@@ -9,13 +9,15 @@ export const BackgroundVideo: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const isDark = theme === 'dark';
 
-  // Landing page hero video (local asset), zoomed to hide generation watermark on the right
-  const HERO_VIDEO_URL = '/videos/role-act-as-a-master-animato.mp4';
+  // Landing page hero videos (local assets), zoomed to hide generation watermark on the right
+  const HERO_VIDEO_LIGHT = '/videos/role-act-as-a-master-animato.mp4';
+  const HERO_VIDEO_DARK = '/videos/night-head.mp4';
 
   // Determine which video to play based on active collection and theme
   const onHero = activeCollection === 'All';
+  const heroVideoSrc = isDark ? HERO_VIDEO_DARK : HERO_VIDEO_LIGHT;
   const currentVideoSrc = onHero
-    ? HERO_VIDEO_URL
+    ? heroVideoSrc
     : collectionVideos[activeCollection];
 
   useEffect(() => {
