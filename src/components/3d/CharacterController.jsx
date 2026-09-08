@@ -8,20 +8,18 @@ import { useProductStore } from '../../store/useProductStore';
 const SPEED = 7.5;
 const ROTATION_SPEED = 10;
 
-// Internal component to load custom .glb model if available, fallback gracefully
-function CustomGLBCharacter({ animationName = 'Idle' }) {
+// Helper function for smooth angle interpolation
+function lerpAngle(start, end, amount) {
+  let shortest = ((end - start + Math.PI) % (Math.PI * 2)) - Math.PI;
+  if (shortest < -Math.PI) shortest += Math.PI * 2;
+  return start + shortest * amount;
+}
+
+// Inner component for loading user-provided GLB character
+function GLBCharacterModel({ animationName = 'Idle', modelPath = '/models/character.glb' }) {
   const group = useRef();
-  const [hasGLB, setHasGLB] = useState(false);
-  let gltfData = null;
-
-  try {
-    // Attempt loading character model from root absolute web path /models/character.glb
-    gltfData = useGLTF('/models/character.glb');
-  } catch (e) {
-    // Graceful fallback to procedural Ghibli traveler mesh
-  }
-
-  const { actions } = useAnimations(gltfData?.animations || [], group);
+  const { scene, animations } = useGLTF(modelPath);
+  const { actions } = useAnimations(animations, group);
 
   useEffect(() => {
     if (actions && actions[animationName]) {
@@ -32,17 +30,17 @@ function CustomGLBCharacter({ animationName = 'Idle' }) {
     }
   }, [actions, animationName]);
 
-  if (gltfData && gltfData.scene) {
-    return (
-      <group ref={group} dispose={null}>
-        <primitive object={gltfData.scene} scale={0.8} position={[0, -0.9, 0]} />
-      </group>
-    );
-  }
-
-  // Fallback Procedural Ghibli Traveler Bard Mesh
   return (
-    <group ref={group} position={[0, -1, 0]}>
+    <group ref={group} dispose={null}>
+      <primitive object={scene} scale={0.8} position={[0, -0.9, 0]} />
+    </group>
+  );
+}
+
+// Procedural Ghibli Traveler Bard fallback mesh
+function ProceduralCharacter() {
+  return (
+    <group position={[0, -1, 0]}>
       {/* Torso */}
       <mesh castShadow receiveShadow position={[0, 0.85, 0]}>
         <cylinderGeometry args={[0.3, 0.45, 0.9, 16]} />
@@ -72,10 +70,37 @@ function CustomGLBCharacter({ animationName = 'Idle' }) {
   );
 }
 
-// Preload character GLB path if user places file in /public/models/character.glb
-useGLTF.preload('/models/character.glb', true, true, (err) => {
-  // Silence missing asset warning in console before file placement
-});
+class GLBErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch() {
+    // Suppress asset error logs for missing character GLB
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+function CustomGLBCharacter({ animationName = 'Idle' }) {
+  return (
+    <GLBErrorBoundary fallback={<ProceduralCharacter />}>
+      <React.Suspense fallback={<ProceduralCharacter />}>
+        <GLBCharacterModel animationName={animationName} />
+      </React.Suspense>
+    </GLBErrorBoundary>
+  );
+}
 
 export function CharacterController({ position = [0, 2, 0] }) {
   const rigidBodyRef = useRef();
@@ -143,7 +168,7 @@ export function CharacterController({ position = [0, 2, 0] }) {
     }
 
     if (characterGroupRef.current) {
-      characterGroupRef.current.rotation.y = THREE.MathUtils.lerpAngle(
+      characterGroupRef.current.rotation.y = lerpAngle(
         characterGroupRef.current.rotation.y,
         targetRotation.current,
         delta * ROTATION_SPEED

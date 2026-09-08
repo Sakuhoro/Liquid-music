@@ -62,6 +62,7 @@ export default function App() {
                   ))}
                 </Physics>
 
+                <PostProcessingPipeline />
               </Suspense>
             </Canvas>
           </ThreeDErrorBoundary>

@@ -1,7 +1,4 @@
 import React from 'react';
-import { COLLECTIONS } from '../../data/products';
-import { GhibliToonShader } from './shaders/GhibliToonShader';
-import * as THREE from 'three';
 
 export function EnvironmentGround() {
   return (

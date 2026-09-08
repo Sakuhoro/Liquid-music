@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RigidBody, CuboidCollider } from '@react-three/rapier';
+import { RigidBody } from '@react-three/rapier';
 import { Text, Float, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useProductStore } from '../../store/useProductStore';
-import { Sparkles as SparklesIcon, Lock, CheckCircle2 } from 'lucide-react';
+import { Lock, CheckCircle2 } from 'lucide-react';
 
 export function POIStand({ collection }) {
   const meshRef = useRef();
