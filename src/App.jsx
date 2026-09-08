@@ -7,6 +7,7 @@ import { WebGLEnvironment } from './components/3d/WebGLEnvironment';
 import { CharacterController } from './components/3d/CharacterController';
 import { EnvironmentGround } from './components/3d/EnvironmentGround';
 import { POIStand } from './components/3d/POIStand';
+import { PostProcessingPipeline } from './components/3d/PostProcessingPipeline';
 import { Navigation } from './components/ui/Navigation';
 import { VirtualJoystick } from './components/ui/VirtualJoystick';
 import { CollectionModal } from './components/ui/CollectionModal';
@@ -60,6 +61,7 @@ export default function App() {
                     <POIStand key={col.id} collection={col} />
                   ))}
                 </Physics>
+
               </Suspense>
             </Canvas>
           </ThreeDErrorBoundary>
