@@ -9,13 +9,14 @@ export const BackgroundVideo: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const isDark = theme === 'dark';
 
+  // Landing page hero video (local asset), zoomed to hide generation watermark on the right
+  const HERO_VIDEO_URL = '/videos/role-act-as-a-master-animato.mp4';
+
   // Determine which video to play based on active collection and theme
-  const currentVideoSrc =
-    activeCollection !== 'All'
-      ? collectionVideos[activeCollection]
-      : isDark
-      ? collectionVideos['Permanent 1']
-      : collectionVideos['Spring'];
+  const onHero = activeCollection === 'All';
+  const currentVideoSrc = onHero
+    ? HERO_VIDEO_URL
+    : collectionVideos[activeCollection];
 
   useEffect(() => {
     const playSafe = async () => {
@@ -45,6 +46,11 @@ export const BackgroundVideo: React.FC = () => {
         muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-1000"
+        style={
+          onHero
+            ? { transform: 'scale(1.32)', transformOrigin: '22% 50%' }
+            : undefined
+        }
         src={currentVideoSrc}
       />
 
