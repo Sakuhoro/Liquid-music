@@ -1,0 +1,6 @@
+{
+  "name": "Liquid Music - Symphonic Vape Liquids",
+  "description": "Premium vape liquids crafted like symphonies with Studio Ghibli cinematic video backgrounds, dynamic volume and nicotine pricing engine, and glassmorphic e-commerce experience.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
