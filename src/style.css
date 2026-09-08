@@ -1,16 +1,42 @@
-:root {
-  color-scheme: dark;
-  font-family: system-ui, sans-serif;
+@import "tailwindcss";
+
+@layer base {
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
 }
-body {
-  margin: 0;
-  display: grid;
-  place-items: center;
-  min-height: 100vh;
-  background: #0d1117;
-  color: #e6edf3;
+
+/* Custom Ghibli style animations & scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-main {
-  text-align: center;
-  padding: 2rem;
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
