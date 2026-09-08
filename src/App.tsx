@@ -39,20 +39,26 @@ export default function App() {
   useEffect(() => {
     if (!audioRef.current) return;
 
-    if (isBgMusicPlaying) {
-      audioRef.current.src = currentMusicSrc;
-      audioRef.current.loop = true;
-      audioRef.current.volume = 0.45;
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Autoplay policy handled
-        });
-      }
-    } else {
+    // Ambient music is scoped to the hero (main) page only.
+    if (viewMode !== 'hero') {
       audioRef.current.pause();
+      return;
     }
-  }, [isBgMusicPlaying, currentMusicSrc]);
+    if (!isBgMusicPlaying) {
+      audioRef.current.pause();
+      return;
+    }
+
+    audioRef.current.src = currentMusicSrc;
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.45;
+    const playPromise = audioRef.current.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Autoplay policy handled
+      });
+    }
+  }, [isBgMusicPlaying, currentMusicSrc, viewMode]);
 
   return (
     <main

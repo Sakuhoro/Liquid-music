@@ -166,13 +166,11 @@ export const useAppStore = create<AppState>()(
         })),
 
       // Background Music
-      darkMusicUrl:
-        'https://actions.google.com/sounds/v1/weather/ambient_hum_night.ogg',
-      lightMusicUrl:
-        'https://actions.google.com/sounds/v1/weather/breeze_through_trees.ogg',
+      darkMusicUrl: '/audio/evening-improvisation-with-ethera.mp3',
+      lightMusicUrl: '/audio/fly-away-when-the-fog-settled-down.mp3',
       setDarkMusicUrl: (url) => set({ darkMusicUrl: url }),
       setLightMusicUrl: (url) => set({ lightMusicUrl: url }),
-      isBgMusicPlaying: false,
+      isBgMusicPlaying: true,
       toggleBgMusic: () =>
         set((state) => ({ isBgMusicPlaying: !state.isBgMusicPlaying })),
       setIsBgMusicPlaying: (isBgMusicPlaying) => set({ isBgMusicPlaying }),
@@ -418,7 +416,7 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: 'liquid-music-store-v3',
+      name: 'liquid-music-store-v4',
       partialize: (state) => ({
         theme: state.theme,
         cart: state.cart,
