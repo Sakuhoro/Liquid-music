@@ -38,16 +38,11 @@ export const MOCK_EXISTING_USERS: AuthUser[] = [
 ];
 
 export const DEFAULT_COLLECTION_VIDEOS: CollectionVideosConfig = {
-  Spring:
-    'https://upload.wikimedia.org/wikipedia/commons/1/14/Cloud_timelapse_in_New_Mexico.webm',
-  Summer:
-    'https://upload.wikimedia.org/wikipedia/commons/c/c6/Cumulus_timelapse_Skupowo-170324.webm',
-  Autumn:
-    'https://upload.wikimedia.org/wikipedia/commons/8/85/Winter_Timelapse_of_Clouds_Roiling_over_Rimrock_on_Okanagan_Mountain.webm',
-  'Permanent 1':
-    'https://upload.wikimedia.org/wikipedia/commons/8/80/JAPAN_Milk_Way_4K_-_Beautiful_Star_and_Sky_at_Night_Time_Lapse.webm',
-  'Permanent 2':
-    'https://upload.wikimedia.org/wikipedia/commons/0/05/Astrophotography_Timelapse.webm',
+  Spring: '/videos/role-act-as-a-master-animato.mp4',
+  Summer: '/videos/role-act-as-a-master-animato.mp4',
+  Autumn: '/videos/night-head.mp4',
+  'Permanent 1': '/videos/night-head.mp4',
+  'Permanent 2': '/videos/night-head.mp4',
 };
 
 interface AppState {
@@ -416,7 +411,7 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: 'liquid-music-store-v4',
+      name: 'liquid-music-store-v5',
       partialize: (state) => ({
         theme: state.theme,
         cart: state.cart,
