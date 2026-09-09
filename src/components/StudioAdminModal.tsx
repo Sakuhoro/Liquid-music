@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { ProductItem, CollectionName } from '../types';
 import {
@@ -20,6 +20,10 @@ import {
   AlertCircle,
   HelpCircle,
   LogOut,
+  Image as ImageIcon,
+  Upload,
+  Link as LinkIcon,
+  Sparkles,
 } from 'lucide-react';
 
 export const StudioAdminModal: React.FC = () => {
@@ -55,7 +59,7 @@ export const StudioAdminModal: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Admin tabs
-  const [activeTab, setActiveTab] = useState<'products' | 'videos' | 'audio' | 'export'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'images' | 'videos' | 'audio' | 'export'>('products');
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -67,6 +71,12 @@ export const StudioAdminModal: React.FC = () => {
   const [tempSoundCloud, setTempSoundCloud] = useState(soundCloudUrl);
   const [audioSaveNotice, setAudioSaveNotice] = useState(false);
   const [videoSaveNotice, setVideoSaveNotice] = useState(false);
+
+  // Image Management state
+  const [selectedProductForImage, setSelectedProductForImage] = useState<string>(products[0]?.id || '');
+  const [customImageUrlInput, setCustomImageUrlInput] = useState('');
+  const [imageSaveNotice, setImageSaveNotice] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isStudioModalOpen) return null;
 
@@ -129,6 +139,41 @@ export const StudioAdminModal: React.FC = () => {
     setEditingProduct(newProd);
   };
 
+  // Image Upload Handler (Converts file to Data URL)
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setImageSaveNotice('Error: Selected file is not an image.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      const targetProd = products.find((p) => p.id === selectedProductForImage);
+      if (targetProd) {
+        updateProduct({ ...targetProd, image: dataUrl });
+        setImageSaveNotice(`Image updated successfully for ${targetProd.name}!`);
+        setTimeout(() => setImageSaveNotice(null), 2500);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleApplyUrlImage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customImageUrlInput.trim()) return;
+    const targetProd = products.find((p) => p.id === selectedProductForImage);
+    if (targetProd) {
+      updateProduct({ ...targetProd, image: customImageUrlInput.trim() });
+      setCustomImageUrlInput('');
+      setImageSaveNotice(`Image URL updated for ${targetProd.name}!`);
+      setTimeout(() => setImageSaveNotice(null), 2500);
+    }
+  };
+
   const handleCopyJson = () => {
     navigator.clipboard.writeText(JSON.stringify(products, null, 2));
     setCopied(true);
@@ -144,6 +189,8 @@ export const StudioAdminModal: React.FC = () => {
     downloadAnchor.click();
     downloadAnchor.remove();
   };
+
+  const curProductForImage = products.find((p) => p.id === selectedProductForImage) || products[0];
 
   return (
     <div
@@ -278,6 +325,17 @@ export const StudioAdminModal: React.FC = () => {
                 Flavors & Pricing ({products.length})
               </button>
               <button
+                onClick={() => setActiveTab('images')}
+                className={`px-4 py-2 text-xs font-mono rounded-t-xl transition-all cursor-pointer whitespace-nowrap ${
+                  activeTab === 'images'
+                    ? 'bg-white/10 font-bold text-amber-400 border-b-2 border-amber-400'
+                    : 'opacity-60 hover:opacity-100'
+                }`}
+              >
+                <ImageIcon className="w-3.5 h-3.5 inline mr-1" />
+                Image Upload & Media
+              </button>
+              <button
                 onClick={() => setActiveTab('videos')}
                 className={`px-4 py-2 text-xs font-mono rounded-t-xl transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'videos'
@@ -388,7 +446,124 @@ export const StudioAdminModal: React.FC = () => {
                 </div>
               )}
 
-              {/* TAB 2: Collection-Specific Videos (Spring, Summer, Autumn, Permanent 1, Permanent 2) */}
+              {/* TAB 2: Image Management & Direct Upload */}
+              {activeTab === 'images' && (
+                <div className="space-y-6 max-w-3xl">
+                  <div>
+                    <h3 className="font-serif text-xl mb-1 flex items-center gap-2">
+                      <ImageIcon className="w-5 h-5 text-amber-400" />
+                      <span>Admin Image Management & Uploads</span>
+                    </h3>
+                    <p className="text-xs opacity-70">
+                      Upload local product artwork directly (PNG/JPG/WebP) or replace artwork using remote image URLs.
+                    </p>
+                  </div>
+
+                  {imageSaveNotice && (
+                    <div className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-2">
+                      <Check className="w-4 h-4" />
+                      <span>{imageSaveNotice}</span>
+                    </div>
+                  )}
+
+                  {/* Target Product Selection */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-mono uppercase tracking-wider opacity-80 font-bold">
+                      Select Target Opus / Product:
+                    </label>
+                    <select
+                      value={selectedProductForImage}
+                      onChange={(e) => setSelectedProductForImage(e.target.value)}
+                      className="w-full px-4 py-3 rounded-2xl border border-white/15 bg-white/10 text-xs font-mono focus:outline-none focus:border-amber-400"
+                    >
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id} className="bg-slate-900 text-white">
+                          {p.name} ({p.category})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {curProductForImage && (
+                    <div className="p-5 rounded-3xl border border-white/15 bg-white/[0.03] space-y-5">
+                      <div className="flex flex-col sm:flex-row items-center gap-6">
+                        <div className="relative w-36 h-36 rounded-2xl overflow-hidden border border-white/20 shadow-xl bg-black/40 shrink-0">
+                          <img
+                            src={curProductForImage.image}
+                            alt={curProductForImage.name}
+                            className="w-full h-full object-cover"
+                          />
+                          <span className="absolute bottom-2 left-2 right-2 px-2 py-0.5 rounded bg-black/70 text-[9px] font-mono text-center text-amber-300">
+                            Current Artwork
+                          </span>
+                        </div>
+
+                        <div className="flex-1 space-y-3">
+                          <h4 className="font-serif text-2xl font-bold">{curProductForImage.name}</h4>
+                          <p className="text-xs opacity-70 line-clamp-2">{curProductForImage.description}</p>
+                          <div className="text-xs font-mono text-amber-400">
+                            Category: {curProductForImage.category} • Opus: {curProductForImage.opusNumber}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Upload Methods */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                        {/* Method A: Local File Upload */}
+                        <div className="p-4 rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] space-y-3">
+                          <div className="flex items-center gap-2 text-xs font-mono font-bold text-amber-400 uppercase">
+                            <Upload className="w-4 h-4" />
+                            <span>Upload Local File</span>
+                          </div>
+                          <p className="text-[11px] opacity-70">
+                            Select PNG, JPG, or WebP image file from your device to encode into database artwork.
+                          </p>
+
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="liquid-glass w-full py-2.5 rounded-xl text-xs font-semibold text-stone-100 flex items-center justify-center gap-2 cursor-pointer hover:scale-105 transition-transform"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Choose Image File...</span>
+                          </button>
+                        </div>
+
+                        {/* Method B: Remote URL */}
+                        <form onSubmit={handleApplyUrlImage} className="p-4 rounded-2xl border border-white/10 bg-white/[0.03] space-y-3">
+                          <div className="flex items-center gap-2 text-xs font-mono font-bold opacity-80 uppercase">
+                            <LinkIcon className="w-4 h-4 text-sky-400" />
+                            <span>Remote Image URL</span>
+                          </div>
+                          <input
+                            type="url"
+                            placeholder="https://images.unsplash.com/..."
+                            value={customImageUrlInput}
+                            onChange={(e) => setCustomImageUrlInput(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl border border-white/15 bg-white/5 text-xs font-mono focus:outline-none focus:border-amber-400"
+                          />
+                          <button
+                            type="submit"
+                            className="w-full py-2.5 rounded-xl border border-sky-400/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 font-semibold text-xs transition-colors cursor-pointer"
+                          >
+                            Apply Remote URL
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 3: Collection-Specific Videos (Spring, Summer, Autumn, Permanent 1, Permanent 2) */}
               {activeTab === 'videos' && (
                 <form onSubmit={handleSaveVideos} className="space-y-6 max-w-2xl">
                   <div>
@@ -434,7 +609,7 @@ export const StudioAdminModal: React.FC = () => {
                 </form>
               )}
 
-              {/* TAB 3: Background Music & SoundCloud Integration */}
+              {/* TAB 4: Background Music & SoundCloud Integration */}
               {activeTab === 'audio' && (
                 <form onSubmit={handleSaveAudio} className="space-y-6 max-w-2xl">
                   <div>
@@ -510,7 +685,7 @@ export const StudioAdminModal: React.FC = () => {
                 </form>
               )}
 
-              {/* TAB 4: Export JSON with "Download database backup" helper text */}
+              {/* TAB 5: Export JSON with "Download database backup" helper text */}
               {activeTab === 'export' && (
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -632,7 +807,7 @@ export const StudioAdminModal: React.FC = () => {
                     <div>
                       <label className="block font-mono opacity-70 mb-1">Image URL (PNG/WebP):</label>
                       <input
-                        type="url"
+                        type="text"
                         required
                         value={editingProduct.image}
                         onChange={(e) =>

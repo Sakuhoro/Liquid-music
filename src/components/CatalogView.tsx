@@ -6,11 +6,7 @@ import {
   NicotineType,
   CollectionName,
 } from '../types';
-import {
-  calculatePrice,
-  VOLUME_PRICING,
-  NICOTINE_PRICING,
-} from '../data/products';
+import { calculatePrice } from '../data/products';
 import {
   Search,
   Play,
@@ -21,8 +17,77 @@ import {
   ArrowLeft,
   Music,
   Radio,
+  Sparkles,
+  Layers,
 } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
+import { DepthCard } from './ui/depth-card';
+
+// Metadata for Collection Depth Cards
+const COLLECTION_CARDS: {
+  id: CollectionName | 'All';
+  title: string;
+  subtitle: string;
+  description: string;
+  image: string;
+  badge: string;
+  color: string;
+}[] = [
+  {
+    id: 'All',
+    title: 'All Opus',
+    subtitle: 'Complete Symphonic Anthology',
+    description: 'Explore the full spectrum of movement compositions across all seasonal & permanent masterworks.',
+    image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
+    badge: 'Full Catalog',
+    color: 'from-amber-500/80 to-amber-900/80',
+  },
+  {
+    id: 'Spring',
+    title: 'Spring Collection',
+    subtitle: 'Floral Cantabile & Spring Blossom Dew',
+    description: 'Delicate sakura petals, white peach nectar, and crisp alpine mountain water.',
+    image: 'https://images.unsplash.com/photo-1528183429752-a97d0bf99b5a?w=600&auto=format&fit=crop&q=80',
+    badge: 'Seasonal Opus',
+    color: 'from-pink-500/80 to-rose-900/80',
+  },
+  {
+    id: 'Summer',
+    title: 'Summer Collection',
+    subtitle: 'Tropical Vivace & Root Beer Crescendos',
+    description: 'Sun-drenched Alphonso mango, effervescent sassafras, key lime zest, and coastal ice.',
+    image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=600&auto=format&fit=crop&q=80',
+    badge: 'Seasonal Opus',
+    color: 'from-amber-400/80 to-orange-900/80',
+  },
+  {
+    id: 'Autumn',
+    title: 'Autumn Collection',
+    subtitle: 'Warm Acoustic Resonance & Spiced Orchards',
+    description: 'Bourbon vanilla caramel, torched brown sugar, honeycrisp apple, and charred oak.',
+    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80',
+    badge: 'Seasonal Opus',
+    color: 'from-orange-500/80 to-stone-900/80',
+  },
+  {
+    id: 'Permanent 1',
+    title: 'Permanent 1',
+    subtitle: 'Signature Virtuoso Masterworks',
+    description: 'Electric blue raspberry symphonies and deep contrapuntal espresso cacao fugues.',
+    image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=600&auto=format&fit=crop&q=80',
+    badge: 'Core Series',
+    color: 'from-sky-500/80 to-indigo-900/80',
+  },
+  {
+    id: 'Permanent 2',
+    title: 'Permanent 2',
+    subtitle: 'Ethereal Sub-Zero Nocturnes & Kyoho Études',
+    description: 'Nordic spearmint, frosted fir resins, and soothing aloe vera grape harmonies.',
+    image: 'https://images.unsplash.com/photo-1517840901100-8179e982acb7?w=600&auto=format&fit=crop&q=80',
+    badge: 'Core Series',
+    color: 'from-emerald-500/80 to-teal-900/80',
+  },
+];
 
 // Subcomponent: Individual Flavor Card with High-Contrast Light Theme Support & Dynamic Pricing
 const FlavorCard: React.FC<{ product: ProductItem }> = ({ product }) => {
@@ -317,16 +382,6 @@ export const CatalogView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const isDark = theme === 'dark';
 
-  // Specific collections requested: Spring, Summer, Autumn, Permanent 1, Permanent 2
-  const collections: (CollectionName | 'All')[] = [
-    'All',
-    'Spring',
-    'Summer',
-    'Autumn',
-    'Permanent 1',
-    'Permanent 2',
-  ];
-
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const matchesCollection =
@@ -396,23 +451,80 @@ export const CatalogView: React.FC = () => {
         </div>
       </div>
 
-      {/* Collection-Specific Filter Tabs (Spring, Summer, Autumn, Permanent 1, Permanent 2) */}
-      <div className="flex items-center gap-2.5 overflow-x-auto pb-4 mb-6 scrollbar-none">
-        {collections.map((col) => (
-          <button
-            key={col}
-            onClick={() => setActiveCollection(col)}
-            className={`px-4 py-2 rounded-full text-xs font-mono transition-all duration-200 cursor-pointer whitespace-nowrap ${
-              activeCollection === col
-                ? 'bg-amber-400 text-stone-950 font-bold shadow-lg shadow-amber-400/30 scale-105 border-amber-500'
-                : isDark
-                ? 'liquid-glass text-stone-300 hover:text-white'
-                : 'bg-white/80 border border-slate-300 text-slate-800 font-semibold hover:bg-white shadow-sm'
-            }`}
-          >
-            {col === 'All' ? 'All Opus' : col}
-          </button>
-        ))}
+      {/* REACT BITS PRO DEPTH CARD SECTION: Flavor Collections Selection UI */}
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <h3 className={`font-serif text-xl sm:text-2xl font-bold ${isDark ? 'text-stone-100' : 'text-slate-900'}`}>
+              Flavor Collections
+            </h3>
+          </div>
+          <span className="text-xs font-mono opacity-70 flex items-center gap-1">
+            <Layers className="w-3.5 h-3.5 text-amber-400" />
+            <span>Interactive 3D Depth View</span>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          {COLLECTION_CARDS.map((card) => {
+            const isSelected = activeCollection === card.id;
+            return (
+              <div
+                key={card.id}
+                onClick={() => setActiveCollection(card.id)}
+                className={`relative rounded-3xl p-1 transition-all duration-300 ${
+                  isSelected
+                    ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-[1.02] shadow-2xl'
+                    : 'hover:scale-[1.01] opacity-90 hover:opacity-100'
+                }`}
+              >
+                <DepthCard
+                  image={card.image}
+                  height={220}
+                  maxRotation={22}
+                  maxTranslation={20}
+                  borderRadius="20px"
+                  spotlight={true}
+                  spotlightColor="rgba(251, 191, 36, 0.45)"
+                  className="w-full"
+                >
+                  <div className="flex flex-col justify-between h-full p-2">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[9px] font-mono uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-amber-300 border border-amber-400/30">
+                        {card.badge}
+                      </span>
+                      {isSelected && (
+                        <span className="w-5 h-5 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold text-xs shadow-md">
+                          ✓
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-auto pt-4">
+                      <h4 className="font-serif text-lg font-bold text-white tracking-tight leading-snug drop-shadow-md">
+                        {card.title}
+                      </h4>
+                      <p className="text-[10px] font-sans text-stone-200 opacity-90 line-clamp-2 mt-0.5 font-medium drop-shadow-sm">
+                        {card.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                </DepthCard>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Grid Header & Item Count */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className={`font-serif text-lg font-bold ${isDark ? 'text-stone-200' : 'text-slate-800'}`}>
+          {activeCollection === 'All' ? 'All Movements' : `${activeCollection} Collection`}
+        </h3>
+        <span className="text-xs font-mono opacity-70">
+          Showing {filteredProducts.length} opus
+        </span>
       </div>
 
       {/* Grid of Flavors */}
