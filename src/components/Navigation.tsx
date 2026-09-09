@@ -10,6 +10,7 @@ import {
   Radio,
   Volume2,
   VolumeX,
+  ShieldCheck,
 } from 'lucide-react';
 
 export const Navigation: React.FC = () => {
@@ -20,6 +21,7 @@ export const Navigation: React.FC = () => {
   const cartCount = useAppStore((state) => state.getCartItemCount());
   const setIsCartOpen = useAppStore((state) => state.setIsCartOpen);
   const currentUser = useAppStore((state) => state.currentUser);
+  const isAdminLoggedIn = useAppStore((state) => state.isAdminLoggedIn);
   const setIsAccountModalOpen = useAppStore((state) => state.setIsAccountModalOpen);
   const setIsStudioModalOpen = useAppStore((state) => state.setIsStudioModalOpen);
   const openAuthModal = useAppStore((state) => state.openAuthModal);
@@ -37,12 +39,14 @@ export const Navigation: React.FC = () => {
     }
   };
 
+  const isAdmin = isAdminLoggedIn || currentUser?.role === 'ADMIN';
+
   return (
     <header
       id="main-app-nav"
       className="relative z-10 flex flex-row items-center justify-between px-6 sm:px-8 py-6 max-w-7xl mx-auto w-full"
     >
-      {/* Brand Logo: Plain text "Liquid Music" - No trademark symbol, no decorative dot */}
+      {/* Brand Logo: Plain text "Liquid Music" */}
       <button
         id="nav-logo-btn"
         onClick={() => setViewMode('hero')}
@@ -53,18 +57,21 @@ export const Navigation: React.FC = () => {
         </span>
       </button>
 
-      {/* Center Links: Studio, Collections, Account */}
+      {/* Center Links: Admin Cabinet (Visible ONLY for ADMIN), Collections, Account */}
       <nav className="flex items-center gap-6 md:gap-10 text-sm font-medium">
-        <button
-          id="nav-link-studio"
-          onClick={() => setIsStudioModalOpen(true)}
-          className={`hover:opacity-100 transition-all flex items-center gap-1.5 cursor-pointer ${
-            isDark ? 'text-stone-300 hover:text-white' : 'text-stone-700 hover:text-stone-950'
-          }`}
-        >
-          <Sliders className="w-3.5 h-3.5 opacity-70" />
-          <span>Studio</span>
-        </button>
+        {/* Only visible when authenticated as ADMIN */}
+        {isAdmin && (
+          <button
+            id="nav-link-studio"
+            onClick={() => setIsStudioModalOpen(true)}
+            className={`hover:opacity-100 transition-all flex items-center gap-1.5 cursor-pointer font-bold text-amber-400 ${
+              isDark ? 'hover:text-amber-300' : 'hover:text-amber-600'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 text-amber-400" />
+            <span>Кабинет администратора</span>
+          </button>
+        )}
 
         <button
           id="nav-link-collections"
@@ -88,7 +95,7 @@ export const Navigation: React.FC = () => {
         >
           <User className="w-3.5 h-3.5 opacity-70" />
           <span>
-            {currentUser ? currentUser.telegram : 'Account'}
+            {currentUser ? currentUser.telegram : 'Вход на студию звукозаписи'}
           </span>
           {currentUser && (
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />

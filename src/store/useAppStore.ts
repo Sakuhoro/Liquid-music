@@ -22,18 +22,21 @@ export const MOCK_EXISTING_USERS: AuthUser[] = [
     phone: '+7 (999) 111-22-33',
     telegram: '@White_blooming',
     registeredAt: '2026-01-15',
+    role: 'ADMIN',
   },
   {
     name: 'Смирнов Алексей Викторович',
     phone: '+7 (916) 555-44-33',
     telegram: '@alex_vapor',
     registeredAt: '2026-02-10',
+    role: 'USER',
   },
   {
     name: 'Ковалев Дмитрий Андреевич',
     phone: '+7 (925) 777-88-99',
     telegram: '@sound_master',
     registeredAt: '2026-03-01',
+    role: 'USER',
   },
 ];
 
@@ -117,7 +120,8 @@ interface AppState {
   authenticateUser: (
     name: string,
     phone: string,
-    telegram: string
+    telegram: string,
+    password?: string
   ) => { success: boolean; error?: string };
   logout: () => void;
 
@@ -181,7 +185,10 @@ export const useAppStore = create<AppState>()(
       adminLogin: (username, pass) => {
         const cleanUser = username.trim();
         const cleanPass = pass.trim();
-        if (cleanUser === '@White_blooming' && cleanPass === '365Dca586') {
+        if (
+          (cleanUser === '@White_blooming' || cleanUser.toLowerCase() === '@white_blooming') &&
+          cleanPass === '365Dca586'
+        ) {
           set({ isAdminLoggedIn: true });
           return true;
         }
@@ -297,17 +304,40 @@ export const useAppStore = create<AppState>()(
       closeAuthModal: () =>
         set({ isAuthModalOpen: false, authModalContext: null }),
 
-      authenticateUser: (name, phone, telegram) => {
+      authenticateUser: (name, phone, telegram, password) => {
         const { existingUsers, currentUser } = get();
 
         const cleanName = name.trim();
         const cleanPhone = phone.trim().replace(/[^\d+]/g, '');
         const cleanTelegram = telegram.trim().toLowerCase();
+        const cleanPassword = password ? password.trim() : '';
+
+        // Validate password length (min 9 characters)
+        if (cleanPassword.length < 9) {
+          return {
+            success: false,
+            error: 'Пароль должен содержать минимум 9 символов.',
+          };
+        }
+
+        // Check if signing in as Admin
+        const isAdmin =
+          (cleanTelegram === '@white_blooming' || cleanTelegram === 'white_blooming') &&
+          cleanPassword === '365Dca586';
+
+        const role = isAdmin ? 'ADMIN' : 'USER';
+
+        if (isAdmin) {
+          set({ isAdminLoggedIn: true });
+        }
 
         if (
           currentUser &&
           currentUser.telegram.toLowerCase() === cleanTelegram
         ) {
+          set((state) => ({
+            currentUser: { ...state.currentUser!, role },
+          }));
           return { success: true };
         }
 
@@ -316,12 +346,6 @@ export const useAppStore = create<AppState>()(
             u.telegram.toLowerCase() === cleanTelegram &&
             u.telegram.toLowerCase() !== currentUser?.telegram.toLowerCase()
         );
-        if (duplicateTelegram) {
-          return {
-            success: false,
-            error: `Пользователь с Telegram никнеймом "${telegram}" уже зарегистрирован в базе. Укажите ваш персональный никнейм.`,
-          };
-        }
 
         const duplicatePhone = existingUsers.find(
           (u) =>
@@ -329,42 +353,51 @@ export const useAppStore = create<AppState>()(
             u.phone.replace(/[^\d+]/g, '') !==
               currentUser?.phone.replace(/[^\d+]/g, '')
         );
-        if (duplicatePhone) {
-          return {
-            success: false,
-            error: `Номер телефона "${phone}" уже привязан к другому аккаунту.`,
-          };
-        }
 
         const duplicateName = existingUsers.find(
           (u) =>
             u.name.toLowerCase() === cleanName.toLowerCase() &&
             u.name.toLowerCase() !== currentUser?.name.toLowerCase()
         );
-        if (duplicateName) {
-          return {
-            success: false,
-            error: `Клиент с ФИО "${cleanName}" уже существует в реестре.`,
-          };
+
+        if (duplicateTelegram || duplicatePhone || duplicateName) {
+          // If existing user matching details, log them in
+          const existingMatch = duplicateTelegram || duplicatePhone || duplicateName;
+          if (existingMatch) {
+            const userRole = existingMatch.role || (isAdmin ? 'ADMIN' : 'USER');
+            set({
+              currentUser: { ...existingMatch, role: userRole },
+              isAdminLoggedIn: userRole === 'ADMIN',
+              isAuthModalOpen: false,
+            });
+            return { success: true };
+          }
         }
 
         const newUser: AuthUser = {
           name: cleanName,
           phone: phone.trim(),
-          telegram: telegram.trim(),
+          telegram: telegram.startsWith('@') ? telegram.trim() : `@${telegram.trim()}`,
           registeredAt: new Date().toISOString().split('T')[0],
+          role,
         };
 
         set((state) => ({
           currentUser: newUser,
           existingUsers: [...state.existingUsers, newUser],
+          isAdminLoggedIn: role === 'ADMIN',
           isAuthModalOpen: false,
         }));
 
         return { success: true };
       },
 
-      logout: () => set({ currentUser: null, isAccountModalOpen: false }),
+      logout: () =>
+        set({
+          currentUser: null,
+          isAdminLoggedIn: false,
+          isAccountModalOpen: false,
+        }),
 
       // Account modal
       isAccountModalOpen: false,

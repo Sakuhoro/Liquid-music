@@ -56,6 +56,7 @@ export interface AuthUser {
   phone: string; // Phone number
   telegram: string; // @username
   registeredAt: string;
+  role?: 'ADMIN' | 'USER';
 }
 
 export interface PlacedOrder {
