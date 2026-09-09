@@ -3,22 +3,16 @@ import { useAppStore } from '../store/useAppStore';
 
 export const BackgroundVideo: React.FC = () => {
   const theme = useAppStore((state) => state.theme);
-  const activeCollection = useAppStore((state) => state.activeCollection);
-  const collectionVideos = useAppStore((state) => state.collectionVideos);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const isDark = theme === 'dark';
 
-  // Landing page hero videos (local assets), zoomed to hide generation watermark on the right
+  // Local hero videos (no remote placeholders), zoomed to hide generation watermark on the right
   const HERO_VIDEO_LIGHT = '/videos/role-act-as-a-master-animato.mp4';
   const HERO_VIDEO_DARK = '/videos/night-head.mp4';
 
-  // Determine which video to play based on active collection and theme
-  const onHero = activeCollection === 'All';
-  const heroVideoSrc = isDark ? HERO_VIDEO_DARK : HERO_VIDEO_LIGHT;
-  const currentVideoSrc = onHero
-    ? heroVideoSrc
-    : collectionVideos[activeCollection];
+  // Theme-driven background; active collection does not switch the video anymore
+  const currentVideoSrc = isDark ? HERO_VIDEO_DARK : HERO_VIDEO_LIGHT;
 
   useEffect(() => {
     const playSafe = async () => {
@@ -48,11 +42,7 @@ export const BackgroundVideo: React.FC = () => {
         muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-1000"
-        style={
-          onHero
-            ? { transform: 'scale(1.32)', transformOrigin: '22% 50%' }
-            : undefined
-        }
+        style={{ transform: 'scale(1.32)', transformOrigin: '22% 50%' }}
         src={currentVideoSrc}
       />
 
