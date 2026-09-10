@@ -87,10 +87,6 @@ export const ProductDetailModal: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 text-xs font-mono text-amber-300 font-bold mb-1">
                 <span>{inspectedProduct.opusNumber}</span>
-                <span>•</span>
-                <span>{inspectedProduct.musicalKey}</span>
-                <span>•</span>
-                <span>{inspectedProduct.bpm} BPM</span>
               </div>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white drop-shadow-md">
                 {inspectedProduct.name}
