@@ -59,7 +59,7 @@ export const StudioAdminModal: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Admin tabs
-  const [activeTab, setActiveTab] = useState<'products' | 'images' | 'videos' | 'audio' | 'export'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'videos' | 'audio' | 'export'>('products');
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -72,10 +72,6 @@ export const StudioAdminModal: React.FC = () => {
   const [audioSaveNotice, setAudioSaveNotice] = useState(false);
   const [videoSaveNotice, setVideoSaveNotice] = useState(false);
 
-  // Image Management state
-  const [selectedProductForImage, setSelectedProductForImage] = useState<string>(products[0]?.id || '');
-  const [customImageUrlInput, setCustomImageUrlInput] = useState('');
-  const [imageSaveNotice, setImageSaveNotice] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isStudioModalOpen) return null;
@@ -119,19 +115,19 @@ export const StudioAdminModal: React.FC = () => {
     const newId = `opus-${Date.now()}`;
     const newProd: ProductItem = {
       id: newId,
-      name: 'Blue Raspberry Symphony',
-      subtitle: 'New Melodic Movement',
-      description: 'Handcrafted vapor opus composed of delicate botanical and confectionery top notes.',
+      name: 'Новый Вкус',
+      subtitle: 'Новый авторский микс',
+      description: 'Описание нового авторского вкуса и ароматической пирамиды.',
       image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=500&auto=format&fit=crop&q=80',
       basePrice: 300,
-      category: 'Permanent 1',
+      category: 'Spring',
       musicalKey: 'C Major',
       bpm: 120,
       opusNumber: `Op. ${products.length + 1}`,
       aromaticChords: {
-        top: 'Blue Raspberry, Cold Mint',
-        heart: 'Wild Berries, Blossom Dew',
-        base: 'White Amber, Sugar Cane',
+        top: 'Верхние ноты',
+        heart: 'Ноты сердца',
+        base: 'Базовый аккорд',
       },
       accentColor: '#38bdf8',
     };
@@ -139,39 +135,19 @@ export const StudioAdminModal: React.FC = () => {
     setEditingProduct(newProd);
   };
 
-  // Image Upload Handler (Converts file to Data URL)
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Image Upload Handler for Edit Form
+  const handleEditImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !editingProduct) return;
 
-    if (!file.type.startsWith('image/')) {
-      setImageSaveNotice('Error: Selected file is not an image.');
-      return;
-    }
+    if (!file.type.startsWith('image/')) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
-      const targetProd = products.find((p) => p.id === selectedProductForImage);
-      if (targetProd) {
-        updateProduct({ ...targetProd, image: dataUrl });
-        setImageSaveNotice(`Image updated successfully for ${targetProd.name}!`);
-        setTimeout(() => setImageSaveNotice(null), 2500);
-      }
+      setEditingProduct({ ...editingProduct, image: dataUrl });
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleApplyUrlImage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customImageUrlInput.trim()) return;
-    const targetProd = products.find((p) => p.id === selectedProductForImage);
-    if (targetProd) {
-      updateProduct({ ...targetProd, image: customImageUrlInput.trim() });
-      setCustomImageUrlInput('');
-      setImageSaveNotice(`Image URL updated for ${targetProd.name}!`);
-      setTimeout(() => setImageSaveNotice(null), 2500);
-    }
   };
 
   const handleCopyJson = () => {
@@ -190,8 +166,6 @@ export const StudioAdminModal: React.FC = () => {
     downloadAnchor.remove();
   };
 
-  const curProductForImage = products.find((p) => p.id === selectedProductForImage) || products[0];
-
   return (
     <div
       id="studio-admin-modal-backdrop"
@@ -199,7 +173,7 @@ export const StudioAdminModal: React.FC = () => {
     >
       <div
         id="studio-admin-modal-card"
-        className={`relative w-full max-w-4xl rounded-3xl overflow-hidden border shadow-2xl backdrop-blur-2xl flex flex-col max-h-[90vh] ${
+        className={`relative w-full max-w-[1344px] h-[88vh] rounded-3xl overflow-hidden border shadow-2xl backdrop-blur-2xl flex flex-col ${
           isDark
             ? 'bg-[rgba(7,24,38,0.96)] border-white/20 text-stone-100'
             : 'bg-white/95 border-slate-300 text-slate-900'
@@ -292,10 +266,10 @@ export const StudioAdminModal: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="font-serif text-2xl font-normal">
-                    Studio Director & Admin Console
+                    Кабинет администратора
                   </h2>
                   <p className="text-xs opacity-60">
-                    Logged in as <span className="text-amber-400 font-mono">@White_blooming</span>
+                    Авторизован как <span className="text-amber-400 font-mono">@White_blooming</span>
                   </p>
                 </div>
               </div>
@@ -303,11 +277,11 @@ export const StudioAdminModal: React.FC = () => {
               <div className="flex items-center gap-2 pr-10">
                 <button
                   onClick={adminLogout}
-                  title="Lock Admin Console"
+                  title="Заблокировать консоль"
                   className="px-3 py-1.5 rounded-xl border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  <span>Lock</span>
+                  <span>Выход</span>
                 </button>
               </div>
             </div>
@@ -322,18 +296,7 @@ export const StudioAdminModal: React.FC = () => {
                     : 'opacity-60 hover:opacity-100'
                 }`}
               >
-                Flavors & Pricing ({products.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('images')}
-                className={`px-4 py-2 text-xs font-mono rounded-t-xl transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === 'images'
-                    ? 'bg-white/10 font-bold text-amber-400 border-b-2 border-amber-400'
-                    : 'opacity-60 hover:opacity-100'
-                }`}
-              >
-                <ImageIcon className="w-3.5 h-3.5 inline mr-1" />
-                Image Upload & Media
+                Вкусы и Цены ({products.length})
               </button>
               <button
                 onClick={() => setActiveTab('videos')}
@@ -344,7 +307,7 @@ export const StudioAdminModal: React.FC = () => {
                 }`}
               >
                 <Video className="w-3.5 h-3.5 inline mr-1" />
-                Collection Videos
+                Видео коллекций
               </button>
               <button
                 onClick={() => setActiveTab('audio')}
@@ -355,7 +318,7 @@ export const StudioAdminModal: React.FC = () => {
                 }`}
               >
                 <Music className="w-3.5 h-3.5 inline mr-1" />
-                Background & SoundCloud
+                Фоновая музыка & SoundCloud
               </button>
               <button
                 onClick={() => setActiveTab('export')}
@@ -366,7 +329,7 @@ export const StudioAdminModal: React.FC = () => {
                 }`}
               >
                 <FileCode className="w-3.5 h-3.5 inline mr-1" />
-                Export Database
+                Экспорт БД
               </button>
             </div>
 
@@ -377,7 +340,7 @@ export const StudioAdminModal: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-mono opacity-70">
-                      Manage flavors, categories, and base prices
+                      Управление вкусами, коллекциями и базовыми ценами
                     </span>
                     <div className="flex items-center gap-2">
                       <button
@@ -385,14 +348,14 @@ export const StudioAdminModal: React.FC = () => {
                         className="px-3 py-1.5 rounded-xl border border-white/10 hover:bg-white/5 text-xs font-mono flex items-center gap-1.5 opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Reset Defaults</span>
+                        <span>Сбросить по умолчанию</span>
                       </button>
                       <button
                         onClick={handleCreateNew}
-                        className="liquid-glass px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 text-stone-100 cursor-pointer"
+                        className="bg-amber-400 hover:bg-amber-300 text-stone-950 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-amber-400/20 transition-transform active:scale-95"
                       >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add New Opus</span>
+                        <Plus className="w-4 h-4" />
+                        <span>Добавить вкус</span>
                       </button>
                     </div>
                   </div>
@@ -418,9 +381,9 @@ export const StudioAdminModal: React.FC = () => {
                               {prod.category}
                             </span>
                           </div>
-                          <p className="text-xs opacity-60 truncate">{prod.subtitle}</p>
+                          <p className="text-xs opacity-60 truncate">{prod.description}</p>
                           <div className="text-xs font-mono text-amber-400 mt-1">
-                            Base: {prod.basePrice} ₽ • Key: {prod.musicalKey} • {prod.bpm} BPM
+                            Цена: {prod.basePrice} ₽
                           </div>
                         </div>
 
@@ -430,7 +393,7 @@ export const StudioAdminModal: React.FC = () => {
                             className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
                           >
                             <Edit2 className="w-3.5 h-3.5 text-amber-400" />
-                            <span>Edit</span>
+                            <span>Редактировать</span>
                           </button>
 
                           <button
@@ -443,123 +406,6 @@ export const StudioAdminModal: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {/* TAB 2: Image Management & Direct Upload */}
-              {activeTab === 'images' && (
-                <div className="space-y-6 max-w-3xl">
-                  <div>
-                    <h3 className="font-serif text-xl mb-1 flex items-center gap-2">
-                      <ImageIcon className="w-5 h-5 text-amber-400" />
-                      <span>Admin Image Management & Uploads</span>
-                    </h3>
-                    <p className="text-xs opacity-70">
-                      Upload local product artwork directly (PNG/JPG/WebP) or replace artwork using remote image URLs.
-                    </p>
-                  </div>
-
-                  {imageSaveNotice && (
-                    <div className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-2">
-                      <Check className="w-4 h-4" />
-                      <span>{imageSaveNotice}</span>
-                    </div>
-                  )}
-
-                  {/* Target Product Selection */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-mono uppercase tracking-wider opacity-80 font-bold">
-                      Select Target Opus / Product:
-                    </label>
-                    <select
-                      value={selectedProductForImage}
-                      onChange={(e) => setSelectedProductForImage(e.target.value)}
-                      className="w-full px-4 py-3 rounded-2xl border border-white/15 bg-white/10 text-xs font-mono focus:outline-none focus:border-amber-400"
-                    >
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id} className="bg-slate-900 text-white">
-                          {p.name} ({p.category})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {curProductForImage && (
-                    <div className="p-5 rounded-3xl border border-white/15 bg-white/[0.03] space-y-5">
-                      <div className="flex flex-col sm:flex-row items-center gap-6">
-                        <div className="relative w-36 h-36 rounded-2xl overflow-hidden border border-white/20 shadow-xl bg-black/40 shrink-0">
-                          <img
-                            src={curProductForImage.image}
-                            alt={curProductForImage.name}
-                            className="w-full h-full object-cover"
-                          />
-                          <span className="absolute bottom-2 left-2 right-2 px-2 py-0.5 rounded bg-black/70 text-[9px] font-mono text-center text-amber-300">
-                            Current Artwork
-                          </span>
-                        </div>
-
-                        <div className="flex-1 space-y-3">
-                          <h4 className="font-serif text-2xl font-bold">{curProductForImage.name}</h4>
-                          <p className="text-xs opacity-70 line-clamp-2">{curProductForImage.description}</p>
-                          <div className="text-xs font-mono text-amber-400">
-                            Category: {curProductForImage.category} • Opus: {curProductForImage.opusNumber}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Upload Methods */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/10">
-                        {/* Method A: Local File Upload */}
-                        <div className="p-4 rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] space-y-3">
-                          <div className="flex items-center gap-2 text-xs font-mono font-bold text-amber-400 uppercase">
-                            <Upload className="w-4 h-4" />
-                            <span>Upload Local File</span>
-                          </div>
-                          <p className="text-[11px] opacity-70">
-                            Select PNG, JPG, or WebP image file from your device to encode into database artwork.
-                          </p>
-
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFileUpload}
-                            className="hidden"
-                          />
-
-                          <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="liquid-glass w-full py-2.5 rounded-xl text-xs font-semibold text-stone-100 flex items-center justify-center gap-2 cursor-pointer hover:scale-105 transition-transform"
-                          >
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                            <span>Choose Image File...</span>
-                          </button>
-                        </div>
-
-                        {/* Method B: Remote URL */}
-                        <form onSubmit={handleApplyUrlImage} className="p-4 rounded-2xl border border-white/10 bg-white/[0.03] space-y-3">
-                          <div className="flex items-center gap-2 text-xs font-mono font-bold opacity-80 uppercase">
-                            <LinkIcon className="w-4 h-4 text-sky-400" />
-                            <span>Remote Image URL</span>
-                          </div>
-                          <input
-                            type="url"
-                            placeholder="https://images.unsplash.com/..."
-                            value={customImageUrlInput}
-                            onChange={(e) => setCustomImageUrlInput(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border border-white/15 bg-white/5 text-xs font-mono focus:outline-none focus:border-amber-400"
-                          />
-                          <button
-                            type="submit"
-                            className="w-full py-2.5 rounded-xl border border-sky-400/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 font-semibold text-xs transition-colors cursor-pointer"
-                          >
-                            Apply Remote URL
-                          </button>
-                        </form>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -744,23 +590,23 @@ export const StudioAdminModal: React.FC = () => {
             {editingProduct && (
               <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
                 <div
-                  className={`w-full max-w-lg rounded-3xl p-6 border shadow-2xl ${
+                  className={`w-full max-w-xl rounded-3xl p-6 sm:p-8 border shadow-2xl ${
                     isDark ? 'bg-[hsl(201,100%,13%)] border-white/20 text-white' : 'bg-white border-slate-300 text-slate-900'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-serif text-2xl">Edit {editingProduct.name}</h3>
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="font-serif text-2xl font-bold">Редактирование: {editingProduct.name}</h3>
                     <button
                       onClick={() => setEditingProduct(null)}
-                      className="p-1.5 rounded-full hover:bg-white/10"
+                      className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
 
-                  <form onSubmit={handleSaveProduct} className="space-y-3 text-xs">
+                  <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
                     <div>
-                      <label className="block font-mono opacity-70 mb-1">Name:</label>
+                      <label className="block font-mono font-bold opacity-80 mb-1 text-xs">Имя</label>
                       <input
                         type="text"
                         required
@@ -768,12 +614,12 @@ export const StudioAdminModal: React.FC = () => {
                         onChange={(e) =>
                           setEditingProduct({ ...editingProduct, name: e.target.value })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-white/15 bg-white/5 focus:outline-none"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-white/5 focus:outline-none focus:border-amber-500 font-medium text-sm"
                       />
                     </div>
 
                     <div>
-                      <label className="block font-mono opacity-70 mb-1">Collection:</label>
+                      <label className="block font-mono font-bold opacity-80 mb-1 text-xs">Коллекция</label>
                       <select
                         value={editingProduct.category}
                         onChange={(e) =>
@@ -782,96 +628,97 @@ export const StudioAdminModal: React.FC = () => {
                             category: e.target.value as CollectionName,
                           })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-white/15 bg-white/10 focus:outline-none"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-amber-500 text-xs font-semibold"
                       >
-                        <option value="Spring" className="bg-slate-900 text-white">Spring</option>
-                        <option value="Summer" className="bg-slate-900 text-white">Summer</option>
-                        <option value="Autumn" className="bg-slate-900 text-white">Autumn</option>
-                        <option value="Permanent 1" className="bg-slate-900 text-white">Permanent 1</option>
-                        <option value="Permanent 2" className="bg-slate-900 text-white">Permanent 2</option>
+                        <option value="Spring">Spring</option>
+                        <option value="Summer">Summer</option>
+                        <option value="Autumn">Autumn</option>
+                        <option value="Permanent 1">Permanent 1</option>
+                        <option value="Permanent 2">Permanent 2</option>
                       </select>
                     </div>
 
-                    <div>
-                      <label className="block font-mono opacity-70 mb-1">Subtitle:</label>
-                      <input
-                        type="text"
-                        value={editingProduct.subtitle}
-                        onChange={(e) =>
-                          setEditingProduct({ ...editingProduct, subtitle: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-xl border border-white/15 bg-white/5 focus:outline-none"
-                      />
+                    {/* Integrated Direct Photo Loader & Preview */}
+                    <div className="p-4 rounded-2xl border border-slate-300 dark:border-white/15 bg-slate-100/70 dark:bg-white/[0.03] space-y-3">
+                      <label className="block font-mono font-bold opacity-90 text-xs uppercase tracking-wider">
+                        Загрузка фотографии карточки
+                      </label>
+
+                      <div className="flex items-center gap-4">
+                        {editingProduct.image && (
+                          <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-300 dark:border-white/20 shrink-0 bg-black/20 shadow-md">
+                            <img
+                              src={editingProduct.image}
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+
+                        <div className="flex-1 space-y-2">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleEditImageUpload}
+                            className="hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full py-2.5 px-4 rounded-xl border border-slate-300 dark:border-white/20 bg-white dark:bg-white/10 hover:bg-slate-50 dark:hover:bg-white/20 text-slate-800 dark:text-stone-100 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-colors"
+                          >
+                            <Upload className="w-4 h-4 text-amber-500" />
+                            <span>Загрузить изображение с компьютера</span>
+                          </button>
+                          <p className="text-[10px] opacity-60 font-mono">
+                            Поддерживаются форматы PNG, JPG, WebP. Выбранная картинка будет сохранена напрямую в карточке.
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
                     <div>
-                      <label className="block font-mono opacity-70 mb-1">Image URL (PNG/WebP):</label>
-                      <input
-                        type="text"
-                        required
-                        value={editingProduct.image}
-                        onChange={(e) =>
-                          setEditingProduct({ ...editingProduct, image: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-xl border border-white/15 bg-white/5 focus:outline-none font-mono text-[11px]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-mono opacity-70 mb-1">Description:</label>
+                      <label className="block font-mono font-bold opacity-80 mb-1 text-xs">Описание</label>
                       <textarea
-                        rows={2}
+                        rows={3}
                         value={editingProduct.description}
                         onChange={(e) =>
                           setEditingProduct({ ...editingProduct, description: e.target.value })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-white/15 bg-white/5 focus:outline-none"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-white/5 focus:outline-none focus:border-amber-500 text-xs font-normal"
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block font-mono opacity-70 mb-1">Base Price (₽):</label>
-                        <input
-                          type="number"
-                          required
-                          value={editingProduct.basePrice}
-                          onChange={(e) =>
-                            setEditingProduct({
-                              ...editingProduct,
-                              basePrice: Number(e.target.value),
-                            })
-                          }
-                          className="w-full px-3 py-2 rounded-xl border border-white/15 bg-white/5 focus:outline-none font-mono"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-mono opacity-70 mb-1">Musical Key:</label>
-                        <input
-                          type="text"
-                          value={editingProduct.musicalKey}
-                          onChange={(e) =>
-                            setEditingProduct({ ...editingProduct, musicalKey: e.target.value })
-                          }
-                          className="w-full px-3 py-2 rounded-xl border border-white/15 bg-white/5 focus:outline-none font-mono"
-                        />
-                      </div>
+                    <div>
+                      <label className="block font-mono font-bold opacity-80 mb-1 text-xs">Цена (₽)</label>
+                      <input
+                        type="number"
+                        required
+                        value={editingProduct.basePrice}
+                        onChange={(e) =>
+                          setEditingProduct({
+                            ...editingProduct,
+                            basePrice: Number(e.target.value),
+                          })
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-white/5 focus:outline-none focus:border-amber-500 font-mono text-sm font-bold"
+                      />
                     </div>
 
-                    <div className="pt-3 flex justify-end gap-2">
+                    <div className="pt-4 flex justify-end gap-3 border-t border-slate-200 dark:border-white/10">
                       <button
                         type="button"
                         onClick={() => setEditingProduct(null)}
-                        className="px-4 py-2 rounded-xl border border-white/10 hover:bg-white/5"
+                        className="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-white/20 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-semibold cursor-pointer transition-colors"
                       >
-                        Cancel
+                        Отмена
                       </button>
                       <button
                         type="submit"
-                        className="liquid-glass px-5 py-2 rounded-xl font-semibold text-stone-100"
+                        className="bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold px-6 py-2.5 rounded-xl text-xs tracking-wide shadow-lg shadow-amber-500/30 transition-all cursor-pointer active:scale-95"
                       >
-                        Save Changes
+                        Сохранить изменения
                       </button>
                     </div>
                   </form>

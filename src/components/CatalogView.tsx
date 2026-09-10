@@ -152,8 +152,6 @@ const FlavorCard: React.FC<{ product: ProductItem }> = ({ product }) => {
           >
             <Music className={`w-3.5 h-3.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
             <span>{product.opusNumber}</span>
-            <span>•</span>
-            <span>{product.musicalKey}</span>
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -194,12 +192,9 @@ const FlavorCard: React.FC<{ product: ProductItem }> = ({ product }) => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent pointer-events-none" />
 
-          <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-[11px] font-mono text-white/95">
+          <div className="absolute bottom-2.5 left-3 flex items-center text-[11px] font-mono text-white/95">
             <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md border border-white/20 font-bold">
               {product.category}
-            </span>
-            <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md border border-white/20">
-              {product.bpm} BPM
             </span>
           </div>
         </div>
@@ -391,8 +386,7 @@ export const CatalogView: React.FC = () => {
         q === '' ||
         p.name.toLowerCase().includes(q) ||
         p.subtitle.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.musicalKey.toLowerCase().includes(q);
+        p.description.toLowerCase().includes(q);
       return matchesCollection && matchesQuery;
     });
   }, [products, activeCollection, searchQuery]);
