@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
 import { DepthCard } from './ui/depth-card';
+import Carousel from './ui/Carousel.jsx';
 
 // Metadata for Collection Depth Cards
 const COLLECTION_CARDS: {
@@ -370,6 +371,7 @@ const FlavorCard: React.FC<{ product: ProductItem }> = ({ product }) => {
 export const CatalogView: React.FC = () => {
   const products = useAppStore((state) => state.products);
   const setViewMode = useAppStore((state) => state.setViewMode);
+  const setInspectedProduct = useAppStore((state) => state.setInspectedProduct);
   const activeCollection = useAppStore((state) => state.activeCollection);
   const setActiveCollection = useAppStore((state) => state.setActiveCollection);
   const theme = useAppStore((state) => state.theme);
@@ -443,6 +445,29 @@ export const CatalogView: React.FC = () => {
             }`}
           />
         </div>
+      </div>
+
+      {/* VINYL CAROUSEL SECTION */}
+      <div className="mb-10 flex flex-col items-center justify-center p-6 rounded-3xl border border-white/10 bg-black/20 backdrop-blur-md">
+        <div className="flex items-center gap-2 mb-4">
+          <Disc className="w-5 h-5 text-amber-400 animate-spin" style={{ animationDuration: '8s' }} />
+          <h3 className={`font-serif text-xl sm:text-2xl font-bold ${isDark ? 'text-stone-100' : 'text-slate-900'}`}>
+            Vinyl Player Carousel Navigation
+          </h3>
+        </div>
+        <p className="text-xs font-mono text-amber-400/80 mb-6 text-center">
+          Hover over a vinyl record to play rotation animation & view title • Click to inspect details
+        </p>
+        <Carousel
+          items={filteredProducts}
+          baseWidth={320}
+          round={true}
+          loop={true}
+          autoplay={true}
+          autoplayDelay={4000}
+          pauseOnHover={true}
+          onItemClick={(product: any) => setInspectedProduct(product)}
+        />
       </div>
 
       {/* REACT BITS PRO DEPTH CARD SECTION: Flavor Collections Selection UI */}

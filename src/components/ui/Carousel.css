@@ -1,0 +1,174 @@
+.carousel-container {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #555;
+  border-radius: 24px;
+  padding: 16px;
+  --outer-r: 24px;
+  --p-distance: 12px;
+}
+
+.carousel-track {
+  display: flex;
+}
+
+.carousel-item {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  border: 1px solid #555;
+  border-radius: calc(var(--outer-r) - var(--p-distance));
+  background-color: #1B1722;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.carousel-item:active {
+  cursor: grabbing;
+}
+
+.carousel-container.round {
+  border: 1px solid #555;
+}
+
+/* --- СТИЛИ ВИНИЛОВОЙ ПЛАСТИНКИ --- */
+.carousel-item.round {
+  background-color: transparent;
+  border: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.vinyl-spin-wrapper {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #111;
+  background-image: repeating-radial-gradient(
+    #111,
+    #111 4px,
+    #252525 5px,
+    #111 6px
+  );
+  box-shadow:
+    inset 0 0 15px rgba(255, 255, 255, 0.15),
+    0 10px 20px rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transition: transform 0.3s;
+}
+
+@keyframes spin-vinyl {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.carousel-item.round:hover .vinyl-spin-wrapper {
+  animation: spin-vinyl 4s linear infinite;
+}
+
+.vinyl-label {
+  width: 42%;
+  height: 42%;
+  border-radius: 50%;
+  background-color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
+}
+
+.vinyl-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.vinyl-hole {
+  position: absolute;
+  width: 12%;
+  height: 12%;
+  background-color: #120F17;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.9);
+  z-index: 2;
+}
+
+.vinyl-title-tooltip {
+  position: absolute;
+  bottom: 15%;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.carousel-item.round:hover .vinyl-title-tooltip {
+  opacity: 1;
+}
+
+/* --- ОСТАЛЬНЫЕ СТИЛИ (Индикаторы) --- */
+.carousel-indicators-container.round {
+  position: absolute;
+  z-index: 2;
+  bottom: 1.5em;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.carousel-indicator.active {
+  background-color: #fff;
+}
+
+.carousel-indicator.inactive {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.carousel-indicators-container {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.carousel-indicators {
+  margin-top: 16px;
+  display: flex;
+  width: 150px;
+  justify-content: space-between;
+  padding: 0 32px;
+}
+
+.carousel-indicator {
+  height: 8px;
+  width: 8px;
+  border: none;
+  padding: 0;
+  appearance: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+
+.carousel-indicator:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
