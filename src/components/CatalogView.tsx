@@ -26,7 +26,7 @@ import Carousel from './ui/Carousel.jsx';
 
 // Metadata for Collection Depth Cards
 const COLLECTION_CARDS: {
-  id: CollectionName | 'All';
+  id: CollectionName;
   title: string;
   subtitle: string;
   description: string;
@@ -34,15 +34,6 @@ const COLLECTION_CARDS: {
   badge: string;
   color: string;
 }[] = [
-  {
-    id: 'All',
-    title: 'All Opus',
-    subtitle: 'Complete Symphonic Anthology',
-    description: 'Explore the full spectrum of movement compositions across all seasonal & permanent masterworks.',
-    image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
-    badge: 'Full Catalog',
-    color: 'from-amber-500/80 to-amber-900/80',
-  },
   {
     id: 'Spring',
     title: 'Spring Collection',
@@ -393,6 +384,8 @@ export const CatalogView: React.FC = () => {
     });
   }, [products, activeCollection, searchQuery]);
 
+  const isOverview = activeCollection === 'All';
+
   return (
     <div
       id="spotify-musical-catalog-overlay"
@@ -405,102 +398,91 @@ export const CatalogView: React.FC = () => {
         }`}
       >
         <div>
-          <button
-            onClick={() => setViewMode('hero')}
-            className={`inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest mb-2 cursor-pointer transition-colors ${
-              isDark ? 'text-amber-400 hover:text-amber-300' : 'text-amber-700 hover:text-amber-800 font-bold'
-            }`}
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Return to Cinematic View</span>
-          </button>
+          {isOverview ? (
+            <button
+              onClick={() => setViewMode('hero')}
+              className={`inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest mb-2 cursor-pointer transition-colors ${
+                isDark ? 'text-amber-400 hover:text-amber-300' : 'text-amber-700 hover:text-amber-800 font-bold'
+              }`}
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Главная страница</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setActiveCollection('All')}
+              className={`inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest mb-2 cursor-pointer transition-colors ${
+                isDark ? 'text-amber-400 hover:text-amber-300' : 'text-amber-700 hover:text-amber-800 font-bold'
+              }`}
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Все коллекции</span>
+            </button>
+          )}
+
           <h2
             className={`font-serif text-4xl sm:text-5xl font-normal tracking-tight ${
               isDark ? 'text-stone-100' : 'text-slate-900'
             }`}
           >
-            The Musical Catalog
+            {isOverview ? 'Все коллекции' : `${activeCollection} Collection`}
           </h2>
           <p
             className={`text-sm mt-1 max-w-xl ${
               isDark ? 'text-stone-300' : 'text-slate-700 font-medium'
             }`}
           >
-            Artisanal essences composed as seasonal opus movements: Spring, Summer, Autumn, and Permanent masterworks.
+            {isOverview
+              ? 'Выберите коллекцию из списка ниже, чтобы просмотреть виниловый проигрыватель и товары'
+              : 'Эксклюзивная подборка товаров данной коллекции'}
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative w-full md:w-72">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 opacity-50" />
-          <input
-            type="text"
-            placeholder="Search opus, key, notes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full pl-10 pr-4 py-2.5 rounded-full text-xs border backdrop-blur-md focus:outline-none focus:border-amber-500 transition-colors ${
-              isDark
-                ? 'bg-white/[0.05] border-white/15 text-stone-100 placeholder:text-stone-400'
-                : 'bg-white/95 border-slate-300 text-slate-900 placeholder:text-slate-500 shadow-sm'
-            }`}
-          />
-        </div>
-      </div>
-
-      {/* VINYL CAROUSEL SECTION */}
-      <div className="mb-10 flex flex-col items-center justify-center p-6 rounded-3xl border border-white/10 bg-black/20 backdrop-blur-md">
-        <div className="flex items-center gap-2 mb-4">
-          <Disc className="w-5 h-5 text-amber-400 animate-spin" style={{ animationDuration: '8s' }} />
-          <h3 className={`font-serif text-xl sm:text-2xl font-bold ${isDark ? 'text-stone-100' : 'text-slate-900'}`}>
-            Vinyl Player Carousel Navigation
-          </h3>
-        </div>
-        <p className="text-xs font-mono text-amber-400/80 mb-6 text-center">
-          Hover over a vinyl record to play rotation animation & view title • Click to inspect details
-        </p>
-        <Carousel
-          items={filteredProducts}
-          baseWidth={320}
-          round={true}
-          loop={true}
-          autoplay={true}
-          autoplayDelay={4000}
-          pauseOnHover={true}
-          onItemClick={(product: any) => setInspectedProduct(product)}
-        />
-      </div>
-
-      {/* REACT BITS PRO DEPTH CARD SECTION: Flavor Collections Selection UI */}
-      <div className="mb-10">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <h3 className={`font-serif text-xl sm:text-2xl font-bold ${isDark ? 'text-stone-100' : 'text-slate-900'}`}>
-              Flavor Collections
-            </h3>
+        {/* Search Bar (shown inside specific collection view) */}
+        {!isOverview && (
+          <div className="relative w-full md:w-72">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 opacity-50" />
+            <input
+              type="text"
+              placeholder="Search opus, key, notes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`w-full pl-10 pr-4 py-2.5 rounded-full text-xs border backdrop-blur-md focus:outline-none focus:border-amber-500 transition-colors ${
+                isDark
+                  ? 'bg-white/[0.05] border-white/15 text-stone-100 placeholder:text-stone-400'
+                  : 'bg-white/95 border-slate-300 text-slate-900 placeholder:text-slate-500 shadow-sm'
+              }`}
+            />
           </div>
-          <span className="text-xs font-mono opacity-70 flex items-center gap-1">
-            <Layers className="w-3.5 h-3.5 text-amber-400" />
-            <span>Interactive 3D Depth View</span>
-          </span>
-        </div>
+        )}
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {COLLECTION_CARDS.map((card) => {
-            const isSelected = activeCollection === card.id;
-            return (
+      {isOverview ? (
+        /* MAIN OVERVIEW VIEW: Death Card Navigation Menu ONLY */
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              <h3 className={`font-serif text-2xl sm:text-3xl font-bold ${isDark ? 'text-stone-100' : 'text-slate-900'}`}>
+                Выберите коллекцию
+              </h3>
+            </div>
+            <span className="text-xs font-mono opacity-70 flex items-center gap-1">
+              <Layers className="w-3.5 h-3.5 text-amber-400" />
+              <span>Interactive 3D View</span>
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            {COLLECTION_CARDS.map((card) => (
               <div
                 key={card.id}
                 onClick={() => setActiveCollection(card.id)}
-                className={`relative rounded-3xl p-1 transition-all duration-300 ${
-                  isSelected
-                    ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-[1.02] shadow-2xl'
-                    : 'hover:scale-[1.01] opacity-90 hover:opacity-100'
-                }`}
+                className="relative rounded-3xl p-1 transition-all duration-300 cursor-pointer hover:scale-[1.03] opacity-90 hover:opacity-100"
               >
                 <DepthCard
                   image={card.image}
-                  height={220}
+                  height={260}
                   maxRotation={22}
                   maxTranslation={20}
                   borderRadius="20px"
@@ -508,65 +490,86 @@ export const CatalogView: React.FC = () => {
                   spotlightColor="rgba(251, 191, 36, 0.45)"
                   className="w-full"
                 >
-                  <div className="flex flex-col justify-between h-full p-2">
+                  <div className="flex flex-col justify-between h-full p-3">
                     <div className="flex items-center justify-between gap-1">
                       <span className="text-[9px] font-mono uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-amber-300 border border-amber-400/30">
                         {card.badge}
                       </span>
-                      {isSelected && (
-                        <span className="w-5 h-5 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold text-xs shadow-md">
-                          ✓
-                        </span>
-                      )}
                     </div>
 
                     <div className="mt-auto pt-4">
-                      <h4 className="font-serif text-lg font-bold text-white tracking-tight leading-snug drop-shadow-md">
+                      <h4 className="font-serif text-xl font-bold text-white tracking-tight leading-snug drop-shadow-md">
                         {card.title}
                       </h4>
-                      <p className="text-[10px] font-sans text-stone-200 opacity-90 line-clamp-2 mt-0.5 font-medium drop-shadow-sm">
+                      <p className="text-[11px] font-sans text-stone-200 opacity-90 line-clamp-2 mt-1 font-medium drop-shadow-sm">
                         {card.subtitle}
                       </p>
                     </div>
                   </div>
                 </DepthCard>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        /* SPECIFIC COLLECTION VIEW: Vinyl Carousel + Product Cards */
+        <>
+          {/* VINYL CAROUSEL SECTION STRICTLY INSIDE SPECIFIC COLLECTION */}
+          <div className="mb-10 flex flex-col items-center justify-center p-6 rounded-3xl border border-white/10 bg-black/20 backdrop-blur-md">
+            <div className="flex items-center gap-2 mb-3">
+              <Disc className="w-5 h-5 text-amber-400 animate-spin" style={{ animationDuration: '8s' }} />
+              <h3 className={`font-serif text-xl sm:text-2xl font-bold ${isDark ? 'text-stone-100' : 'text-slate-900'}`}>
+                Виниловый проигрыватель товаров
+              </h3>
+            </div>
+            <p className="text-xs font-mono text-amber-400/80 mb-6 text-center">
+              Наведите на виниловую пластинку для вращения • Нажмите для просмотра деталей
+            </p>
+            <Carousel
+              items={filteredProducts}
+              baseWidth={320}
+              round={true}
+              loop={true}
+              autoplay={true}
+              autoplayDelay={4000}
+              pauseOnHover={true}
+              onItemClick={(product: any) => setInspectedProduct(product)}
+            />
+          </div>
 
-      {/* Grid Header & Item Count */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className={`font-serif text-lg font-bold ${isDark ? 'text-stone-200' : 'text-slate-800'}`}>
-          {activeCollection === 'All' ? 'All Movements' : `${activeCollection} Collection`}
-        </h3>
-        <span className="text-xs font-mono opacity-70">
-          Showing {filteredProducts.length} opus
-        </span>
-      </div>
+          {/* Grid Header & Item Count */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className={`font-serif text-lg font-bold ${isDark ? 'text-stone-200' : 'text-slate-800'}`}>
+              Товары коллекции ({activeCollection})
+            </h3>
+            <span className="text-xs font-mono opacity-70">
+              Показано: {filteredProducts.length}
+            </span>
+          </div>
 
-      {/* Grid of Flavors */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {filteredProducts.map((product) => (
-          <FlavorCard key={product.id} product={product} />
-        ))}
-      </div>
+          {/* Grid of Flavors */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {filteredProducts.map((product) => (
+              <FlavorCard key={product.id} product={product} />
+            ))}
+          </div>
 
-      {filteredProducts.length === 0 && (
-        <div className="py-24 text-center space-y-3">
-          <Disc className="w-12 h-12 mx-auto opacity-30 animate-spin" style={{ animationDuration: '8s' }} />
-          <p className="text-sm font-medium opacity-80">No symphonies found in this collection</p>
-          <button
-            onClick={() => {
-              setSearchQuery('');
-              setActiveCollection('All');
-            }}
-            className="text-xs text-amber-500 underline font-mono cursor-pointer"
-          >
-            Show All Collections
-          </button>
-        </div>
+          {filteredProducts.length === 0 && (
+            <div className="py-24 text-center space-y-3">
+              <Disc className="w-12 h-12 mx-auto opacity-30 animate-spin" style={{ animationDuration: '8s' }} />
+              <p className="text-sm font-medium opacity-80">В этой коллекции нет товаров</p>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setActiveCollection('All');
+                }}
+                className="text-xs text-amber-500 underline font-mono cursor-pointer"
+              >
+                Вернуться ко всем коллекциям
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

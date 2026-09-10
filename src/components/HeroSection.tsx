@@ -1,12 +1,9 @@
 import React from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { ArrowRight, Disc } from 'lucide-react';
-import Carousel from './ui/Carousel.jsx';
+import { ArrowRight } from 'lucide-react';
 
 export const HeroSection: React.FC = () => {
   const setViewMode = useAppStore((state) => state.setViewMode);
-  const products = useAppStore((state) => state.products);
-  const setInspectedProduct = useAppStore((state) => state.setInspectedProduct);
   const theme = useAppStore((state) => state.theme);
   const isDark = theme === 'dark';
 
@@ -26,30 +23,12 @@ export const HeroSection: React.FC = () => {
 
       {/* Subtext: Subheading */}
       <p
-        className={`mt-6 text-lg sm:text-xl md:text-2xl font-normal tracking-wide max-w-2xl mx-auto animate-fade-rise opacity-0 delay-200 ${
+        className={`mt-6 mb-10 text-lg sm:text-xl md:text-2xl font-normal tracking-wide max-w-2xl mx-auto animate-fade-rise opacity-0 delay-200 ${
           isDark ? 'text-[hsl(240,4%,66%)]' : 'text-stone-700 font-medium'
         }`}
       >
         Здесь ноты обретают другое состояние
       </p>
-
-      {/* Vinyl Products Navigation Carousel */}
-      <div className="mt-8 mb-6 animate-fade-rise opacity-0 delay-300 flex flex-col items-center">
-        <div className="flex items-center gap-2 mb-3 text-xs font-mono uppercase tracking-widest text-amber-400">
-          <Disc className="w-4 h-4 animate-spin" style={{ animationDuration: '6s' }} />
-          <span>Виниловая коллекция товаров</span>
-        </div>
-        <Carousel
-          items={products}
-          baseWidth={320}
-          round={true}
-          loop={true}
-          autoplay={true}
-          autoplayDelay={3500}
-          pauseOnHover={true}
-          onItemClick={(product: any) => setInspectedProduct(product)}
-        />
-      </div>
 
       {/* CTA Button: "Начать путешествие" with .liquid-glass */}
       <div className="animate-fade-rise opacity-0 delay-300">
