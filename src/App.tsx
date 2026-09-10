@@ -18,8 +18,14 @@ export default function App() {
   const darkMusicUrl = useAppStore((state) => state.darkMusicUrl);
   const lightMusicUrl = useAppStore((state) => state.lightMusicUrl);
   const isBgMusicPlaying = useAppStore((state) => state.isBgMusicPlaying);
+  const fetchProducts = useAppStore((state) => state.fetchProducts);
 
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Fetch initial products from persistent SQLite database
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   // Sync document class for dark/light mode
   useEffect(() => {

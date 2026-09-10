@@ -136,11 +136,30 @@ export const StudioAdminModal: React.FC = () => {
   };
 
   // Image Upload Handler for Edit Form
-  const handleEditImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !editingProduct) return;
 
     if (!file.type.startsWith('image/')) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          setEditingProduct({ ...editingProduct, image: data.url });
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to upload image to server:', err);
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {

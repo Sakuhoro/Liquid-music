@@ -228,7 +228,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full min-h-[580px] h-[75vh] flex flex-col items-center justify-center overflow-hidden select-none cursor-grab active:cursor-grabbing ${className}`}
+      className={`relative w-full flex-1 h-full min-h-[70vh] sm:min-h-[80vh] flex flex-col items-center justify-center overflow-hidden select-none cursor-grab active:cursor-grabbing ${className}`}
       style={{ perspective: `${perspective}px` }}
     >
       {/* 3D Dolly Stage */}
@@ -279,11 +279,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
               key={item.id}
               onClick={(e) => {
                 e.stopPropagation();
-                if (isFocused) {
-                  onItemClick?.(item);
-                } else {
-                  targetPosRef.current = renderPos + stepOffset;
-                }
+                onItemClick?.(item);
               }}
               style={{
                 position: 'absolute',
@@ -299,8 +295,8 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
             >
               {/* Custom Vinyl Record Styling for product items */}
               <div
-                className={`vinyl-spin-wrapper relative w-full h-full rounded-full flex items-center justify-center transition-transform duration-700 ease-out ${
-                  isFocused ? 'group-hover:rotate-180 shadow-[0_0_40px_rgba(251,191,36,0.3)]' : ''
+                className={`vinyl-spin-wrapper relative w-full h-full rounded-full flex items-center justify-center transition-all duration-700 ease-out group-hover:animate-[spin_10s_linear_infinite] ${
+                  isFocused ? 'shadow-[0_0_40px_rgba(251,191,36,0.3)]' : ''
                 }`}
                 style={{
                   backgroundImage:
@@ -309,8 +305,8 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                     'inset 0 0 20px rgba(255,255,255,0.2), 0 20px 40px rgba(0,0,0,0.85)',
                 }}
               >
-                {/* Vinyl Central Label "Яблоко" (42% circle) */}
-                <div className="vinyl-label relative w-[42%] h-[42%] rounded-full bg-white flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.8)] border border-amber-400/30">
+                {/* Vinyl Central Label "Яблоко" (80% circle) */}
+                <div className="vinyl-label relative w-[80%] h-[80%] rounded-full bg-white flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.8)] border border-amber-400/30">
                   <img
                     src={item.image}
                     alt={item.name}

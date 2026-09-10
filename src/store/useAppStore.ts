@@ -88,12 +88,13 @@ interface AppState {
   isStudioModalOpen: boolean;
   setIsStudioModalOpen: (open: boolean) => void;
 
-  // Products (Admin ready)
+  // Products (Admin & Persistence ready)
   products: ProductItem[];
-  updateProduct: (updated: ProductItem) => void;
-  addProduct: (newProd: ProductItem) => void;
-  deleteProduct: (id: string) => void;
-  resetProducts: () => void;
+  fetchProducts: () => Promise<void>;
+  updateProduct: (updated: ProductItem) => Promise<void>;
+  addProduct: (newProd: ProductItem) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+  resetProducts: () => Promise<void>;
 
   // Active inspected product modal
   inspectedProduct: ProductItem | null;
@@ -198,21 +199,79 @@ export const useAppStore = create<AppState>()(
       isStudioModalOpen: false,
       setIsStudioModalOpen: (isStudioModalOpen) => set({ isStudioModalOpen }),
 
-      // Products (Admin ready)
+      // Products (Admin & Persistence ready)
       products: INITIAL_PRODUCTS,
-      updateProduct: (updated) =>
+
+      fetchProducts: async () => {
+        try {
+          const res = await fetch('/api/products');
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              set({ products: data });
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to fetch products from backend API:', err);
+        }
+      },
+
+      updateProduct: async (updated) => {
         set((state) => ({
           products: state.products.map((p) => (p.id === updated.id ? updated : p)),
-        })),
-      addProduct: (newProd) =>
+        }));
+        try {
+          await fetch(`/api/products/${encodeURIComponent(updated.id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updated),
+          });
+        } catch (err) {
+          console.error('Failed to update product via API:', err);
+        }
+      },
+
+      addProduct: async (newProd) => {
         set((state) => ({
           products: [newProd, ...state.products],
-        })),
-      deleteProduct: (id) =>
+        }));
+        try {
+          await fetch('/api/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newProd),
+          });
+        } catch (err) {
+          console.error('Failed to add product via API:', err);
+        }
+      },
+
+      deleteProduct: async (id) => {
         set((state) => ({
           products: state.products.filter((p) => p.id !== id),
-        })),
-      resetProducts: () => set({ products: INITIAL_PRODUCTS }),
+        }));
+        try {
+          await fetch(`/api/products/${encodeURIComponent(id)}`, {
+            method: 'DELETE',
+          });
+        } catch (err) {
+          console.error('Failed to delete product via API:', err);
+        }
+      },
+
+      resetProducts: async () => {
+        try {
+          const res = await fetch('/api/products/reset', { method: 'POST' });
+          if (res.ok) {
+            const data = await res.json();
+            set({ products: data });
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to reset products via API:', err);
+        }
+        set({ products: INITIAL_PRODUCTS });
+      },
 
       // Inspected product
       inspectedProduct: null,
