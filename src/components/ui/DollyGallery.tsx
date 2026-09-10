@@ -39,7 +39,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
   onItemClick,
   onIndexChange,
   infinite = true,
-  itemWidth = 340,
+  itemWidth = 680,
   perspective = 1000,
   spacing = 700,
   spread = 0.65,
@@ -68,7 +68,9 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
   const pointerRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
   const isHoveredRef = useRef(false);
   const isDraggingRef = useRef(false);
-  const dragStartYRef = useRef(0);
+  const isPointerDownRef = useRef(false);
+  const didDragRef = useRef(false);
+  const dragStartClientRef = useRef({ x: 0, y: 0 });
   const dragStartPosRef = useRef(0);
 
   const [renderPos, setRenderPos] = useState(0);
@@ -159,25 +161,40 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
       pointerRef.current.targetX = nx;
       pointerRef.current.targetY = ny;
 
-      if (isDraggingRef.current) {
-        const dy = dragStartYRef.current - e.clientY;
-        const posDelta = (dy / (itemWidth * 0.8)) * dragSpeed;
-        let next = dragStartPosRef.current + posDelta;
-        if (!infinite) {
-          next = Math.max(-0.2, Math.min(itemCount - 0.8, next));
+      if (isPointerDownRef.current) {
+        const dx = e.clientX - dragStartClientRef.current.x;
+        const dy = e.clientY - dragStartClientRef.current.y;
+
+        // Threshold check to distinguish tap/click from drag gesture
+        if (!didDragRef.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+          didDragRef.current = true;
+          isDraggingRef.current = true;
+          try {
+            el.setPointerCapture(e.pointerId);
+          } catch (_) {}
         }
-        targetPosRef.current = next;
+
+        if (isDraggingRef.current) {
+          const moveDeltaY = dragStartClientRef.current.y - e.clientY;
+          const posDelta = (moveDeltaY / (itemWidth * 0.8)) * dragSpeed;
+          let next = dragStartPosRef.current + posDelta;
+          if (!infinite) {
+            next = Math.max(-0.2, Math.min(itemCount - 0.8, next));
+          }
+          targetPosRef.current = next;
+        }
       }
     };
 
     const handlePointerDown = (e: PointerEvent) => {
-      isDraggingRef.current = true;
-      dragStartYRef.current = e.clientY;
+      isPointerDownRef.current = true;
+      didDragRef.current = false;
+      dragStartClientRef.current = { x: e.clientX, y: e.clientY };
       dragStartPosRef.current = targetPosRef.current;
-      el.setPointerCapture(e.pointerId);
     };
 
     const handlePointerUp = (e: PointerEvent) => {
+      isPointerDownRef.current = false;
       if (isDraggingRef.current) {
         isDraggingRef.current = false;
         try {
@@ -279,7 +296,9 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
               key={item.id}
               onClick={(e) => {
                 e.stopPropagation();
-                onItemClick?.(item);
+                if (!didDragRef.current) {
+                  onItemClick?.(item);
+                }
               }}
               style={{
                 position: 'absolute',

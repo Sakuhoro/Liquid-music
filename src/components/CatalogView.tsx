@@ -106,109 +106,111 @@ export const CatalogView: React.FC = () => {
   return (
     <div
       id="spotify-musical-catalog-overlay"
-      className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-6 sm:px-8 py-4 pb-20 flex flex-col animate-fade-rise"
+      className="relative z-10 flex-1 w-full py-4 pb-20 flex flex-col animate-fade-rise"
     >
       {/* Catalog Header Ribbon */}
-      <div
-        className={`flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 pb-6 border-b ${
-          isDark ? 'border-white/10' : 'border-slate-300'
-        }`}
-      >
-        <div>
-          {isOverview ? (
-            <button
-              onClick={() => setViewMode('hero')}
-              className={`inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest mb-2 cursor-pointer transition-colors ${
-                isDark ? 'text-amber-400 hover:text-amber-300' : 'text-amber-700 hover:text-amber-800 font-bold'
-              }`}
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Главная страница</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => setActiveCollection('All')}
-              className={`inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest mb-2 cursor-pointer transition-colors ${
-                isDark ? 'text-amber-400 hover:text-amber-300' : 'text-amber-700 hover:text-amber-800 font-bold'
-              }`}
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Все коллекции</span>
-            </button>
-          )}
-
-          <h2
-            className={`font-serif text-4xl sm:text-5xl font-normal tracking-tight ${
-              isDark ? 'text-stone-100' : 'text-slate-900'
-            }`}
-          >
-            {isOverview ? 'Все коллекции' : `${activeCollection} Collection`}
-          </h2>
-          <p
-            className={`text-sm mt-1 max-w-xl ${
-              isDark ? 'text-stone-300' : 'text-slate-700 font-medium'
-            }`}
-          >
-            {isOverview
-              ? 'Выберите коллекцию из списка ниже для просмотра пластинок товаров'
-              : 'Интерактивный виниловый карусель товаров. Перетаскивайте карточки или наведите мышью, чтобы просмотреть название.'}
-          </p>
-        </div>
-
-        {/* View mode toggle & Search Bar (shown inside specific collection view) */}
-        {!isOverview && (
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            {/* View Mode Switcher */}
-            <div className={`flex items-center p-1 rounded-full border backdrop-blur-md ${
-              isDark ? 'bg-white/5 border-white/15' : 'bg-slate-100 border-slate-300'
-            }`}>
+      <div className="max-w-7xl mx-auto w-full px-6 sm:px-8">
+        <div
+          className={`flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 pb-6 border-b ${
+            isDark ? 'border-white/10' : 'border-slate-300'
+          }`}
+        >
+          <div>
+            {isOverview ? (
               <button
-                onClick={() => setDisplayMode('dolly')}
-                title="3D Gallery"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  displayMode === 'dolly'
-                    ? 'bg-amber-500 text-stone-950 font-semibold shadow-md'
-                    : isDark ? 'text-stone-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                onClick={() => setViewMode('hero')}
+                className={`inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest mb-2 cursor-pointer transition-colors ${
+                  isDark ? 'text-amber-400 hover:text-amber-300' : 'text-amber-700 hover:text-amber-800 font-bold'
                 }`}
               >
-                <Film className="w-3.5 h-3.5" />
-                <span>3D Галерея</span>
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Главная страница</span>
               </button>
+            ) : (
               <button
-                onClick={() => setDisplayMode('grid')}
-                title="Сетка"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  displayMode === 'grid'
-                    ? 'bg-amber-500 text-stone-950 font-semibold shadow-md'
-                    : isDark ? 'text-stone-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                onClick={() => setActiveCollection('All')}
+                className={`inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest mb-2 cursor-pointer transition-colors ${
+                  isDark ? 'text-amber-400 hover:text-amber-300' : 'text-amber-700 hover:text-amber-800 font-bold'
                 }`}
               >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span>Сетка</span>
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Все коллекции</span>
               </button>
-            </div>
+            )}
 
-            <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 opacity-50" />
-              <input
-                type="text"
-                placeholder="Поиск нот, вкусов..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full pl-10 pr-4 py-2 rounded-full text-xs border backdrop-blur-md focus:outline-none focus:border-amber-500 transition-colors ${
-                  isDark
-                    ? 'bg-white/[0.05] border-white/15 text-stone-100 placeholder:text-stone-400'
-                    : 'bg-white/95 border-slate-300 text-slate-900 placeholder:text-slate-500 shadow-sm'
-                }`}
-              />
-            </div>
+            <h2
+              className={`font-serif text-4xl sm:text-5xl font-normal tracking-tight ${
+                isDark ? 'text-stone-100' : 'text-slate-900'
+              }`}
+            >
+              {isOverview ? 'Все коллекции' : `${activeCollection} Collection`}
+            </h2>
+            <p
+              className={`text-sm mt-1 max-w-xl ${
+                isDark ? 'text-stone-300' : 'text-slate-700 font-medium'
+              }`}
+            >
+              {isOverview
+                ? 'Выберите коллекцию из списка ниже для просмотра пластинок товаров'
+                : 'Интерактивный виниловый карусель товаров. Перетаскивайте карточки или наведите мышью, чтобы просмотреть название.'}
+            </p>
           </div>
-        )}
+
+          {/* View mode toggle & Search Bar (shown inside specific collection view) */}
+          {!isOverview && (
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              {/* View Mode Switcher */}
+              <div className={`flex items-center p-1 rounded-full border backdrop-blur-md ${
+                isDark ? 'bg-white/5 border-white/15' : 'bg-slate-100 border-slate-300'
+              }`}>
+                <button
+                  onClick={() => setDisplayMode('dolly')}
+                  title="3D Gallery"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    displayMode === 'dolly'
+                      ? 'bg-amber-500 text-stone-950 font-semibold shadow-md'
+                      : isDark ? 'text-stone-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Film className="w-3.5 h-3.5" />
+                  <span>3D Галерея</span>
+                </button>
+                <button
+                  onClick={() => setDisplayMode('grid')}
+                  title="Сетка"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    displayMode === 'grid'
+                      ? 'bg-amber-500 text-stone-950 font-semibold shadow-md'
+                      : isDark ? 'text-stone-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>Сетка</span>
+                </button>
+              </div>
+
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 opacity-50" />
+                <input
+                  type="text"
+                  placeholder="Поиск нот, вкусов..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-2 rounded-full text-xs border backdrop-blur-md focus:outline-none focus:border-amber-500 transition-colors ${
+                    isDark
+                      ? 'bg-white/[0.05] border-white/15 text-stone-100 placeholder:text-stone-400'
+                      : 'bg-white/95 border-slate-300 text-slate-900 placeholder:text-slate-500 shadow-sm'
+                  }`}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {isOverview ? (
         /* MAIN OVERVIEW VIEW: Depth Card Navigation Menu ONLY */
-        <div className="mb-10">
+        <div className="max-w-7xl mx-auto w-full px-6 sm:px-8 mb-10">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-amber-400" />
@@ -280,42 +282,45 @@ export const CatalogView: React.FC = () => {
           ) : displayMode === 'dolly' ? (
             <DollyGallery
               items={filteredProducts}
+              itemWidth={680}
               onItemClick={(item) => {
-                const fullProduct = products.find((p) => p.id === item.id);
+                const fullProduct = products.find((p) => String(p.id) === String(item.id));
                 if (fullProduct) setInspectedProduct(fullProduct);
               }}
             />
           ) : (
             /* Grid View */
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full py-6">
-              {filteredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  onClick={() => setInspectedProduct(product)}
-                  className="group relative rounded-2xl overflow-hidden border border-white/10 bg-stone-900/40 p-4 backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-amber-400/40 shadow-lg"
-                >
-                  <div className="relative aspect-square rounded-xl overflow-hidden mb-3 bg-black/40 flex items-center justify-center">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                      <span className="text-xs font-bold text-amber-300">Открыть описание</span>
+            <div className="max-w-7xl mx-auto w-full px-6 sm:px-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full py-6">
+                {filteredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    onClick={() => setInspectedProduct(product)}
+                    className="group relative rounded-2xl overflow-hidden border border-white/10 bg-stone-900/40 p-4 backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-amber-400/40 shadow-lg"
+                  >
+                    <div className="relative aspect-square rounded-xl overflow-hidden mb-3 bg-black/40 flex items-center justify-center">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                        <span className="text-xs font-bold text-amber-300">Открыть описание</span>
+                      </div>
+                    </div>
+                    <h4 className="font-serif text-lg font-bold text-stone-100 group-hover:text-amber-400 transition-colors">
+                      {product.name}
+                    </h4>
+                    <p className="text-xs text-stone-400 line-clamp-1 mt-0.5">{product.subtitle}</p>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="text-xs font-mono font-bold text-amber-400">{product.basePrice} ₽</span>
+                      <span className="text-[10px] font-mono text-stone-400 border border-white/10 px-2 py-0.5 rounded-full">
+                        {product.opusNumber}
+                      </span>
                     </div>
                   </div>
-                  <h4 className="font-serif text-lg font-bold text-stone-100 group-hover:text-amber-400 transition-colors">
-                    {product.name}
-                  </h4>
-                  <p className="text-xs text-stone-400 line-clamp-1 mt-0.5">{product.subtitle}</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs font-mono font-bold text-amber-400">{product.basePrice} ₽</span>
-                    <span className="text-[10px] font-mono text-stone-400 border border-white/10 px-2 py-0.5 rounded-full">
-                      {product.opusNumber}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
