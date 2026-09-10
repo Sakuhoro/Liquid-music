@@ -512,47 +512,18 @@ export const CatalogView: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* SPECIFIC COLLECTION VIEW: Vinyl Carousel + Product Cards */
-        <>
-          {/* VINYL CAROUSEL SECTION STRICTLY INSIDE SPECIFIC COLLECTION */}
-          <div className="mb-10 flex flex-col items-center justify-center p-6 rounded-3xl border border-white/10 bg-black/20 backdrop-blur-md">
-            <div className="flex items-center gap-2 mb-3">
-              <Disc className="w-5 h-5 text-amber-400 animate-spin" style={{ animationDuration: '8s' }} />
-              <h3 className={`font-serif text-xl sm:text-2xl font-bold ${isDark ? 'text-stone-100' : 'text-slate-900'}`}>
-                Виниловый проигрыватель товаров
-              </h3>
-            </div>
-            <p className="text-xs font-mono text-amber-400/80 mb-6 text-center">
-              Наведите на виниловую пластинку для вращения • Нажмите для просмотра деталей
-            </p>
-            <Carousel
-              items={filteredProducts}
-              baseWidth={320}
-              round={true}
-              loop={true}
-              autoplay={true}
-              autoplayDelay={4000}
-              pauseOnHover={true}
-              onItemClick={(product: any) => setInspectedProduct(product)}
-            />
-          </div>
-
-          {/* Grid Header & Item Count */}
-          <div className="flex items-center justify-between mb-4">
-            <h3 className={`font-serif text-lg font-bold ${isDark ? 'text-stone-200' : 'text-slate-800'}`}>
-              Товары коллекции ({activeCollection})
-            </h3>
-            <span className="text-xs font-mono opacity-70">
-              Показано: {filteredProducts.length}
-            </span>
-          </div>
-
-          {/* Grid of Flavors */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filteredProducts.map((product) => (
-              <FlavorCard key={product.id} product={product} />
-            ))}
-          </div>
+        /* SPECIFIC COLLECTION VIEW: Vinyl Carousel ONLY (Full Width / No Cards) */
+        <div className="w-full flex-1 flex flex-col items-center justify-center py-6 my-auto">
+          <Carousel
+            items={filteredProducts}
+            baseWidth={520}
+            round={true}
+            loop={true}
+            autoplay={true}
+            autoplayDelay={4000}
+            pauseOnHover={true}
+            onItemClick={(product: any) => setInspectedProduct(product)}
+          />
 
           {filteredProducts.length === 0 && (
             <div className="py-24 text-center space-y-3">
@@ -569,7 +540,7 @@ export const CatalogView: React.FC = () => {
               </button>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

@@ -31,7 +31,8 @@
 }
 
 .carousel-container.round {
-  border: 1px solid #555;
+  border: none;
+  background: transparent;
 }
 
 /* --- СТИЛИ ВИНИЛОВОЙ ПЛАСТИНКИ --- */
@@ -73,8 +74,8 @@
 }
 
 .vinyl-label {
-  width: 42%;
-  height: 42%;
+  width: 84%;
+  height: 84%;
   border-radius: 50%;
   background-color: #fff;
   display: flex;
