@@ -10,9 +10,12 @@ import {
   ArrowLeft,
   Sparkles,
   Layers,
+  LayoutGrid,
+  Film,
 } from 'lucide-react';
 import { DepthCard } from './ui/depth-card';
 import DollyGallery from './ui/DollyGallery';
+import Carousel from './ui/Carousel';
 
 // Metadata for Collection Depth Cards
 const COLLECTION_CARDS: {
@@ -71,6 +74,8 @@ const COLLECTION_CARDS: {
   },
 ];
 
+type DisplayMode = 'carousel' | 'dolly' | 'grid';
+
 export const CatalogView: React.FC = () => {
   const products = useAppStore((state) => state.products);
   const setViewMode = useAppStore((state) => state.setViewMode);
@@ -80,6 +85,7 @@ export const CatalogView: React.FC = () => {
   const theme = useAppStore((state) => state.theme);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('carousel');
   const isDark = theme === 'dark';
 
   const filteredProducts = useMemo(() => {
@@ -97,6 +103,17 @@ export const CatalogView: React.FC = () => {
   }, [products, activeCollection, searchQuery]);
 
   const isOverview = activeCollection === 'All';
+
+  // Format products for Carousel component
+  const carouselItems = useMemo(() => {
+    return filteredProducts.map((p) => ({
+      id: p.id,
+      title: p.name,
+      description: p.subtitle,
+      image: p.image,
+      product: p,
+    }));
+  }, [filteredProducts]);
 
   return (
     <div
@@ -145,26 +162,70 @@ export const CatalogView: React.FC = () => {
             }`}
           >
             {isOverview
-              ? 'Выберите коллекцию из списка ниже, чтобы перейти к 3D Dolly виниловой галерее'
-              : 'Прокручивайте колесико или используйте кнопки, чтобы лететь сквозь пластинки'}
+              ? 'Выберите коллекцию из списка ниже для просмотра пластинок товаров'
+              : 'Интерактивный виниловый карусель товаров. Перетаскивайте карточки или наведите мышью, чтобы просмотреть название.'}
           </p>
         </div>
 
-        {/* Search Bar (shown inside specific collection view) */}
+        {/* View mode toggle & Search Bar (shown inside specific collection view) */}
         {!isOverview && (
-          <div className="relative w-full md:w-72">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 opacity-50" />
-            <input
-              type="text"
-              placeholder="Search opus, key, notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2.5 rounded-full text-xs border backdrop-blur-md focus:outline-none focus:border-amber-500 transition-colors ${
-                isDark
-                  ? 'bg-white/[0.05] border-white/15 text-stone-100 placeholder:text-stone-400'
-                  : 'bg-white/95 border-slate-300 text-slate-900 placeholder:text-slate-500 shadow-sm'
-              }`}
-            />
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            {/* View Mode Switcher */}
+            <div className={`flex items-center p-1 rounded-full border backdrop-blur-md ${
+              isDark ? 'bg-white/5 border-white/15' : 'bg-slate-100 border-slate-300'
+            }`}>
+              <button
+                onClick={() => setDisplayMode('carousel')}
+                title="Виниловый карусель"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  displayMode === 'carousel'
+                    ? 'bg-amber-500 text-stone-950 font-semibold shadow-md'
+                    : isDark ? 'text-stone-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Disc className="w-3.5 h-3.5" />
+                <span>Винил</span>
+              </button>
+              <button
+                onClick={() => setDisplayMode('dolly')}
+                title="3D Gallery"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  displayMode === 'dolly'
+                    ? 'bg-amber-500 text-stone-950 font-semibold shadow-md'
+                    : isDark ? 'text-stone-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Film className="w-3.5 h-3.5" />
+                <span>3D Галерея</span>
+              </button>
+              <button
+                onClick={() => setDisplayMode('grid')}
+                title="Сетка"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  displayMode === 'grid'
+                    ? 'bg-amber-500 text-stone-950 font-semibold shadow-md'
+                    : isDark ? 'text-stone-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Сетка</span>
+              </button>
+            </div>
+
+            <div className="relative w-full sm:w-64">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 opacity-50" />
+              <input
+                type="text"
+                placeholder="Поиск нот, вкусов..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`w-full pl-10 pr-4 py-2 rounded-full text-xs border backdrop-blur-md focus:outline-none focus:border-amber-500 transition-colors ${
+                  isDark
+                    ? 'bg-white/[0.05] border-white/15 text-stone-100 placeholder:text-stone-400'
+                    : 'bg-white/95 border-slate-300 text-slate-900 placeholder:text-slate-500 shadow-sm'
+                }`}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -181,7 +242,7 @@ export const CatalogView: React.FC = () => {
             </div>
             <span className="text-xs font-mono opacity-70 flex items-center gap-1">
               <Layers className="w-3.5 h-3.5 text-amber-400" />
-              <span>Interactive 3D View</span>
+              <span>Interactive Vinyl View</span>
             </span>
           </div>
 
@@ -224,17 +285,9 @@ export const CatalogView: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* SPECIFIC COLLECTION VIEW: 3D Dolly Gallery ONLY */
-        <div className="w-full flex-1 flex flex-col items-center justify-center my-auto">
-          <DollyGallery
-            items={filteredProducts}
-            onItemClick={(item) => {
-              const fullProduct = products.find((p) => p.id === item.id);
-              if (fullProduct) setInspectedProduct(fullProduct);
-            }}
-          />
-
-          {filteredProducts.length === 0 && (
+        /* SPECIFIC COLLECTION VIEW: Vinyl Carousel / Dolly Gallery / Grid View */
+        <div className="w-full flex-1 flex flex-col items-center justify-center my-auto min-h-[420px]">
+          {filteredProducts.length === 0 ? (
             <div className="py-24 text-center space-y-3">
               <Disc className="w-12 h-12 mx-auto opacity-30 animate-spin" style={{ animationDuration: '8s' }} />
               <p className="text-sm font-medium opacity-80">В этой коллекции нет товаров</p>
@@ -247,6 +300,64 @@ export const CatalogView: React.FC = () => {
               >
                 Вернуться ко всем коллекциям
               </button>
+            </div>
+          ) : displayMode === 'carousel' ? (
+            <div className="flex flex-col items-center justify-center my-auto py-6">
+              <p className="text-xs font-mono uppercase tracking-widest opacity-60 mb-6">
+                Нажмите на виниловую пластинку для подробностей или перетаскивайте
+              </p>
+              <Carousel
+                items={carouselItems}
+                baseWidth={380}
+                round={true}
+                loop={true}
+                autoplay={false}
+                pauseOnHover={true}
+                onItemClick={(item) => {
+                  const fullProduct = products.find((p) => p.id === item.id);
+                  if (fullProduct) setInspectedProduct(fullProduct);
+                }}
+              />
+            </div>
+          ) : displayMode === 'dolly' ? (
+            <DollyGallery
+              items={filteredProducts}
+              onItemClick={(item) => {
+                const fullProduct = products.find((p) => p.id === item.id);
+                if (fullProduct) setInspectedProduct(fullProduct);
+              }}
+            />
+          ) : (
+            /* Grid View */
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full py-6">
+              {filteredProducts.map((product) => (
+                <div
+                  key={product.id}
+                  onClick={() => setInspectedProduct(product)}
+                  className="group relative rounded-2xl overflow-hidden border border-white/10 bg-stone-900/40 p-4 backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-amber-400/40 shadow-lg"
+                >
+                  <div className="relative aspect-square rounded-xl overflow-hidden mb-3 bg-black/40 flex items-center justify-center">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                      <span className="text-xs font-bold text-amber-300">Открыть описание</span>
+                    </div>
+                  </div>
+                  <h4 className="font-serif text-lg font-bold text-stone-100 group-hover:text-amber-400 transition-colors">
+                    {product.name}
+                  </h4>
+                  <p className="text-xs text-stone-400 line-clamp-1 mt-0.5">{product.subtitle}</p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-xs font-mono font-bold text-amber-400">{product.basePrice} ₽</span>
+                    <span className="text-[10px] font-mono text-stone-400 border border-white/10 px-2 py-0.5 rounded-full">
+                      {product.opusNumber}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
