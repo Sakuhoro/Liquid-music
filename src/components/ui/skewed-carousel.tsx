@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { ChevronLeft, ChevronRight, Sparkles, Layers, Disc } from 'lucide-react';
+import { Sparkles, Layers, Disc } from 'lucide-react';
 
 export interface SkewedCarouselItem {
   id: string;
@@ -23,8 +23,11 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
   onSelectItem,
   className = '',
 }) => {
-  const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const targetPosRef = useRef(0);
+  const currentPosRef = useRef(0);
+
+  const [renderPos, setRenderPos] = useState(0);
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1200
   );
@@ -35,19 +38,60 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handlePrev = () => {
-    setActiveIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
-  };
+  // Main physics loop (Lerp damping)
+  useEffect(() => {
+    let animId: number;
+    let lastTime = performance.now();
 
-  const handleNext = () => {
-    setActiveIndex((prev) => (prev === items.length - 1 ? 0 : prev + 1));
-  };
+    const updateLoop = (now: number) => {
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
+
+      // Smooth pos damping towards targetPosRef
+      const diff = targetPosRef.current - currentPosRef.current;
+      const easing = 1 - Math.pow(1 - 0.85, dt * 60);
+      currentPosRef.current += diff * easing;
+
+      setRenderPos(currentPosRef.current);
+
+      animId = requestAnimationFrame(updateLoop);
+    };
+
+    animId = requestAnimationFrame(updateLoop);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
+  // Wheel event hijacking with e.preventDefault() & smooth position targeting
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      // Scroll down (deltaY > 0) moves forward (increases target index step)
+      // Scroll up (deltaY < 0) moves backward (decreases target index step)
+      const speed = 0.0025;
+      const delta = e.deltaY * speed;
+      const maxIndex = Math.max(0, items.length - 1);
+      targetPosRef.current = Math.max(0, Math.min(maxIndex, targetPosRef.current + delta));
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, [items.length]);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') handlePrev();
-      if (e.key === 'ArrowRight') handleNext();
+      const maxIndex = Math.max(0, items.length - 1);
+      if (e.key === 'ArrowLeft') {
+        targetPosRef.current = Math.max(0, Math.round(targetPosRef.current) - 1);
+      }
+      if (e.key === 'ArrowRight') {
+        targetPosRef.current = Math.min(maxIndex, Math.round(targetPosRef.current) + 1);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -55,6 +99,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
 
   // Calculate scaled offset step based on viewport width (1.5x proportional spacing)
   const offsetStep = windowWidth < 640 ? 270 : windowWidth < 1024 ? 350 : 410;
+  const activeIndex = Math.max(0, Math.min(items.length - 1, Math.round(renderPos)));
 
   return (
     <div
@@ -78,7 +123,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
         </div>
         <div className="hidden sm:flex items-center gap-3 text-xs font-mono text-stone-300">
           <Layers className="w-4 h-4 text-amber-400" />
-          <span>Прокрутите или выберите коллекцию</span>
+          <span>Прокрутите колесиком или выберите коллекцию</span>
         </div>
       </div>
 
@@ -89,14 +134,16 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
           {/* Card Container: 1.5x Height Scaling (68vh / 75vh / 80vh max-h-[820px]) and 0-y container skew */}
           <div className="relative w-full h-[68vh] sm:h-[75vh] lg:h-[80vh] max-h-[820px] flex items-center justify-center transform-gpu transition-transform duration-500">
             {items.map((item, index) => {
-              const diff = index - activeIndex;
+              const diff = index - renderPos;
+              const absDiff = Math.abs(diff);
               const isActive = index === activeIndex;
 
               // Compute offset translation along pure X axis (y: 0) with 1.5x scaled step
               const xOffset = diff * offsetStep;
-              const scale = isActive ? 1 : 0.82;
-              const opacity = isActive ? 1 : Math.max(0.25, 0.65 - Math.abs(diff) * 0.2);
-              const zIndex = 30 - Math.abs(diff) * 5;
+              const scale = Math.max(0.75, 1 - absDiff * 0.18);
+              const opacity = Math.max(0.2, 1 - absDiff * 0.35);
+              const zIndex = Math.round(30 - absDiff * 5);
+              const rotateY = diff * -12;
 
               return (
                 <motion.div
@@ -105,7 +152,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                     if (isActive) {
                       onSelectItem(item.id);
                     } else {
-                      setActiveIndex(index);
+                      targetPosRef.current = index;
                     }
                   }}
                   animate={{
@@ -113,10 +160,10 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                     y: 0, // Flattened Y-displacement (strictly horizontal movement)
                     scale: scale,
                     opacity: opacity,
-                    rotateY: diff * -12,
+                    rotateY: rotateY,
                     zIndex: zIndex,
                   }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 25 }}
+                  transition={{ duration: 0.05, ease: 'linear' }}
                   // 1.5x Card Width scaling: w-[360px] sm:w-[570px] lg:w-[630px] max-w-[88vw]
                   // -skew-y-3 is applied to card visuals directly to preserve 3D tilt without slanting movement trajectory
                   className={`absolute w-[360px] sm:w-[570px] lg:w-[630px] max-w-[88vw] h-full rounded-3xl overflow-hidden cursor-pointer shadow-2xl border -skew-y-3 transition-colors duration-300 ${
@@ -192,7 +239,9 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
           {items.map((item, idx) => (
             <button
               key={item.id}
-              onClick={() => setActiveIndex(idx)}
+              onClick={() => {
+                targetPosRef.current = idx;
+              }}
               className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                 activeIndex === idx
                   ? 'w-8 bg-amber-400 shadow-md shadow-amber-400/50'
@@ -201,24 +250,6 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
               aria-label={`Go to slide ${idx + 1}`}
             />
           ))}
-        </div>
-
-        {/* Prev / Next Arrows */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handlePrev}
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-amber-400 hover:text-black text-white border border-white/20 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-lg"
-            aria-label="Previous"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleNext}
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-amber-400 hover:text-black text-white border border-white/20 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-lg"
-            aria-label="Next"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
         </div>
       </div>
     </div>
