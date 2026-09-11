@@ -20,10 +20,8 @@ import {
   AlertCircle,
   HelpCircle,
   LogOut,
-  Image as ImageIcon,
   Upload,
-  Link as LinkIcon,
-  Sparkles,
+  GitBranch,
 } from 'lucide-react';
 
 export const StudioAdminModal: React.FC = () => {
@@ -71,8 +69,12 @@ export const StudioAdminModal: React.FC = () => {
   const [tempSoundCloud, setTempSoundCloud] = useState(soundCloudUrl);
   const [audioSaveNotice, setAudioSaveNotice] = useState(false);
   const [videoSaveNotice, setVideoSaveNotice] = useState(false);
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const [gitSyncNotice, setGitSyncNotice] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const darkAudioInputRef = useRef<HTMLInputElement>(null);
+  const lightAudioInputRef = useRef<HTMLInputElement>(null);
 
   if (!isStudioModalOpen) return null;
 
@@ -102,6 +104,51 @@ export const StudioAdminModal: React.FC = () => {
     setSoundCloudUrl(tempSoundCloud);
     setAudioSaveNotice(true);
     setTimeout(() => setAudioSaveNotice(false), 2000);
+  };
+
+  // Audio Upload & Git Sync Handler (Module 2)
+  const handleAudioFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    targetTheme: 'dark' | 'light'
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAudio(true);
+    setGitSyncNotice(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload-audio', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          if (targetTheme === 'dark') {
+            setTempDarkMusic(data.url);
+            setDarkMusicUrl(data.url);
+          } else {
+            setTempLightMusic(data.url);
+            setLightMusicUrl(data.url);
+          }
+          setGitSyncNotice(
+            `Файл ${file.name} успешно загружен и скоммичен в Git repository (Pushed to Origin).`
+          );
+        }
+      } else {
+        setGitSyncNotice('Ошибка загрузки аудиофайла на сервер.');
+      }
+    } catch (err) {
+      console.error('Audio Git upload failed:', err);
+      setGitSyncNotice('Ошибка при синхронизации аудио с Git.');
+    } finally {
+      setIsUploadingAudio(false);
+    }
   };
 
   const handleSaveProduct = (e: React.FormEvent) => {
@@ -337,7 +384,7 @@ export const StudioAdminModal: React.FC = () => {
                 }`}
               >
                 <Music className="w-3.5 h-3.5 inline mr-1" />
-                Фоновая музыка & SoundCloud
+                Фоновая музыка & Git Sync
               </button>
               <button
                 onClick={() => setActiveTab('export')}
@@ -428,7 +475,7 @@ export const StudioAdminModal: React.FC = () => {
                 </div>
               )}
 
-              {/* TAB 3: Collection-Specific Videos (Spring, Summer, Autumn, Permanent 1, Permanent 2) */}
+              {/* TAB 3: Collection-Specific Videos */}
               {activeTab === 'videos' && (
                 <form onSubmit={handleSaveVideos} className="space-y-6 max-w-2xl">
                   <div>
@@ -474,13 +521,16 @@ export const StudioAdminModal: React.FC = () => {
                 </form>
               )}
 
-              {/* TAB 4: Background Music & SoundCloud Integration */}
+              {/* TAB 4: Background Music & SoundCloud Integration + Git Audio Sync (Module 2) */}
               {activeTab === 'audio' && (
                 <form onSubmit={handleSaveAudio} className="space-y-6 max-w-2xl">
                   <div>
-                    <h3 className="font-serif text-xl mb-1">Background Audio & SoundCloud Player</h3>
+                    <h3 className="font-serif text-xl mb-1 flex items-center gap-2">
+                      <span>Background Audio & Git Sync Engine</span>
+                      <GitBranch className="w-5 h-5 text-amber-400" />
+                    </h3>
                     <p className="text-xs opacity-70">
-                      Configure background ambient audio for Dark and Light themes, and paste a direct SoundCloud link for the UI music player.
+                      Загружайте фоновые аудиофайлы напрямую с локального устройства. Все загруженные файлы автоматически коммитятся и пушатся в Git репозиторий для полной персистентности.
                     </p>
                   </div>
 
@@ -491,36 +541,85 @@ export const StudioAdminModal: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <label className="block text-xs font-mono uppercase tracking-wider opacity-80 font-bold">
-                      Dark Theme Background Music URL:
+                  {gitSyncNotice && (
+                    <div className="p-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-mono flex items-center gap-2">
+                      <GitBranch className="w-4 h-4 shrink-0" />
+                      <span>{gitSyncNotice}</span>
+                    </div>
+                  )}
+
+                  {/* Dark Theme Audio File Upload */}
+                  <div className="p-4 rounded-2xl border border-white/15 bg-white/[0.03] space-y-3">
+                    <label className="block text-xs font-mono uppercase tracking-wider opacity-90 font-bold text-amber-300">
+                      Dark Theme Background Music:
                     </label>
                     <input
                       type="url"
                       required
                       value={tempDarkMusic}
                       onChange={(e) => setTempDarkMusic(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-white/15 bg-white/5 text-xs font-mono focus:outline-none focus:border-amber-400"
+                      className="w-full px-4 py-2 rounded-xl border border-white/15 bg-white/5 text-xs font-mono focus:outline-none focus:border-amber-400"
                     />
-                    <p className="text-[11px] opacity-50 font-mono">
-                      Plays when user toggles Dark Theme and enables the ambient speaker.
-                    </p>
+
+                    {/* Module 2: File upload input for Dark theme audio */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <input
+                        ref={darkAudioInputRef}
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => handleAudioFileUpload(e, 'dark')}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        disabled={isUploadingAudio}
+                        onClick={() => darkAudioInputRef.current?.click()}
+                        className="px-4 py-2 rounded-xl border border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        <Upload className="w-4 h-4 text-amber-400" />
+                        <span>{isUploadingAudio ? 'Синхронизация с Git...' : 'Загрузить аудиофайл (Git Sync)'}</span>
+                      </button>
+                      <span className="text-[11px] opacity-60 font-mono">
+                        PNG, MP3, WAV, FLAC (Git Sync Enabled)
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-xs font-mono uppercase tracking-wider opacity-80 font-bold">
-                      Light Theme Background Music URL:
+                  {/* Light Theme Audio File Upload */}
+                  <div className="p-4 rounded-2xl border border-white/15 bg-white/[0.03] space-y-3">
+                    <label className="block text-xs font-mono uppercase tracking-wider opacity-90 font-bold text-amber-300">
+                      Light Theme Background Music:
                     </label>
                     <input
                       type="url"
                       required
                       value={tempLightMusic}
                       onChange={(e) => setTempLightMusic(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-white/15 bg-white/5 text-xs font-mono focus:outline-none focus:border-amber-400"
+                      className="w-full px-4 py-2 rounded-xl border border-white/15 bg-white/5 text-xs font-mono focus:outline-none focus:border-amber-400"
                     />
-                    <p className="text-[11px] opacity-50 font-mono">
-                      Plays when user toggles Light Theme and enables the ambient speaker.
-                    </p>
+
+                    {/* Module 2: File upload input for Light theme audio */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <input
+                        ref={lightAudioInputRef}
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => handleAudioFileUpload(e, 'light')}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        disabled={isUploadingAudio}
+                        onClick={() => lightAudioInputRef.current?.click()}
+                        className="px-4 py-2 rounded-xl border border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        <Upload className="w-4 h-4 text-amber-400" />
+                        <span>{isUploadingAudio ? 'Синхронизация с Git...' : 'Загрузить аудиофайл (Git Sync)'}</span>
+                      </button>
+                      <span className="text-[11px] opacity-60 font-mono">
+                        MP3, WAV, OGG (Git Sync Enabled)
+                      </span>
+                    </div>
                   </div>
 
                   <div className="space-y-2 pt-2 border-t border-white/10">
@@ -550,7 +649,7 @@ export const StudioAdminModal: React.FC = () => {
                 </form>
               )}
 
-              {/* TAB 5: Export JSON with "Download database backup" helper text */}
+              {/* TAB 5: Export JSON */}
               {activeTab === 'export' && (
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -580,7 +679,6 @@ export const StudioAdminModal: React.FC = () => {
                         )}
                       </button>
 
-                      {/* Export JSON Button with Helper Tooltip */}
                       <div className="relative group">
                         <button
                           onClick={handleDownloadBackup}
@@ -590,7 +688,6 @@ export const StudioAdminModal: React.FC = () => {
                           <span>Export JSON</span>
                         </button>
 
-                        {/* Helper Tooltip */}
                         <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block whitespace-nowrap px-2.5 py-1 rounded-md bg-black/90 text-amber-300 border border-amber-400/30 text-[10px] font-mono shadow-xl z-20">
                           Download database backup
                         </div>
@@ -657,7 +754,6 @@ export const StudioAdminModal: React.FC = () => {
                       </select>
                     </div>
 
-                    {/* Integrated Direct Photo Loader & Preview */}
                     <div className="p-4 rounded-2xl border border-slate-300 dark:border-white/15 bg-slate-100/70 dark:bg-white/[0.03] space-y-3">
                       <label className="block font-mono font-bold opacity-90 text-xs uppercase tracking-wider">
                         Загрузка фотографии карточки

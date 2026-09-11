@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'motion/react';
-import { ChevronLeft, ChevronRight, Disc } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ChevronLeft, ChevronRight, Disc, Sparkles } from 'lucide-react';
 
 export interface DollyItem {
   id: string | number;
   name: string;
   subtitle?: string;
+  description?: string;
+  basePrice?: number;
+  opusNumber?: string;
   image: string;
   [key: string]: any;
 }
@@ -76,6 +79,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
   const [renderPos, setRenderPos] = useState(0);
   const [pointerOffset, setPointerOffset] = useState({ x: 0, y: 0 });
   const [scrollVelocity, setScrollVelocity] = useState(0);
+  const [hoveredItemId, setHoveredItemId] = useState<string | number | null>(null);
 
   const itemCount = items.length;
 
@@ -90,6 +94,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
   );
 
   const activeIndex = Math.round(getWrappedIndex(renderPos));
+  const activeItem = items[activeIndex];
 
   // Notify active index change
   const prevActiveIndexRef = useRef(activeIndex);
@@ -211,6 +216,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
       isHoveredRef.current = false;
       pointerRef.current.targetX = 0;
       pointerRef.current.targetY = 0;
+      setHoveredItemId(null);
     };
 
     el.addEventListener('wheel', handleWheel, { passive: false });
@@ -277,6 +283,11 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
           const xPos = sideSign * spread * itemWidth + (isFocused ? pointerOffset.x * parallaxX * itemWidth : 0);
           const yPos = Math.sin(idx * 2.5) * scatter * itemWidth + (isFocused ? pointerOffset.y * parallaxY * itemWidth : 0);
 
+          // Dynamic positioning logic for Module 4:
+          // xPos >= 0 means vinyl is on the right side -> Popup card floats to the LEFT (-translate-x-full)
+          // xPos < 0 means vinyl is on the left side -> Popup card floats to the RIGHT
+          const isRightSide = xPos >= 0;
+
           // Fast scroll dynamics: dynamic tilt and swell pulse
           const dynamicTilt = isFocused ? scrollVelocity * tilt : 0;
           const dynamicPulse = isFocused ? 1 + Math.abs(scrollVelocity) * pulse : 1;
@@ -290,6 +301,8 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
           }
 
           const scale = dynamicPulse;
+          const isMouseHovered = hoveredItemId === item.id;
+          const showPopup = isFocused || isMouseHovered;
 
           return (
             <div
@@ -300,6 +313,8 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                   onItemClick?.(item);
                 }
               }}
+              onMouseEnter={() => setHoveredItemId(item.id)}
+              onMouseLeave={() => setHoveredItemId(null)}
               style={{
                 position: 'absolute',
                 width: `${itemWidth}px`,
@@ -310,12 +325,12 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                 transformStyle: 'preserve-3d',
                 transition: isDraggingRef.current ? 'none' : 'transform 0.15s ease-out',
               }}
-              className="group flex items-center justify-center cursor-pointer"
+              className="group flex items-center justify-center cursor-pointer relative"
             >
               {/* Custom Vinyl Record Styling for product items */}
               <div
                 className={`vinyl-spin-wrapper relative w-full h-full rounded-full flex items-center justify-center transition-all duration-700 ease-out group-hover:animate-[spin_10s_linear_infinite] ${
-                  isFocused ? 'shadow-[0_0_40px_rgba(251,191,36,0.3)]' : ''
+                  isFocused ? 'shadow-[0_0_40px_rgba(251,191,36,0.35)]' : ''
                 }`}
                 style={{
                   backgroundImage:
@@ -334,24 +349,104 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                   {/* Spindle hole */}
                   <div className="vinyl-hole absolute w-[12%] h-[12%] rounded-full bg-stone-950 border border-black/50 shadow-inner z-10"></div>
                 </div>
-
-                {/* Floating Title Tooltip when hovered or focused */}
-                <div
-                  className={`absolute -bottom-12 bg-black/90 backdrop-blur-md text-amber-300 border border-amber-400/30 px-5 py-2 rounded-full text-sm font-bold shadow-2xl transition-all duration-300 flex items-center gap-2 pointer-events-none ${
-                    isFocused ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}
-                >
-                  <Disc
-                    className="w-4 h-4 text-amber-400 animate-spin"
-                    style={{ animationDuration: '6s' }}
-                  />
-                  <span>{item.name}</span>
-                </div>
               </div>
+
+              {/* Module 4: DESKTOP Smart Hover Popup Card (Hidden on Mobile md:hidden) */}
+              <AnimatePresence>
+                {showPopup && (
+                  <motion.div
+                    initial={{
+                      opacity: 0,
+                      x: isRightSide ? 20 : -20,
+                      scale: 0.92,
+                    }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{
+                      opacity: 0,
+                      x: isRightSide ? 20 : -20,
+                      scale: 0.92,
+                    }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    className={`hidden md:flex flex-col gap-2 absolute top-1/2 -translate-y-1/2 w-80 p-5 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 text-white shadow-2xl z-50 pointer-events-none ${
+                      isRightSide
+                        ? 'right-full mr-8 text-right items-end'
+                        : 'left-full ml-8 text-left items-start'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 text-amber-400 text-[10px] font-mono uppercase tracking-widest font-bold">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>{item.opusNumber || 'Opus Masterwork'}</span>
+                    </div>
+
+                    <h3 className="font-serif text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-snug drop-shadow-md">
+                      {item.name}
+                    </h3>
+
+                    {item.subtitle && (
+                      <p className="text-xs font-sans text-amber-300 font-semibold leading-tight">
+                        {item.subtitle}
+                      </p>
+                    )}
+
+                    {item.description && (
+                      <p className="text-xs font-sans text-stone-200/90 leading-relaxed line-clamp-3 mt-1">
+                        {item.description}
+                      </p>
+                    )}
+
+                    {item.basePrice && (
+                      <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between w-full">
+                        <span className="text-[10px] font-mono text-stone-400">Стоимость</span>
+                        <span className="text-sm font-mono font-bold text-amber-400">
+                          {item.basePrice} ₽
+                        </span>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}
       </div>
+
+      {/* Module 4: MOBILE FIXED BOTTOM SHEET (md:hidden) when a record is focused */}
+      <AnimatePresence>
+        {activeItem && (
+          <motion.div
+            key={activeItem.id}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 25 }}
+            onClick={() => onItemClick?.(activeItem)}
+            className="md:hidden fixed bottom-20 left-4 right-4 z-50 p-4 rounded-2xl bg-black/80 backdrop-blur-xl border border-amber-400/40 text-white shadow-2xl flex flex-col gap-1.5 cursor-pointer active:scale-98 transition-transform"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-amber-400 font-bold uppercase tracking-wider">
+                {activeItem.opusNumber || 'Liquid Music'}
+              </span>
+              <span className="text-xs font-mono font-bold text-amber-400">
+                {activeItem.basePrice ? `${activeItem.basePrice} ₽` : ''}
+              </span>
+            </div>
+            <h3 className="font-serif text-lg font-bold text-white tracking-tight leading-snug">
+              {activeItem.name}
+            </h3>
+            {activeItem.subtitle && (
+              <p className="text-xs font-sans text-amber-300/90 line-clamp-1">
+                {activeItem.subtitle}
+              </p>
+            )}
+            <p className="text-[11px] font-sans text-stone-300 line-clamp-2 mt-0.5">
+              {activeItem.description}
+            </p>
+            <div className="mt-1 text-[10px] font-mono text-amber-400 underline font-bold">
+              Нажмите, чтобы просмотреть подробнее →
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Navigation Controls */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 z-50 bg-black/70 backdrop-blur-md border border-white/10 px-6 py-2.5 rounded-full shadow-2xl">
