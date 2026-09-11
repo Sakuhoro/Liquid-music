@@ -223,26 +223,40 @@ export const CatalogView: React.FC = () => {
                 <div
                   key={product.id}
                   onClick={() => setInspectedProduct(product)}
-                  className="group relative rounded-2xl overflow-hidden border border-white/10 bg-stone-900/40 p-4 backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-amber-400/40 shadow-lg"
+                  className={`group relative rounded-2xl overflow-hidden border p-4 backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-[1.02] shadow-lg flex flex-col justify-between ${
+                    isDark
+                      ? 'border-white/10 bg-stone-900/40 hover:border-amber-400/50 shadow-black/50'
+                      : 'border-slate-200 bg-white/80 hover:border-amber-500/50 shadow-slate-200/50'
+                  }`}
                 >
-                  <div className="relative aspect-square rounded-xl overflow-hidden mb-3 bg-black/40 flex items-center justify-center">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                      <span className="text-xs font-bold text-amber-300">Открыть описание</span>
+                  <div>
+                    <div className="relative aspect-square rounded-xl overflow-hidden mb-3.5 bg-black/40 flex items-center justify-center">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                        <span className="text-xs font-semibold font-sans tracking-wide text-amber-300">Подробнее</span>
+                      </div>
                     </div>
+                    <h4 className={`font-sans text-base font-bold tracking-tight transition-colors line-clamp-1 ${
+                      isDark ? 'text-stone-100 group-hover:text-amber-400' : 'text-slate-900 group-hover:text-amber-600'
+                    }`}>
+                      {product.name}
+                    </h4>
+                    <p className={`font-sans text-xs line-clamp-2 mt-1.5 leading-relaxed antialiased ${
+                      isDark ? 'text-stone-400 opacity-80' : 'text-slate-600 opacity-90'
+                    }`}>
+                      {product.description}
+                    </p>
                   </div>
-                  <h4 className="font-serif text-lg font-bold text-stone-100 group-hover:text-amber-400 transition-colors">
-                    {product.name}
-                  </h4>
-                  <p className="text-xs text-stone-400 line-clamp-1 mt-0.5">{product.subtitle}</p>
-                  <div className="mt-3 flex items-center justify-between">
+                  <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
                     <span className="text-xs font-mono font-bold text-amber-400">{product.basePrice} ₽</span>
-                    <span className="text-[10px] font-mono text-stone-400 border border-white/10 px-2 py-0.5 rounded-full">
-                      {product.opusNumber}
+                    <span className={`text-[10px] font-sans font-medium px-2 py-0.5 rounded-full border ${
+                      isDark ? 'text-stone-400 border-white/10 bg-white/5' : 'text-slate-500 border-slate-200 bg-slate-100'
+                    }`}>
+                      {product.category}
                     </span>
                   </div>
                 </div>

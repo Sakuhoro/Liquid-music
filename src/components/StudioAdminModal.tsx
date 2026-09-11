@@ -170,7 +170,7 @@ export const StudioAdminModal: React.FC = () => {
       category: 'Spring',
       musicalKey: 'C Major',
       bpm: 120,
-      opusNumber: `Op. ${products.length + 1}`,
+      opusNumber: '',
       aromaticChords: {
         top: 'Верхние ноты',
         heart: 'Ноты сердца',
@@ -554,7 +554,7 @@ export const StudioAdminModal: React.FC = () => {
                       Dark Theme Background Music:
                     </label>
                     <input
-                      type="url"
+                      type="text"
                       required
                       value={tempDarkMusic}
                       onChange={(e) => setTempDarkMusic(e.target.value)}
@@ -591,7 +591,7 @@ export const StudioAdminModal: React.FC = () => {
                       Light Theme Background Music:
                     </label>
                     <input
-                      type="url"
+                      type="text"
                       required
                       value={tempLightMusic}
                       onChange={(e) => setTempLightMusic(e.target.value)}

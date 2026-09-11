@@ -26,6 +26,8 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const targetPosRef = useRef(0);
   const currentPosRef = useRef(0);
+  const touchStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const touchPosStartRef = useRef(0);
 
   const [renderPos, setRenderPos] = useState(0);
   const [windowWidth, setWindowWidth] = useState<number>(
@@ -37,6 +39,26 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+    touchPosStartRef.current = targetPosRef.current;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const dx = touchStartRef.current.x - e.touches[0].clientX;
+    const dy = touchStartRef.current.y - e.touches[0].clientY;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      const sensitivity = windowWidth < 640 ? 250 : 400;
+      const stepDelta = dx / sensitivity;
+      const maxIndex = Math.max(0, items.length - 1);
+      targetPosRef.current = Math.max(0, Math.min(maxIndex, touchPosStartRef.current + stepDelta));
+    }
+  };
 
   // Main physics loop (Lerp damping)
   useEffect(() => {
@@ -104,7 +126,9 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`fixed inset-0 w-screen h-screen m-0 p-0 overflow-hidden bg-transparent text-white select-none z-10 flex flex-col justify-between ${className}`}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      className={`fixed inset-0 w-screen h-screen m-0 p-0 overflow-hidden bg-transparent text-white select-none z-10 flex flex-col justify-between touch-pan-y ${className}`}
       style={{ margin: 0, padding: 0 }}
     >
       {/* Subtle translucent ambient contrast overlays (keeps background video crystal clear) */}
@@ -166,7 +190,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                   transition={{ duration: 0.05, ease: 'linear' }}
                   // 1.5x Card Width scaling: w-[360px] sm:w-[570px] lg:w-[630px] max-w-[88vw]
                   // -skew-y-3 is applied to card visuals directly to preserve 3D tilt without slanting movement trajectory
-                  className={`absolute w-[360px] sm:w-[570px] lg:w-[630px] max-w-[88vw] h-full rounded-3xl overflow-hidden cursor-pointer shadow-2xl border -skew-y-3 transition-colors duration-300 ${
+                  className={`absolute w-[280px] xs:w-[320px] sm:w-[520px] lg:w-[630px] max-w-[85vw] h-full rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer shadow-2xl border -skew-y-2 sm:-skew-y-3 transition-colors duration-300 ${
                     isActive
                       ? 'border-amber-400/80 shadow-amber-500/20 shadow-2xl ring-2 ring-amber-400/50'
                       : 'border-white/15 hover:border-white/40'
@@ -194,14 +218,14 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                   </div>
 
                   {/* Bottom Content - Scaled padding and typography for 1.5x cards */}
-                  <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 lg:p-12 z-10 flex flex-col justify-end bg-gradient-to-t from-black via-black/85 to-transparent">
-                    <h3 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
+                  <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-10 lg:p-12 z-10 flex flex-col justify-end bg-gradient-to-t from-black via-black/85 to-transparent">
+                    <h3 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
                       {item.title}
                     </h3>
-                    <p className="text-sm sm:text-base text-amber-300/90 font-mono mt-1.5 font-semibold">
+                    <p className="text-xs sm:text-base text-amber-300/90 font-mono mt-1 font-semibold">
                       {item.subtitle}
                     </p>
-                    <p className="text-xs sm:text-sm text-stone-300/90 font-sans mt-2.5 line-clamp-2 leading-relaxed">
+                    <p className="text-[11px] sm:text-sm text-stone-300/90 font-sans mt-2 line-clamp-2 leading-relaxed">
                       {item.description}
                     </p>
 
@@ -210,7 +234,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                         e.stopPropagation();
                         onSelectItem(item.id);
                       }}
-                      className={`mt-6 w-full py-3.5 sm:py-4 rounded-2xl text-xs sm:text-sm font-mono uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
+                      className={`mt-4 sm:mt-6 w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-mono uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer min-h-[44px] ${
                         isActive
                           ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg shadow-amber-400/30'
                           : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'

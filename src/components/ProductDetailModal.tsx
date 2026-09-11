@@ -82,11 +82,11 @@ export const ProductDetailModal: React.FC = () => {
         </button>
 
         {/* Modal Main Content Grid - Apple/Stripe Editorial Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 p-6 sm:p-10 lg:p-12 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 p-5 sm:p-8 lg:p-12 items-center max-h-[90vh] overflow-y-auto">
 
           {/* LEFT COLUMN: Clean Album Cover Image */}
           <div className="md:col-span-5 flex flex-col items-center justify-center relative">
-            <div className="relative w-full aspect-square max-w-[340px] rounded-2xl overflow-hidden shadow-2xl shadow-black/80 border border-white/20 group">
+            <div className="relative w-full aspect-square max-w-[220px] sm:max-w-[320px] rounded-2xl overflow-hidden shadow-2xl shadow-black/80 border border-white/20 group">
               <img
                 src={inspectedProduct.image}
                 alt={inspectedProduct.name}
@@ -99,7 +99,7 @@ export const ProductDetailModal: React.FC = () => {
               {/* Harmonic Chords Button Badge */}
               <button
                 onClick={handlePlayChord}
-                className="absolute bottom-4 right-4 px-4 py-2 rounded-full bg-black/70 hover:bg-amber-400 hover:text-slate-950 text-white text-xs font-sans font-semibold flex items-center gap-2 backdrop-blur-md border border-white/20 transition-all duration-300 shadow-lg cursor-pointer group/btn"
+                className="absolute bottom-3 right-3 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-black/70 hover:bg-amber-400 hover:text-slate-950 text-white text-[11px] sm:text-xs font-sans font-semibold flex items-center gap-1.5 backdrop-blur-md border border-white/20 transition-all duration-300 shadow-lg cursor-pointer group/btn min-h-[44px]"
               >
                 <Volume2 className="w-4 h-4 text-amber-400 group-hover/btn:text-slate-950 transition-colors" />
                 <span>Аккорды</span>
@@ -108,7 +108,7 @@ export const ProductDetailModal: React.FC = () => {
           </div>
 
           {/* RIGHT COLUMN: Premium Typography & Minimalist Controls */}
-          <div className="md:col-span-7 flex flex-col justify-between space-y-6">
+          <div className="md:col-span-7 flex flex-col justify-between space-y-5">
 
             {/* Header with High-Contrast Typography & tracking-tight */}
             <div>
@@ -127,28 +127,28 @@ export const ProductDetailModal: React.FC = () => {
             <div className="space-y-5 pt-3 border-t border-white/10">
 
               {/* Volume Segmented Control */}
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <div className="flex justify-between items-center text-xs font-sans tracking-wide uppercase text-stone-300">
-                  <span className="font-semibold text-stone-200">Выберите объём:</span>
+                  <span className="font-semibold text-stone-200">Объём:</span>
                   <span className="text-amber-400 font-bold font-mono text-sm">{volPrice} ₽</span>
                 </div>
 
                 {/* Segmented Control Pills */}
-                <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
                   {(['30ml', '60ml', '120ml'] as VolumeType[]).map((v) => {
                     const isSelected = selectedVolume === v;
                     return (
                       <button
                         key={v}
                         onClick={() => setSelectedVolume(v)}
-                        className={`relative py-3 px-3 rounded-xl text-center font-sans transition-all duration-300 cursor-pointer ${
+                        className={`relative py-2.5 px-2 rounded-xl text-center font-sans transition-all duration-300 cursor-pointer min-h-[44px] flex flex-col items-center justify-center ${
                           isSelected
                             ? 'bg-amber-400 text-slate-950 font-bold shadow-lg shadow-amber-400/20 scale-[1.02]'
                             : 'text-stone-300 hover:text-white hover:bg-white/10 font-medium'
                         }`}
                       >
-                        <div className="text-sm font-bold tracking-tight">{v}</div>
-                        <div className={`text-[11px] font-mono mt-0.5 ${isSelected ? 'text-slate-900/80' : 'opacity-60'}`}>
+                        <div className="text-xs sm:text-sm font-bold tracking-tight">{v}</div>
+                        <div className={`text-[10px] font-mono mt-0.5 ${isSelected ? 'text-slate-900/80' : 'opacity-60'}`}>
                           {VOLUME_PRICING[v]} ₽
                         </div>
                       </button>
@@ -158,30 +158,30 @@ export const ProductDetailModal: React.FC = () => {
               </div>
 
               {/* Nicotine Segmented Control */}
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <div className="flex justify-between items-center text-xs font-sans tracking-wide uppercase text-stone-300">
-                  <span className="font-semibold text-stone-200">Концентрация никотина:</span>
+                  <span className="font-semibold text-stone-200">Никотин:</span>
                   <span className="text-amber-400 font-bold font-mono text-sm">
                     {nicPrice > 0 ? `+${nicPrice} ₽` : '0 ₽'}
                   </span>
                 </div>
 
                 {/* Segmented Control Pills */}
-                <div className="grid grid-cols-4 gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                <div className="grid grid-cols-4 gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
                   {(['0mg', '1.5mg', '3mg', '6mg'] as NicotineType[]).map((n) => {
                     const isSelected = selectedNicotine === n;
                     return (
                       <button
                         key={n}
                         onClick={() => setSelectedNicotine(n)}
-                        className={`relative py-3 px-2 rounded-xl text-center font-sans transition-all duration-300 cursor-pointer ${
+                        className={`relative py-2.5 px-1.5 rounded-xl text-center font-sans transition-all duration-300 cursor-pointer min-h-[44px] flex flex-col items-center justify-center ${
                           isSelected
                             ? 'bg-amber-400 text-slate-950 font-bold shadow-lg shadow-amber-400/20 scale-[1.02]'
                             : 'text-stone-300 hover:text-white hover:bg-white/10 font-medium'
                         }`}
                       >
-                        <div className="text-sm font-bold tracking-tight">{n}</div>
-                        <div className={`text-[11px] font-mono mt-0.5 ${isSelected ? 'text-slate-900/80' : 'opacity-60'}`}>
+                        <div className="text-xs sm:text-sm font-bold tracking-tight">{n}</div>
+                        <div className={`text-[10px] font-mono mt-0.5 ${isSelected ? 'text-slate-900/80' : 'opacity-60'}`}>
                           {n === '0mg' ? '0₽' : `+${NICOTINE_PRICING[n]}₽`}
                         </div>
                       </button>
@@ -206,7 +206,7 @@ export const ProductDetailModal: React.FC = () => {
               {/* Clean Order Button: strictly NO plus icon (+) and NO price display inside button */}
               <button
                 onClick={handleAdd}
-                className={`w-full sm:w-auto px-10 py-4 rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 shadow-xl ${
+                className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-bold text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 shadow-xl min-h-[48px] ${
                   isAdded
                     ? 'bg-emerald-500 text-slate-950 shadow-emerald-500/30 scale-[1.02]'
                     : 'bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 hover:shadow-2xl hover:shadow-amber-400/30 hover:scale-[1.02] active:scale-[0.98]'

@@ -31,7 +31,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     category: 'Permanent 1',
     musicalKey: 'E Major',
     bpm: 128,
-    opusNumber: 'Op. 01 No. 1',
+    opusNumber: '',
     aromaticChords: {
       top: 'Electric Blue Raspberry, Cold Mist',
       heart: 'Wild Mountain Blackberry, Candied Zest',
@@ -50,7 +50,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     category: 'Autumn',
     musicalKey: 'G Minor',
     bpm: 72,
-    opusNumber: 'Op. 04 No. 2',
+    opusNumber: '',
     aromaticChords: {
       top: 'Torched Brown Sugar, Sea Salt Flakes',
       heart: 'Madagascar Bourbon Vanilla, Sweet Bavarian Cream',
@@ -69,7 +69,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     category: 'Summer',
     musicalKey: 'B♭ Major',
     bpm: 110,
-    opusNumber: 'Op. 07 No. 3',
+    opusNumber: '',
     aromaticChords: {
       top: 'Effervescent Root Botanical, Wintergreen Herb',
       heart: 'Sassafras Bark, Star Anise, Cinnamon Quill',
@@ -88,7 +88,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     category: 'Spring',
     musicalKey: 'D♭ Major',
     bpm: 84,
-    opusNumber: 'Op. 12 No. 1',
+    opusNumber: '',
     aromaticChords: {
       top: 'White Peach Nectar, Lychee Dew',
       heart: 'Sakura Cherry Blossom, Silver Needle Tea',
@@ -107,7 +107,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     category: 'Summer',
     musicalKey: 'C Major',
     bpm: 130,
-    opusNumber: 'Op. 18 No. 4',
+    opusNumber: '',
     aromaticChords: {
       top: 'Alphonso Mango Nectar, Key Lime Zest',
       heart: 'Tart Passionfruit, Coconut Nectar',
@@ -126,7 +126,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     category: 'Permanent 2',
     musicalKey: 'A Minor',
     bpm: 64,
-    opusNumber: 'Op. 22 No. 1',
+    opusNumber: '',
     aromaticChords: {
       top: 'Sub-Zero Spearmint, Frosted Ozone',
       heart: 'Crisp Peppermint Leaf, Eucalyptus',
@@ -145,7 +145,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     category: 'Permanent 1',
     musicalKey: 'F Minor',
     bpm: 78,
-    opusNumber: 'Op. 29 No. 5',
+    opusNumber: '',
     aromaticChords: {
       top: 'Arabica Crema, Cocoa Nib Dust',
       heart: 'Toasted Hazelnut Butter, Dark Ganache',
@@ -164,7 +164,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     category: 'Autumn',
     musicalKey: 'D Major',
     bpm: 88,
-    opusNumber: 'Op. 35 No. 2',
+    opusNumber: '',
     aromaticChords: {
       top: 'Crisp Honeycrisp Skin, Red Currant',
       heart: 'Ceylon Cinnamon, Golden Honey Glaze',
@@ -183,7 +183,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     category: 'Permanent 2',
     musicalKey: 'F Major',
     bpm: 116,
-    opusNumber: 'Op. 42 No. 3',
+    opusNumber: '',
     aromaticChords: {
       top: 'Ripe Kyoho Grape, Crisp Aloe Vera',
       heart: 'White Muscat Wine, Violet Floral Dew',

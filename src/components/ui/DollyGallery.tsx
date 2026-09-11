@@ -80,6 +80,20 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
   const [pointerOffset, setPointerOffset] = useState({ x: 0, y: 0 });
   const [scrollVelocity, setScrollVelocity] = useState(0);
   const [hoveredItemId, setHoveredItemId] = useState<string | number | null>(null);
+  const [windowWidth, setWindowWidth] = useState<number>(
+    typeof window !== 'undefined' ? window.innerWidth : 1200
+  );
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Adaptive itemWidth and spacing for Mobile / Tablet / Desktop
+  const effectiveItemWidth =
+    windowWidth < 640 ? Math.min(320, windowWidth * 0.75) : windowWidth < 1024 ? 480 : itemWidth;
+  const effectiveSpacing = windowWidth < 640 ? 360 : windowWidth < 1024 ? 500 : spacing;
 
   const itemCount = items.length;
 
@@ -251,7 +265,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full flex-1 h-full min-h-[70vh] sm:min-h-[80vh] flex flex-col items-center justify-center overflow-hidden select-none cursor-grab active:cursor-grabbing ${className}`}
+      className={`relative w-full flex-1 h-full min-h-[70vh] sm:min-h-[80vh] flex flex-col items-center justify-center overflow-hidden select-none cursor-grab active:cursor-grabbing touch-pan-y ${className}`}
       style={{ perspective: `${perspective}px` }}
     >
       {/* 3D Dolly Stage */}
@@ -276,12 +290,12 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
           }
 
           const isFocused = Math.abs(stepOffset) < 0.4;
-          const zDistance = -stepOffset * spacing;
+          const zDistance = -stepOffset * effectiveSpacing;
 
           // Alternate X spread left/right and Y scatter
           const sideSign = (idx % 2 === 0 ? 1 : -1);
-          const xPos = sideSign * spread * itemWidth + (isFocused ? pointerOffset.x * parallaxX * itemWidth : 0);
-          const yPos = Math.sin(idx * 2.5) * scatter * itemWidth + (isFocused ? pointerOffset.y * parallaxY * itemWidth : 0);
+          const xPos = sideSign * spread * effectiveItemWidth + (isFocused ? pointerOffset.x * parallaxX * effectiveItemWidth : 0);
+          const yPos = Math.sin(idx * 2.5) * scatter * effectiveItemWidth + (isFocused ? pointerOffset.y * parallaxY * effectiveItemWidth : 0);
 
           // Dynamic positioning logic for Module 4:
           // xPos >= 0 means vinyl is on the right side -> Popup card floats to the LEFT (-translate-x-full)
@@ -317,8 +331,8 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
               onMouseLeave={() => setHoveredItemId(null)}
               style={{
                 position: 'absolute',
-                width: `${itemWidth}px`,
-                height: `${itemWidth}px`,
+                width: `${effectiveItemWidth}px`,
+                height: `${effectiveItemWidth}px`,
                 transform: `translate3d(${xPos}px, ${yPos}px, ${zDistance}px) rotateX(${-pointerOffset.y * 5}deg) rotateY(${pointerOffset.x * 5}deg) rotateZ(${dynamicTilt}deg) scale(${scale})`,
                 opacity: Math.max(0, Math.min(1, opacity)),
                 zIndex: Math.round(1000 - Math.abs(stepOffset) * 100),
@@ -367,40 +381,31 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                       scale: 0.92,
                     }}
                     transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                    className={`hidden md:flex flex-col gap-2 absolute top-1/2 -translate-y-1/2 w-80 p-5 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 text-white shadow-2xl z-50 pointer-events-none ${
+                    className={`hidden md:flex flex-col gap-2 absolute top-1/2 -translate-y-1/2 w-88 sm:w-96 p-6 rounded-3xl bg-black/75 backdrop-blur-xl border border-white/20 text-white shadow-2xl z-50 pointer-events-none ${
                       isRightSide
                         ? 'right-full mr-8 text-right items-end'
                         : 'left-full ml-8 text-left items-start'
                     }`}
                   >
-                    <div className="flex items-center gap-1.5 text-amber-400 text-[10px] font-mono uppercase tracking-widest font-bold">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>{item.opusNumber || 'Opus Masterwork'}</span>
+                    <div className="flex items-center gap-1.5 text-amber-400 text-xs font-mono uppercase tracking-widest font-bold">
+                      <Sparkles className="w-4 h-4" />
+                      <span>{item.category || 'Liquid Music'}</span>
                     </div>
 
-                    <h3 className="font-serif text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-snug drop-shadow-md">
+                    <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-snug drop-shadow-md">
                       {item.name}
                     </h3>
 
                     {item.subtitle && (
-                      <p className="text-xs font-sans text-amber-300 font-semibold leading-tight">
+                      <p className="text-sm font-sans text-amber-300 font-semibold leading-snug">
                         {item.subtitle}
                       </p>
                     )}
 
                     {item.description && (
-                      <p className="text-xs font-sans text-stone-200/90 leading-relaxed line-clamp-3 mt-1">
+                      <p className="text-xs sm:text-sm font-sans text-stone-300 leading-relaxed line-clamp-3 mt-1 antialiased">
                         {item.description}
                       </p>
-                    )}
-
-                    {item.basePrice && (
-                      <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between w-full">
-                        <span className="text-[10px] font-mono text-stone-400">Стоимость</span>
-                        <span className="text-sm font-mono font-bold text-amber-400">
-                          {item.basePrice} ₽
-                        </span>
-                      </div>
                     )}
                   </motion.div>
                 )}
@@ -420,29 +425,21 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
             exit={{ opacity: 0, y: 40 }}
             transition={{ type: 'spring', stiffness: 280, damping: 25 }}
             onClick={() => onItemClick?.(activeItem)}
-            className="md:hidden fixed bottom-20 left-4 right-4 z-50 p-4 rounded-2xl bg-black/80 backdrop-blur-xl border border-amber-400/40 text-white shadow-2xl flex flex-col gap-1.5 cursor-pointer active:scale-98 transition-transform"
+            className="md:hidden fixed bottom-20 left-4 right-4 z-50 p-4 rounded-2xl bg-black/85 backdrop-blur-xl border border-amber-400/40 text-white shadow-2xl flex flex-col gap-1.5 cursor-pointer active:scale-98 transition-transform"
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono text-amber-400 font-bold uppercase tracking-wider">
-                {activeItem.opusNumber || 'Liquid Music'}
-              </span>
-              <span className="text-xs font-mono font-bold text-amber-400">
-                {activeItem.basePrice ? `${activeItem.basePrice} ₽` : ''}
+                {activeItem.category || 'Liquid Music'}
               </span>
             </div>
-            <h3 className="font-serif text-lg font-bold text-white tracking-tight leading-snug">
+            <h3 className="font-sans text-xl font-extrabold text-white tracking-tight leading-snug">
               {activeItem.name}
             </h3>
-            {activeItem.subtitle && (
-              <p className="text-xs font-sans text-amber-300/90 line-clamp-1">
-                {activeItem.subtitle}
-              </p>
-            )}
-            <p className="text-[11px] font-sans text-stone-300 line-clamp-2 mt-0.5">
+            <p className="text-xs font-sans text-stone-300 line-clamp-2 mt-0.5 leading-relaxed antialiased">
               {activeItem.description}
             </p>
-            <div className="mt-1 text-[10px] font-mono text-amber-400 underline font-bold">
-              Нажмите, чтобы просмотреть подробнее →
+            <div className="mt-1 text-[11px] font-sans text-amber-400 font-bold">
+              Нажмите, чтобы открыть →
             </div>
           </motion.div>
         )}
@@ -453,7 +450,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
         <button
           onClick={goToPrev}
           aria-label="Previous Vinyl"
-          className="w-9 h-9 rounded-full bg-white/10 hover:bg-amber-400 hover:text-black text-stone-200 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+          className="min-w-[44px] min-h-[44px] rounded-full bg-white/10 hover:bg-amber-400 hover:text-black text-stone-200 flex items-center justify-center transition-all cursor-pointer active:scale-95"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
