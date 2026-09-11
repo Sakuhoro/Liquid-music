@@ -6,10 +6,20 @@ import {
   X,
   Volume2,
   Check,
-  ShoppingBag,
-  Layers,
+  Disc,
+  Plus,
 } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
+
+/**
+ * Visual Layer Architecture (Album Design System):
+ * Композиция модального окна выполнена в формате премиального винилового конверта (Editorial Album Layout):
+ * левая колонка выделена под квадратный арт вкуса с глубокими объёмными тенями `shadow-black/70 shadow-2xl`
+ * и интерактивной кнопкой прослушивания гармонических аккордов, а правая колонка содержит платиновую типографику вкуса,
+ * описание и сегментированные "кнопки-таблетки" управления (Segmented Pill Controls). Вся конструкция
+ * помещена в полупрозрачный стеклянный контейнер с эффектом `backdrop-blur-xl` и тонким бордером `border-white/10`,
+ * создающим эксклюзивную атмосферу физического музыкального релиза.
+ */
 
 export const ProductDetailModal: React.FC = () => {
   const inspectedProduct = useAppStore((state) => state.inspectedProduct);
@@ -55,212 +65,175 @@ export const ProductDetailModal: React.FC = () => {
       onClick={(e) => {
         if (e.target === e.currentTarget) setInspectedProduct(null);
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-rise cursor-pointer"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-black/80 backdrop-blur-xl animate-fade-rise cursor-pointer overflow-y-auto"
     >
       <div
         id="product-inspect-modal-card"
         onClick={(e) => e.stopPropagation()}
-        className={`relative w-full max-w-2xl rounded-3xl overflow-hidden border shadow-2xl backdrop-blur-2xl flex flex-col max-h-[92vh] cursor-default ${
+        className={`relative w-full max-w-4xl rounded-3xl overflow-hidden border shadow-2xl backdrop-blur-2xl cursor-default transition-all duration-300 ${
           isDark
-            ? 'bg-[rgba(8,28,44,0.95)] border-white/20 text-stone-100'
-            : 'bg-white/95 border-slate-300 text-slate-900 shadow-2xl'
+            ? 'bg-slate-950/85 border-white/10 text-stone-100 shadow-black/80'
+            : 'bg-stone-900/90 border-white/15 text-stone-100 shadow-black/70'
         }`}
       >
         {/* Close Button */}
         <button
           onClick={() => setInspectedProduct(null)}
-          className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition-colors cursor-pointer"
+          className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white/80 hover:text-white border border-white/10 backdrop-blur-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer"
+          aria-label="Close"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Header Media & Art */}
-        <div className="relative h-56 sm:h-64 overflow-hidden bg-stone-950">
-          <img
-            src={inspectedProduct.image}
-            alt={inspectedProduct.name}
-            className="w-full h-full object-cover opacity-90"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[hsl(201,100%,13%)] via-black/40 to-black/30" />
+        {/* Modal Main Content Grid - Editorial Album Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 p-6 sm:p-8 lg:p-10 items-center">
 
-          <div className="absolute bottom-4 left-6 right-6 flex items-end justify-between">
+          {/* LEFT COLUMN: Physical Vinyl/CD Album Cover Art */}
+          <div className="md:col-span-5 flex flex-col items-center justify-center relative">
+            <div className="relative w-full aspect-square max-w-[340px] rounded-2xl overflow-hidden shadow-2xl shadow-black/70 border border-white/15 group">
+              <img
+                src={inspectedProduct.image}
+                alt={inspectedProduct.name}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+
+              {/* Album Vinyl Sheen Overlay */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/50 via-transparent to-white/10 opacity-70" />
+
+              {/* Harmonic Chords Button Badge */}
+              <button
+                onClick={handlePlayChord}
+                className="absolute bottom-3 right-3 px-3.5 py-2 rounded-full bg-black/60 hover:bg-amber-400 hover:text-slate-950 text-white text-xs font-mono font-medium flex items-center gap-2 backdrop-blur-md border border-white/20 transition-all duration-300 shadow-lg cursor-pointer group/btn"
+              >
+                <Volume2 className="w-4 h-4 text-amber-400 group-hover/btn:text-slate-950 transition-colors" />
+                <span>Аккорды</span>
+              </button>
+            </div>
+
+            {/* Sub-label showing Physical Release style badge */}
+            <div className="mt-3 flex items-center gap-2 text-[11px] font-mono tracking-widest text-amber-400/80 uppercase">
+              <Disc className="w-3.5 h-3.5 animate-spin-slow" />
+              <span>Physical Release Edition</span>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Platinum Album Typography & Controls */}
+          <div className="md:col-span-7 flex flex-col justify-between space-y-6">
+
+            {/* Header / Clean Title without Opus */}
             <div>
-              <div className="flex items-center gap-2 text-xs font-mono text-amber-300 font-bold mb-1">
-                <span>{inspectedProduct.opusNumber}</span>
-              </div>
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white drop-shadow-md">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white font-serif drop-shadow-md leading-none mb-3">
                 {inspectedProduct.name}
               </h2>
+              <p className="text-sm leading-relaxed text-stone-300/90 font-sans line-clamp-3">
+                {inspectedProduct.description}
+              </p>
             </div>
 
-            <button
-              onClick={handlePlayChord}
-              className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-mono flex items-center gap-1.5 backdrop-blur-md transition-all cursor-pointer"
-            >
-              <Volume2 className="w-3.5 h-3.5 text-amber-300" />
-              <span>Harmonic Chords</span>
-            </button>
-          </div>
-        </div>
+            {/* Option Controls Section */}
+            <div className="space-y-5 pt-2 border-t border-white/10">
 
-        {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-6 text-sm">
-          <p className={`leading-relaxed ${isDark ? 'text-stone-300' : 'text-slate-700 font-medium'}`}>
-            {inspectedProduct.description}
-          </p>
+              {/* Volume Segmented Control */}
+              <div className="space-y-2.5">
+                <div className="flex justify-between items-center text-xs font-mono tracking-wider uppercase text-stone-300">
+                  <span className="font-semibold text-amber-300/90">Выбрать нужный объём:</span>
+                  <span className="text-amber-400 font-bold font-mono">{volPrice} ₽</span>
+                </div>
 
-          {/* Aromatic Architecture Chords */}
-          <div
-            className={`p-4 rounded-2xl border space-y-2 ${
-              isDark
-                ? 'bg-white/[0.03] border-white/10 text-stone-200'
-                : 'bg-slate-100/90 border-slate-300 text-slate-900'
-            }`}
-          >
-            <div
-              className={`flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider ${
-                isDark ? 'text-amber-400' : 'text-amber-700'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Aromatic Pyramid Architecture</span>
+                {/* Segmented Pill Control */}
+                <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                  {(['30ml', '60ml', '120ml'] as VolumeType[]).map((v) => {
+                    const isSelected = selectedVolume === v;
+                    return (
+                      <button
+                        key={v}
+                        onClick={() => setSelectedVolume(v)}
+                        className={`relative py-2.5 px-3 rounded-xl text-center text-xs font-mono transition-all duration-300 cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-400 text-slate-950 font-bold shadow-lg shadow-amber-400/20 scale-[1.02]'
+                            : 'text-stone-300 hover:text-white hover:bg-white/10 font-medium'
+                        }`}
+                      >
+                        <div className="text-sm font-bold tracking-tight">{v}</div>
+                        <div className={`text-[10px] ${isSelected ? 'text-slate-900/80' : 'opacity-60'}`}>
+                          {VOLUME_PRICING[v]} ₽
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Nicotine Segmented Control */}
+              <div className="space-y-2.5">
+                <div className="flex justify-between items-center text-xs font-mono tracking-wider uppercase text-stone-300">
+                  <span className="font-semibold text-amber-300/90">Выбрать нужную концентрацию никотина:</span>
+                  <span className="text-amber-400 font-bold font-mono">
+                    {nicPrice > 0 ? `+${nicPrice} ₽` : '0 ₽'}
+                  </span>
+                </div>
+
+                {/* Segmented Pill Control */}
+                <div className="grid grid-cols-4 gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                  {(['0mg', '1.5mg', '3mg', '6mg'] as NicotineType[]).map((n) => {
+                    const isSelected = selectedNicotine === n;
+                    return (
+                      <button
+                        key={n}
+                        onClick={() => setSelectedNicotine(n)}
+                        className={`relative py-2.5 px-2 rounded-xl text-center text-xs font-mono transition-all duration-300 cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-400 text-slate-950 font-bold shadow-lg shadow-amber-400/20 scale-[1.02]'
+                            : 'text-stone-300 hover:text-white hover:bg-white/10 font-medium'
+                        }`}
+                      >
+                        <div className="text-sm font-bold tracking-tight">{n}</div>
+                        <div className={`text-[10px] ${isSelected ? 'text-slate-900/80' : 'opacity-60'}`}>
+                          {n === '0mg' ? '+0₽' : `+${NICOTINE_PRICING[n]}₽`}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
-              <div
-                className={`p-2.5 rounded-xl border ${
-                  isDark ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200 shadow-sm'
+
+            {/* CTA Footer Row: Total Price & Massive Playlist Button */}
+            <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+              <div>
+                <div className="text-xs font-mono uppercase tracking-widest text-stone-400 mb-0.5">
+                  Итоговая стоимость
+                </div>
+                <div className="text-3xl font-extrabold font-serif text-amber-400 tracking-tight">
+                  {totalPrice} ₽
+                </div>
+              </div>
+
+              <button
+                onClick={handleAdd}
+                className={`w-full sm:w-auto px-8 py-4 rounded-2xl font-bold text-sm tracking-wide flex items-center justify-center gap-3 cursor-pointer transition-all duration-300 shadow-xl ${
+                  isAdded
+                    ? 'bg-emerald-500 text-slate-950 shadow-emerald-500/30 scale-[1.02]'
+                    : 'bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 hover:shadow-2xl hover:shadow-amber-400/30 hover:scale-[1.02] active:scale-[0.98]'
                 }`}
               >
-                <span className="block font-mono text-[10px] uppercase opacity-60">Top Note</span>
-                <span className="font-semibold">{inspectedProduct.aromaticChords.top}</span>
-              </div>
-              <div
-                className={`p-2.5 rounded-xl border ${
-                  isDark ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200 shadow-sm'
-                }`}
-              >
-                <span className="block font-mono text-[10px] uppercase opacity-60">Heart Note</span>
-                <span className="font-semibold">{inspectedProduct.aromaticChords.heart}</span>
-              </div>
-              <div
-                className={`p-2.5 rounded-xl border ${
-                  isDark ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200 shadow-sm'
-                }`}
-              >
-                <span className="block font-mono text-[10px] uppercase opacity-60">Base Chord</span>
-                <span className="font-semibold">{inspectedProduct.aromaticChords.base}</span>
-              </div>
+                {isAdded ? (
+                  <>
+                    <Check className="w-5 h-5 stroke-[2.5]" />
+                    <span>В плейлисте</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5 stroke-[2.5]" />
+                    <span>Добавить в плейлист • {totalPrice} ₽</span>
+                  </>
+                )}
+              </button>
             </div>
+
           </div>
 
-          {/* Volume Selection Engine */}
-          <div className="space-y-2">
-            <div
-              className={`flex justify-between items-center text-xs font-mono uppercase tracking-wider ${
-                isDark ? 'text-stone-300' : 'text-slate-800 font-bold'
-              }`}
-            >
-              <span>1. Choose Bottle Volume:</span>
-              <span className={isDark ? 'text-amber-400 font-bold' : 'text-amber-700 font-bold'}>
-                {volPrice} ₽
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-xs font-mono">
-              {(['30ml', '60ml', '120ml'] as VolumeType[]).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setSelectedVolume(v)}
-                  className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
-                    selectedVolume === v
-                      ? 'bg-amber-400 text-stone-950 font-bold border-amber-500 shadow-lg shadow-amber-400/25'
-                      : isDark
-                      ? 'bg-white/5 border-white/10 text-stone-300 hover:bg-white/10'
-                      : 'bg-slate-100 border-slate-300 text-slate-800 hover:bg-slate-200 font-semibold'
-                  }`}
-                >
-                  <div className="text-sm font-bold">{v}</div>
-                  <div className="text-[11px] opacity-80">{VOLUME_PRICING[v]} ₽</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Nicotine Formulation Engine */}
-          <div className="space-y-2">
-            <div
-              className={`flex justify-between items-center text-xs font-mono uppercase tracking-wider ${
-                isDark ? 'text-stone-300' : 'text-slate-800 font-bold'
-              }`}
-            >
-              <span>2. Choose Nicotine Strength:</span>
-              <span className={isDark ? 'text-amber-400 font-bold' : 'text-amber-700 font-bold'}>
-                +{nicPrice} ₽
-              </span>
-            </div>
-            <div className="grid grid-cols-4 gap-2 text-xs font-mono">
-              {(['0mg', '1.5mg', '3mg', '6mg'] as NicotineType[]).map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setSelectedNicotine(n)}
-                  className={`p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
-                    selectedNicotine === n
-                      ? 'bg-amber-400 text-stone-950 font-bold border-amber-500 shadow-lg shadow-amber-400/25'
-                      : isDark
-                      ? 'bg-white/5 border-white/10 text-stone-300 hover:bg-white/10'
-                      : 'bg-slate-100 border-slate-300 text-slate-800 hover:bg-slate-200 font-semibold'
-                  }`}
-                >
-                  <div className="text-sm font-bold">{n}</div>
-                  <div className="text-[10px] opacity-80">
-                    {n === '0mg' ? '+0₽' : `+${NICOTINE_PRICING[n]}₽`}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Modal Footer: Total Price & Add */}
-        <div
-          className={`p-6 border-t flex items-center justify-between gap-4 ${
-            isDark ? 'border-white/10' : 'border-slate-300'
-          }`}
-        >
-          <div>
-            <div
-              className={`text-2xl sm:text-3xl font-serif font-bold ${
-                isDark ? 'text-amber-400' : 'text-amber-700'
-              }`}
-            >
-              {totalPrice} ₽
-            </div>
-            <div
-              className={`text-xs font-mono ${
-                isDark ? 'text-stone-400' : 'text-slate-600 font-medium'
-              }`}
-            >
-              {volPrice} ₽ (объём) + {nicPrice} ₽ (никотин)
-            </div>
-          </div>
-
-          <button
-            onClick={handleAdd}
-            className={`liquid-glass px-6 py-3.5 rounded-full text-sm font-semibold flex items-center gap-2 cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 text-stone-100 ${
-              isAdded ? 'bg-emerald-500 text-stone-950 font-bold' : ''
-            }`}
-          >
-            {isAdded ? (
-              <>
-                <Check className="w-4 h-4" />
-                <span>Added to Symphonies</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="w-4 h-4" />
-                <span>Add to Cart ({totalPrice} ₽)</span>
-              </>
-            )}
-          </button>
         </div>
       </div>
     </div>
