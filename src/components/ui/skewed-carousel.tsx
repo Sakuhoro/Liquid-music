@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { ChevronLeft, ChevronRight, Sparkles, Layers, Disc } from 'lucide-react';
 
 export interface SkewedCarouselItem {
@@ -25,6 +25,15 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [windowWidth, setWindowWidth] = useState<number>(
+    typeof window !== 'undefined' ? window.innerWidth : 1200
+  );
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handlePrev = () => {
     setActiveIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
@@ -44,28 +53,20 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [items.length]);
 
+  // Calculate scaled offset step based on viewport width (1.5x proportional spacing)
+  const offsetStep = windowWidth < 640 ? 270 : windowWidth < 1024 ? 350 : 410;
+
   return (
     <div
       ref={containerRef}
-      className={`fixed inset-0 w-screen h-screen m-0 p-0 overflow-hidden bg-black text-white select-none z-20 flex flex-col justify-between ${className}`}
+      className={`fixed inset-0 w-screen h-screen m-0 p-0 overflow-hidden bg-transparent text-white select-none z-10 flex flex-col justify-between ${className}`}
       style={{ margin: 0, padding: 0 }}
     >
-      {/* Dynamic Background Blur Image with Gradient Overlay */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={items[activeIndex]?.id}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 0.35, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.8 }}
-          className="absolute inset-0 bg-cover bg-center filter blur-xl pointer-events-none transform scale-110"
-          style={{ backgroundImage: `url(${items[activeIndex]?.image})` }}
-        />
-      </AnimatePresence>
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/80 pointer-events-none" />
+      {/* Subtle translucent ambient contrast overlays (keeps background video crystal clear) */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60 pointer-events-none z-0" />
 
       {/* Skewed Carousel Header */}
-      <div className="relative z-30 pt-8 px-8 sm:px-12 flex items-center justify-between border-b border-white/10 pb-6 backdrop-blur-md bg-black/30">
+      <div className="relative z-30 pt-8 px-8 sm:px-12 flex items-center justify-between border-b border-white/10 pb-6 backdrop-blur-md bg-black/25">
         <div>
           <div className="flex items-center gap-2 text-amber-400 text-xs font-mono uppercase tracking-widest mb-1">
             <Sparkles className="w-4 h-4" />
@@ -81,21 +82,21 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
         </div>
       </div>
 
-      {/* Main Skewed Stage */}
+      {/* Main Skewed Stage - Unskewed container for strict horizontal scroll axis */}
       <div className="relative z-30 flex-1 w-full flex items-center justify-center overflow-hidden py-4">
         <div className="w-full max-w-7xl px-4 flex items-center justify-center relative">
 
-          {/* Skewed Card Container */}
-          <div className="relative w-full h-[52vh] sm:h-[60vh] max-h-[620px] flex items-center justify-center -skew-y-3 sm:-skew-y-6 transform-gpu transition-transform duration-500">
+          {/* Card Container: 1.5x Height Scaling (68vh / 75vh / 80vh max-h-[820px]) and 0-y container skew */}
+          <div className="relative w-full h-[68vh] sm:h-[75vh] lg:h-[80vh] max-h-[820px] flex items-center justify-center transform-gpu transition-transform duration-500">
             {items.map((item, index) => {
               const diff = index - activeIndex;
               const isActive = index === activeIndex;
 
-              // Compute offset translation & z-index for skewed cards
-              let xOffset = diff * 260; // desktop horizontal shift
-              let scale = isActive ? 1 : 0.82;
-              let opacity = isActive ? 1 : Math.max(0.2, 0.6 - Math.abs(diff) * 0.2);
-              let zIndex = 30 - Math.abs(diff) * 5;
+              // Compute offset translation along pure X axis (y: 0) with 1.5x scaled step
+              const xOffset = diff * offsetStep;
+              const scale = isActive ? 1 : 0.82;
+              const opacity = isActive ? 1 : Math.max(0.25, 0.65 - Math.abs(diff) * 0.2);
+              const zIndex = 30 - Math.abs(diff) * 5;
 
               return (
                 <motion.div
@@ -109,13 +110,16 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                   }}
                   animate={{
                     x: xOffset,
+                    y: 0, // Flattened Y-displacement (strictly horizontal movement)
                     scale: scale,
                     opacity: opacity,
                     rotateY: diff * -12,
                     zIndex: zIndex,
                   }}
                   transition={{ type: 'spring', stiffness: 260, damping: 25 }}
-                  className={`absolute w-[280px] sm:w-[380px] lg:w-[420px] h-full rounded-3xl overflow-hidden cursor-pointer shadow-2xl border transition-colors duration-300 ${
+                  // 1.5x Card Width scaling: w-[360px] sm:w-[570px] lg:w-[630px] max-w-[88vw]
+                  // -skew-y-3 is applied to card visuals directly to preserve 3D tilt without slanting movement trajectory
+                  className={`absolute w-[360px] sm:w-[570px] lg:w-[630px] max-w-[88vw] h-full rounded-3xl overflow-hidden cursor-pointer shadow-2xl border -skew-y-3 transition-colors duration-300 ${
                     isActive
                       ? 'border-amber-400/80 shadow-amber-500/20 shadow-2xl ring-2 ring-amber-400/50'
                       : 'border-white/15 hover:border-white/40'
@@ -132,25 +136,25 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                   />
 
                   {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
 
                   {/* Top Badge */}
-                  <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
-                    <span className="text-[10px] font-mono uppercase tracking-widest font-bold px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-amber-300 border border-amber-400/30">
+                  <div className="absolute top-5 left-5 right-5 flex justify-between items-center z-10">
+                    <span className="text-xs font-mono uppercase tracking-widest font-bold px-3.5 py-1.5 rounded-full bg-black/70 backdrop-blur-md text-amber-300 border border-amber-400/30">
                       {item.badge}
                     </span>
-                    <Disc className={`w-5 h-5 text-amber-400 ${isActive ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
+                    <Disc className={`w-6 h-6 text-amber-400 ${isActive ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
                   </div>
 
-                  {/* Bottom Content */}
-                  <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 z-10 flex flex-col justify-end bg-gradient-to-t from-black via-black/80 to-transparent">
-                    <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
+                  {/* Bottom Content - Scaled padding and typography for 1.5x cards */}
+                  <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 lg:p-12 z-10 flex flex-col justify-end bg-gradient-to-t from-black via-black/85 to-transparent">
+                    <h3 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
                       {item.title}
                     </h3>
-                    <p className="text-xs sm:text-sm text-amber-300/90 font-mono mt-1 font-semibold">
+                    <p className="text-sm sm:text-base text-amber-300/90 font-mono mt-1.5 font-semibold">
                       {item.subtitle}
                     </p>
-                    <p className="text-xs text-stone-300/80 font-sans mt-2 line-clamp-2 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-stone-300/90 font-sans mt-2.5 line-clamp-2 leading-relaxed">
                       {item.description}
                     </p>
 
@@ -159,7 +163,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                         e.stopPropagation();
                         onSelectItem(item.id);
                       }}
-                      className={`mt-4 w-full py-3 rounded-2xl text-xs font-mono uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
+                      className={`mt-6 w-full py-3.5 sm:py-4 rounded-2xl text-xs sm:text-sm font-mono uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
                         isActive
                           ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg shadow-amber-400/30'
                           : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
@@ -177,8 +181,8 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
       </div>
 
       {/* Footer Navigation Controls */}
-      <div className="relative z-30 pb-8 px-8 flex items-center justify-between border-t border-white/10 pt-4 backdrop-blur-md bg-black/40">
-        <div className="text-xs font-mono text-stone-400">
+      <div className="relative z-30 pb-8 px-8 flex items-center justify-between border-t border-white/10 pt-4 backdrop-blur-md bg-black/30">
+        <div className="text-xs font-mono text-stone-300">
           Коллекция <span className="text-amber-400 font-bold">{activeIndex + 1}</span> из{' '}
           <span className="text-stone-200">{items.length}</span>
         </div>
