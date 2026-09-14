@@ -17,7 +17,7 @@ import DollyGallery from './ui/DollyGallery';
 const COLLECTION_CARDS: SkewedCarouselItem[] = [
   {
     id: 'Spring',
-    title: 'Spring Collection',
+    title: 'Весенняя коллекция',
     subtitle: 'Floral Cantabile & Spring Blossom Dew',
     description: 'Delicate sakura petals, white peach nectar, and crisp alpine mountain water.',
     image: '/uploads/photo_2026-09-15_00-08-32.jpg',
@@ -26,7 +26,7 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
   },
   {
     id: 'Summer',
-    title: 'Summer Collection',
+    title: 'Летняя коллекция',
     subtitle: 'Tropical Vivace & Root Beer Crescendos',
     description: 'Sun-drenched Alphonso mango, effervescent sassafras, key lime zest, and coastal ice.',
     image: '/uploads/photo_2026-09-15_00-00-09.jpg',
@@ -35,7 +35,7 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
   },
   {
     id: 'Autumn',
-    title: 'Autumn Collection',
+    title: 'Зимняя коллекция',
     subtitle: 'Warm Acoustic Resonance & Spiced Orchards',
     description: 'Bourbon vanilla caramel, torched brown sugar, honeycrisp apple, and charred oak.',
     image: '/uploads/photo_2026-09-15_00-00-17.jpg',
@@ -44,7 +44,7 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
   },
   {
     id: 'Permanent 1',
-    title: 'Permanent 1',
+    title: 'Bones of what you belive 50\50',
     subtitle: 'Signature Virtuoso Masterworks',
     description: 'Electric blue raspberry symphonies and deep contrapuntal espresso cacao fugues.',
     image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=600&auto=format&fit=crop&q=80',
@@ -53,10 +53,10 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
   },
   {
     id: 'Permanent 2',
-    title: 'Permanent 2',
+    title: 'Velvet Distortion',
     subtitle: 'Ethereal Sub-Zero Nocturnes & Kyoho Études',
     description: 'Nordic spearmint, frosted fir resins, and soothing aloe vera grape harmonies.',
-    image: 'https://images.unsplash.com/photo-1517840901100-8179e982acb7?w=600&auto=format&fit=crop&q=80',
+    image: '/uploads/velvet-distortion.png',
     badge: 'Core Series',
     color: 'from-emerald-500/80 to-teal-900/80',
   },
