@@ -44,7 +44,7 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
   },
   {
     id: 'Permanent 1',
-    title: 'Bones of what you belive 50\50',
+    title: 'Bones of what you belive 50\\50',
     subtitle: 'Signature Virtuoso Masterworks',
     description: 'Electric blue raspberry symphonies and deep contrapuntal espresso cacao fugues.',
     image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=600&auto=format&fit=crop&q=80',
