@@ -69,6 +69,7 @@ export const CatalogView: React.FC = () => {
   const setInspectedProduct = useAppStore((state) => state.setInspectedProduct);
   const activeCollection = useAppStore((state) => state.activeCollection);
   const setActiveCollection = useAppStore((state) => state.setActiveCollection);
+  const isCollectionArchived = useAppStore((state) => state.isCollectionArchived);
   const theme = useAppStore((state) => state.theme);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -125,18 +126,18 @@ export const CatalogView: React.FC = () => {
             </button>
 
             <h2
-              className={`font-serif text-4xl sm:text-5xl font-normal tracking-tight ${
-                isDark ? 'text-stone-100' : 'text-slate-900'
+              className={`font-sans text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight antialiased ${
+                isDark ? 'text-white' : 'text-slate-950'
               }`}
             >
               {`${activeCollection} Collection`}
             </h2>
             <p
-              className={`text-sm mt-1 max-w-xl ${
-                isDark ? 'text-stone-300' : 'text-slate-700 font-medium'
+              className={`text-sm sm:text-base mt-2 max-w-xl font-sans font-normal antialiased leading-relaxed ${
+                isDark ? 'text-stone-300' : 'text-slate-800'
               }`}
             >
-              Интерактивный виниловый карусель товаров. Перетаскивайте карточки или наведите мышью, чтобы просмотреть название.
+              Коллекция авторских вкусовых композиций Liquid Music.
             </p>
           </div>
 
@@ -231,30 +232,34 @@ export const CatalogView: React.FC = () => {
                 >
                   <div>
                     <div className="relative aspect-square rounded-xl overflow-hidden mb-3.5 bg-black/40 flex items-center justify-center">
+                      {isCollectionArchived(product.category as CollectionName) && (
+                        <div className="absolute top-3 left-3 z-20 px-3 py-1 rounded-full bg-rose-600/90 text-white text-[11px] font-bold uppercase tracking-wider font-sans backdrop-blur-md shadow-lg border border-rose-400/40">
+                          Архив
+                        </div>
+                      )}
                       <img
                         src={product.image}
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                        <span className="text-xs font-semibold font-sans tracking-wide text-amber-300">Подробнее</span>
+                        <span className="text-xs font-bold font-sans tracking-wide text-amber-300 antialiased">Подробнее</span>
                       </div>
                     </div>
-                    <h4 className={`font-sans text-base font-bold tracking-tight transition-colors line-clamp-1 ${
-                      isDark ? 'text-stone-100 group-hover:text-amber-400' : 'text-slate-900 group-hover:text-amber-600'
+                    <h4 className={`font-sans text-lg font-extrabold tracking-tight antialiased transition-colors line-clamp-1 ${
+                      isDark ? 'text-white group-hover:text-amber-400' : 'text-slate-950 group-hover:text-amber-600'
                     }`}>
                       {product.name}
                     </h4>
-                    <p className={`font-sans text-xs line-clamp-2 mt-1.5 leading-relaxed antialiased ${
-                      isDark ? 'text-stone-400 opacity-80' : 'text-slate-600 opacity-90'
+                    <p className={`font-sans text-xs line-clamp-2 mt-1.5 leading-relaxed antialiased font-medium ${
+                      isDark ? 'text-stone-300 opacity-90' : 'text-slate-700 opacity-90'
                     }`}>
                       {product.description}
                     </p>
                   </div>
                   <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
-                    <span className="text-xs font-mono font-bold text-amber-400">{product.basePrice} ₽</span>
-                    <span className={`text-[10px] font-sans font-medium px-2 py-0.5 rounded-full border ${
-                      isDark ? 'text-stone-400 border-white/10 bg-white/5' : 'text-slate-500 border-slate-200 bg-slate-100'
+                    <span className={`text-[11px] font-sans font-bold px-2.5 py-1 rounded-full border antialiased ${
+                      isDark ? 'text-stone-300 border-white/15 bg-white/5' : 'text-slate-700 border-slate-300 bg-slate-100'
                     }`}>
                       {product.category}
                     </span>

@@ -58,9 +58,13 @@ interface AppState {
   viewMode: 'hero' | 'catalog';
   setViewMode: (mode: 'hero' | 'catalog') => void;
 
-  // Active Collection filter
+  // Active Collection filter & Archive status
   activeCollection: CollectionName | 'All';
   setActiveCollection: (col: CollectionName | 'All') => void;
+  archivedCollections: Record<CollectionName, boolean>;
+  toggleArchiveCollection: (col: CollectionName) => void;
+  setArchiveAllCollections: (archived: boolean) => void;
+  isCollectionArchived: (col: CollectionName) => boolean;
 
   // Collection-Specific Cinematic Videos
   collectionVideos: CollectionVideosConfig;
@@ -71,6 +75,8 @@ interface AppState {
   lightMusicUrl: string;
   setDarkMusicUrl: (url: string) => void;
   setLightMusicUrl: (url: string) => void;
+  fetchAudioSettings: () => Promise<void>;
+  saveAudioSettings: (darkUrl: string, lightUrl: string) => Promise<void>;
   isBgMusicPlaying: boolean;
   toggleBgMusic: () => void;
   setIsBgMusicPlaying: (playing: boolean) => void;
@@ -135,6 +141,7 @@ interface AppState {
   setIsSuccessModalOpen: (open: boolean) => void;
   lastPlacedOrder: PlacedOrder | null;
   ordersHistory: PlacedOrder[];
+  deleteOrderHistory: (orderId: string) => void;
   placeOrder: () => { success: boolean; requiresAuth?: boolean };
 }
 
@@ -151,9 +158,37 @@ export const useAppStore = create<AppState>()(
       viewMode: 'hero',
       setViewMode: (viewMode) => set({ viewMode }),
 
-      // Active collection
+      // Active collection & Archive status
       activeCollection: 'All',
       setActiveCollection: (activeCollection) => set({ activeCollection }),
+      archivedCollections: {
+        Spring: false,
+        Summer: false,
+        Autumn: false,
+        'Permanent 1': false,
+        'Permanent 2': false,
+      },
+      toggleArchiveCollection: (col) =>
+        set((state) => ({
+          archivedCollections: {
+            ...state.archivedCollections,
+            [col]: !state.archivedCollections[col],
+          },
+        })),
+      setArchiveAllCollections: (archived) =>
+        set({
+          archivedCollections: {
+            Spring: archived,
+            Summer: archived,
+            Autumn: archived,
+            'Permanent 1': archived,
+            'Permanent 2': archived,
+          },
+        }),
+      isCollectionArchived: (col) => {
+        const { archivedCollections } = get();
+        return Boolean(archivedCollections?.[col]);
+      },
 
       // Collection-specific video feeds
       collectionVideos: DEFAULT_COLLECTION_VIDEOS,
@@ -168,8 +203,40 @@ export const useAppStore = create<AppState>()(
       // Background Music
       darkMusicUrl: '/audio/evening-improvisation-with-ethera.mp3',
       lightMusicUrl: '/audio/fly-away-when-the-fog-settled-down.mp3',
-      setDarkMusicUrl: (url) => set({ darkMusicUrl: url }),
-      setLightMusicUrl: (url) => set({ lightMusicUrl: url }),
+      fetchAudioSettings: async () => {
+        try {
+          const res = await fetch('/api/settings/audio');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.value) {
+              if (data.value.darkMusicUrl) set({ darkMusicUrl: data.value.darkMusicUrl });
+              if (data.value.lightMusicUrl) set({ lightMusicUrl: data.value.lightMusicUrl });
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to fetch audio settings from backend:', err);
+        }
+      },
+      saveAudioSettings: async (darkUrl, lightUrl) => {
+        set({ darkMusicUrl: darkUrl, lightMusicUrl: lightUrl });
+        try {
+          await fetch('/api/settings/audio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ value: { darkMusicUrl: darkUrl, lightMusicUrl: lightUrl } }),
+          });
+        } catch (err) {
+          console.error('Failed to save audio settings to API:', err);
+        }
+      },
+      setDarkMusicUrl: (url) => {
+        const { lightMusicUrl, saveAudioSettings } = get();
+        saveAudioSettings(url, lightMusicUrl);
+      },
+      setLightMusicUrl: (url) => {
+        const { darkMusicUrl, saveAudioSettings } = get();
+        saveAudioSettings(darkMusicUrl, url);
+      },
       isBgMusicPlaying: true,
       toggleBgMusic: () =>
         set((state) => ({ isBgMusicPlaying: !state.isBgMusicPlaying })),
@@ -466,7 +533,83 @@ export const useAppStore = create<AppState>()(
       isSuccessModalOpen: false,
       setIsSuccessModalOpen: (isSuccessModalOpen) => set({ isSuccessModalOpen }),
       lastPlacedOrder: null,
-      ordersHistory: [],
+      ordersHistory: [
+        {
+          orderId: 'LM-849201',
+          user: {
+            name: 'Воронова Елена Дмитриевна',
+            phone: '+7 (999) 111-22-33',
+            telegram: '@White_blooming',
+            registeredAt: '2026-01-15',
+            role: 'ADMIN',
+          },
+          items: [
+            {
+              id: 'blue-raspberry-symphony-120ml-0mg',
+              product: INITIAL_PRODUCTS[0],
+              volume: '120ml',
+              nicotine: '0mg',
+              volumePrice: 600,
+              nicotinePrice: 0,
+              totalUnitPrice: 600,
+              quantity: 2,
+            },
+            {
+              id: 'vanilla-caramel-resonance-60ml-3mg',
+              product: INITIAL_PRODUCTS[1],
+              volume: '60ml',
+              nicotine: '3mg',
+              volumePrice: 400,
+              nicotinePrice: 50,
+              totalUnitPrice: 450,
+              quantity: 1,
+            },
+          ],
+          subtotal: 1650,
+          createdAt: '2026-03-28 14:30',
+          status: 'Pending Verification',
+        },
+        {
+          orderId: 'LM-918234',
+          user: {
+            name: 'Смирнов Алексей Викторович',
+            phone: '+7 (916) 555-44-33',
+            telegram: '@alex_vapor',
+            registeredAt: '2026-02-10',
+            role: 'USER',
+          },
+          items: [
+            {
+              id: 'sakura-blossom-sonata-30ml-1.5mg',
+              product: INITIAL_PRODUCTS[3],
+              volume: '30ml',
+              nicotine: '1.5mg',
+              volumePrice: 300,
+              nicotinePrice: 50,
+              totalUnitPrice: 350,
+              quantity: 3,
+            },
+            {
+              id: 'nordic-frost-nocturne-120ml-6mg',
+              product: INITIAL_PRODUCTS[5],
+              volume: '120ml',
+              nicotine: '6mg',
+              volumePrice: 600,
+              nicotinePrice: 100,
+              totalUnitPrice: 700,
+              quantity: 1,
+            },
+          ],
+          subtotal: 1750,
+          createdAt: '2026-03-29 09:15',
+          status: 'Pending Verification',
+        },
+      ],
+
+      deleteOrderHistory: (orderId: string) =>
+        set((state) => ({
+          ordersHistory: state.ordersHistory.filter((o) => o.orderId !== orderId),
+        })),
 
       placeOrder: () => {
         const { currentUser, cart, getCartSubtotal } = get();

@@ -19,13 +19,26 @@ export default function App() {
   const lightMusicUrl = useAppStore((state) => state.lightMusicUrl);
   const isBgMusicPlaying = useAppStore((state) => state.isBgMusicPlaying);
   const fetchProducts = useAppStore((state) => state.fetchProducts);
+  const fetchAudioSettings = useAppStore((state) => state.fetchAudioSettings);
+  const setIsStudioModalOpen = useAppStore((state) => state.setIsStudioModalOpen);
 
   const audioRef = useRef<HTMLAudioElement>(null);
+  const isAutoplayBlockedRef = useRef(false);
+  const isBgMusicPlayingRef = useRef(isBgMusicPlaying);
 
-  // Fetch initial products from persistent SQLite database
+  useEffect(() => {
+    isBgMusicPlayingRef.current = isBgMusicPlaying;
+  }, [isBgMusicPlaying]);
+
+  // Fetch initial products & audio settings from persistent SQLite database and check /Liquidmusic/admin route
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+    fetchAudioSettings();
+
+    if (window.location.pathname.toLowerCase().includes('/admin')) {
+      setIsStudioModalOpen(true);
+    }
+  }, [fetchProducts, fetchAudioSettings, setIsStudioModalOpen]);
 
   // Sync document class for dark/light mode
   useEffect(() => {
@@ -39,32 +52,78 @@ export default function App() {
     }
   }, [theme]);
 
+  // Autoplay Policy Handler (User Interaction Listener)
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      if (isAutoplayBlockedRef.current && audioRef.current && isBgMusicPlayingRef.current) {
+        audioRef.current.play().then(() => {
+          isAutoplayBlockedRef.current = false;
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener('click', handleUserInteraction);
+    window.addEventListener('keydown', handleUserInteraction);
+    window.addEventListener('pointerdown', handleUserInteraction);
+
+    return () => {
+      window.removeEventListener('click', handleUserInteraction);
+      window.removeEventListener('keydown', handleUserInteraction);
+      window.removeEventListener('pointerdown', handleUserInteraction);
+    };
+  }, []);
+
+  // Tab Visibility Handler (Task 3: Action 3)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!audioRef.current) return;
+      if (document.hidden) {
+        audioRef.current.pause();
+      } else {
+        if (isBgMusicPlayingRef.current) {
+          audioRef.current.play().catch(() => {
+            isAutoplayBlockedRef.current = true;
+          });
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   // Sync background ambient audio
   const currentMusicSrc = theme === 'dark' ? darkMusicUrl : lightMusicUrl;
 
   useEffect(() => {
     if (!audioRef.current) return;
 
-    // Ambient music is scoped to the hero (main) page only.
-    if (viewMode !== 'hero') {
-      audioRef.current.pause();
-      return;
-    }
     if (!isBgMusicPlaying) {
       audioRef.current.pause();
       return;
     }
 
-    audioRef.current.src = currentMusicSrc;
-    audioRef.current.loop = true;
-    audioRef.current.volume = 0.45;
+    try {
+      const targetUrl = new URL(currentMusicSrc, window.location.href).href;
+      if (audioRef.current.src !== targetUrl) {
+        audioRef.current.src = currentMusicSrc;
+        audioRef.current.loop = true;
+        audioRef.current.volume = 0.45;
+      }
+    } catch (_) {
+      audioRef.current.src = currentMusicSrc;
+    }
+
     const playPromise = audioRef.current.play();
     if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        // Autoplay policy handled
+      playPromise.catch((err) => {
+        console.warn('Autoplay blocked by browser policy, waiting for user interaction:', err);
+        isAutoplayBlockedRef.current = true;
       });
     }
-  }, [isBgMusicPlaying, currentMusicSrc, viewMode]);
+  }, [isBgMusicPlaying, currentMusicSrc]);
 
   return (
     <main

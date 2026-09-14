@@ -33,10 +33,13 @@ export function sanitizeTitle(title: string): string {
     .trim();
 }
 
+import { CollectionName } from '../types';
+
 export const ProductDetailModal: React.FC = () => {
   const inspectedProduct = useAppStore((state) => state.inspectedProduct);
   const setInspectedProduct = useAppStore((state) => state.setInspectedProduct);
   const addToCart = useAppStore((state) => state.addToCart);
+  const isCollectionArchived = useAppStore((state) => state.isCollectionArchived);
   const theme = useAppStore((state) => state.theme);
 
   const [selectedVolume, setSelectedVolume] = useState<VolumeType>('30ml');
@@ -56,8 +59,10 @@ export const ProductDetailModal: React.FC = () => {
   const volPrice = VOLUME_PRICING[selectedVolume];
   const nicPrice = NICOTINE_PRICING[selectedNicotine];
   const totalPrice = calculatePrice(selectedVolume, selectedNicotine);
+  const isArchived = isCollectionArchived(inspectedProduct.category as CollectionName);
 
   const handleAdd = () => {
+    if (isArchived) return;
     addToCart(inspectedProduct, selectedVolume, selectedNicotine);
     soundEngine.playSuccessTone();
     setIsAdded(true);
@@ -147,27 +152,27 @@ export const ProductDetailModal: React.FC = () => {
 
               {/* Volume Segmented Control */}
               <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs font-sans tracking-wide uppercase text-stone-300">
-                  <span className="font-semibold text-stone-200">Объём:</span>
-                  <span className="text-amber-400 font-bold font-mono text-sm">{volPrice} ₽</span>
+                <div className="flex justify-between items-center text-xs font-sans tracking-wider uppercase text-stone-300 antialiased">
+                  <span className="font-extrabold text-white">Объём флакона (ml):</span>
+                  <span className="text-amber-400 font-extrabold font-sans text-sm tracking-tight">{volPrice} ₽</span>
                 </div>
 
                 {/* Segmented Control Pills */}
-                <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/15 backdrop-blur-md">
                   {(['30ml', '60ml', '120ml'] as VolumeType[]).map((v) => {
                     const isSelected = selectedVolume === v;
                     return (
                       <button
                         key={v}
                         onClick={() => setSelectedVolume(v)}
-                        className={`relative py-2.5 px-2 rounded-xl text-center font-sans transition-all duration-300 cursor-pointer min-h-[44px] flex flex-col items-center justify-center ${
+                        className={`relative py-3 px-2 rounded-xl text-center font-sans antialiased transition-all duration-300 cursor-pointer min-h-[46px] flex flex-col items-center justify-center ${
                           isSelected
-                            ? 'bg-amber-400 text-slate-950 font-bold shadow-lg shadow-amber-400/20 scale-[1.02]'
-                            : 'text-stone-300 hover:text-white hover:bg-white/10 font-medium'
+                            ? 'bg-amber-400 text-slate-950 font-extrabold shadow-lg shadow-amber-400/30 scale-[1.02]'
+                            : 'text-stone-200 hover:text-white hover:bg-white/10 font-bold'
                         }`}
                       >
-                        <div className="text-xs sm:text-sm font-bold tracking-tight">{v}</div>
-                        <div className={`text-[10px] font-mono mt-0.5 ${isSelected ? 'text-slate-900/80' : 'opacity-60'}`}>
+                        <div className="text-sm font-extrabold tracking-tight">{v}</div>
+                        <div className={`text-[11px] font-semibold mt-0.5 ${isSelected ? 'text-slate-950/90' : 'text-stone-400'}`}>
                           {VOLUME_PRICING[v]} ₽
                         </div>
                       </button>
@@ -178,29 +183,29 @@ export const ProductDetailModal: React.FC = () => {
 
               {/* Nicotine Segmented Control */}
               <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs font-sans tracking-wide uppercase text-stone-300">
-                  <span className="font-semibold text-stone-200">Никотин:</span>
-                  <span className="text-amber-400 font-bold font-mono text-sm">
+                <div className="flex justify-between items-center text-xs font-sans tracking-wider uppercase text-stone-300 antialiased">
+                  <span className="font-extrabold text-white">Крепость никотина:</span>
+                  <span className="text-amber-400 font-extrabold font-sans text-sm tracking-tight">
                     {nicPrice > 0 ? `+${nicPrice} ₽` : '0 ₽'}
                   </span>
                 </div>
 
                 {/* Segmented Control Pills */}
-                <div className="grid grid-cols-4 gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                <div className="grid grid-cols-4 gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/15 backdrop-blur-md">
                   {(['0mg', '1.5mg', '3mg', '6mg'] as NicotineType[]).map((n) => {
                     const isSelected = selectedNicotine === n;
                     return (
                       <button
                         key={n}
                         onClick={() => setSelectedNicotine(n)}
-                        className={`relative py-2.5 px-1.5 rounded-xl text-center font-sans transition-all duration-300 cursor-pointer min-h-[44px] flex flex-col items-center justify-center ${
+                        className={`relative py-3 px-1.5 rounded-xl text-center font-sans antialiased transition-all duration-300 cursor-pointer min-h-[46px] flex flex-col items-center justify-center ${
                           isSelected
-                            ? 'bg-amber-400 text-slate-950 font-bold shadow-lg shadow-amber-400/20 scale-[1.02]'
-                            : 'text-stone-300 hover:text-white hover:bg-white/10 font-medium'
+                            ? 'bg-amber-400 text-slate-950 font-extrabold shadow-lg shadow-amber-400/30 scale-[1.02]'
+                            : 'text-stone-200 hover:text-white hover:bg-white/10 font-bold'
                         }`}
                       >
-                        <div className="text-xs sm:text-sm font-bold tracking-tight">{n}</div>
-                        <div className={`text-[10px] font-mono mt-0.5 ${isSelected ? 'text-slate-900/80' : 'opacity-60'}`}>
+                        <div className="text-sm font-extrabold tracking-tight">{n}</div>
+                        <div className={`text-[11px] font-semibold mt-0.5 ${isSelected ? 'text-slate-950/90' : 'text-stone-400'}`}>
                           {n === '0mg' ? '0₽' : `+${NICOTINE_PRICING[n]}₽`}
                         </div>
                       </button>
@@ -211,13 +216,13 @@ export const ProductDetailModal: React.FC = () => {
 
             </div>
 
-            {/* CTA Footer Row: Price Display & Clean Minimalist Order Button */}
+            {/* CTA Footer Row: Premium Typography Price Display & Clean Minimalist Order Button */}
             <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               <div>
-                <div className="text-xs font-sans uppercase tracking-wider text-stone-400 mb-0.5 font-semibold">
+                <div className="text-xs font-sans uppercase tracking-widest text-stone-300 mb-0.5 font-extrabold antialiased">
                   Итоговая стоимость
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold font-mono text-amber-400 tracking-tight">
+                <div className="text-4xl sm:text-5xl font-extrabold font-sans text-amber-400 tracking-tight antialiased">
                   {totalPrice} ₽
                 </div>
               </div>
@@ -225,13 +230,18 @@ export const ProductDetailModal: React.FC = () => {
               {/* Clean Order Button: strictly NO plus icon (+) and NO price display inside button */}
               <button
                 onClick={handleAdd}
-                className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-bold text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 shadow-xl min-h-[48px] ${
-                  isAdded
+                disabled={isArchived}
+                className={`w-full sm:w-auto px-8 py-4 rounded-2xl font-extrabold text-base tracking-wide font-sans antialiased flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 shadow-xl min-h-[52px] ${
+                  isArchived
+                    ? 'bg-stone-700/60 text-stone-400 cursor-not-allowed border border-white/10 shadow-none'
+                    : isAdded
                     ? 'bg-emerald-500 text-slate-950 shadow-emerald-500/30 scale-[1.02]'
                     : 'bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 hover:shadow-2xl hover:shadow-amber-400/30 hover:scale-[1.02] active:scale-[0.98]'
                 }`}
               >
-                {isAdded ? (
+                {isArchived ? (
+                  <span>Коллекция в архиве</span>
+                ) : isAdded ? (
                   <>
                     <Check className="w-5 h-5 stroke-[2.5]" />
                     <span>В плейлисте</span>

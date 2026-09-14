@@ -90,10 +90,11 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Adaptive itemWidth and spacing for Mobile / Tablet / Desktop
+  // Adaptive itemWidth, spacing, and spread for Mobile / Tablet / Desktop
   const effectiveItemWidth =
-    windowWidth < 640 ? Math.min(320, windowWidth * 0.75) : windowWidth < 1024 ? 480 : itemWidth;
-  const effectiveSpacing = windowWidth < 640 ? 360 : windowWidth < 1024 ? 500 : spacing;
+    windowWidth < 640 ? Math.min(260, windowWidth * 0.68) : windowWidth < 1024 ? 480 : itemWidth;
+  const effectiveSpacing = windowWidth < 640 ? 210 : windowWidth < 1024 ? 500 : spacing;
+  const effectiveSpread = windowWidth < 640 ? 0.22 : spread;
 
   const itemCount = items.length;
 
@@ -288,7 +289,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
 
           // Alternate X spread left/right and Y scatter
           const sideSign = (idx % 2 === 0 ? 1 : -1);
-          const xPos = sideSign * spread * effectiveItemWidth + (isFocused ? pointerOffset.x * parallaxX * effectiveItemWidth : 0);
+          const xPos = sideSign * effectiveSpread * effectiveItemWidth + (isFocused ? pointerOffset.x * parallaxX * effectiveItemWidth : 0);
           const yPos = Math.sin(idx * 2.5) * scatter * effectiveItemWidth + (isFocused ? pointerOffset.y * parallaxY * effectiveItemWidth : 0);
 
           // Dynamic positioning logic for Module 4:

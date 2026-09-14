@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Sparkles, Layers, Disc } from 'lucide-react';
+import { Disc } from 'lucide-react';
 
 export interface SkewedCarouselItem {
   id: string;
@@ -167,8 +167,8 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [items.length]);
 
-  // Calculate scaled offset step based on viewport width (1.5x proportional spacing)
-  const offsetStep = windowWidth < 640 ? 270 : windowWidth < 1024 ? 350 : 410;
+  // Calculate scaled offset step based on viewport width (minimal gap on mobile viewports)
+  const offsetStep = windowWidth < 640 ? Math.min(windowWidth * 0.42, 160) : windowWidth < 1024 ? 350 : 410;
   const activeIndex = Math.max(0, Math.min(items.length - 1, Math.round(renderPos)));
 
   return (
@@ -187,17 +187,9 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
       {/* Skewed Carousel Header */}
       <div className="relative z-30 pt-8 px-8 sm:px-12 flex items-center justify-between border-b border-white/10 pb-6 backdrop-blur-md bg-black/25">
         <div>
-          <div className="flex items-center gap-2 text-amber-400 text-xs font-mono uppercase tracking-widest mb-1">
-            <Sparkles className="w-4 h-4" />
-            <span>Interactive Skewed Carousel</span>
-          </div>
           <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white drop-shadow-md">
             Коллекции Liquid Music
           </h1>
-        </div>
-        <div className="hidden sm:flex items-center gap-3 text-xs font-mono text-stone-300">
-          <Layers className="w-4 h-4 text-amber-400" />
-          <span>Прокрутите колесиком или выберите коллекцию</span>
         </div>
       </div>
 
@@ -240,7 +232,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                   transition={{ duration: 0.05, ease: 'linear' }}
                   // 1.5x Card Width scaling: w-[360px] sm:w-[570px] lg:w-[630px] max-w-[88vw]
                   // -skew-y-3 is applied to card visuals directly to preserve 3D tilt without slanting movement trajectory
-                  className={`absolute w-[280px] xs:w-[320px] sm:w-[520px] lg:w-[630px] max-w-[85vw] h-full rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer shadow-2xl border -skew-y-2 sm:-skew-y-3 transition-colors duration-300 ${
+                  className={`absolute w-[250px] xs:w-[280px] sm:w-[520px] lg:w-[630px] max-w-[80vw] h-full rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer shadow-2xl border -skew-y-2 sm:-skew-y-3 transition-colors duration-300 ${
                     isActive
                       ? 'border-amber-400/80 shadow-amber-500/20 shadow-2xl ring-2 ring-amber-400/50'
                       : 'border-white/15 hover:border-white/40'
