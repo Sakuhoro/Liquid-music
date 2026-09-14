@@ -20,7 +20,7 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
     title: 'Spring Collection',
     subtitle: 'Floral Cantabile & Spring Blossom Dew',
     description: 'Delicate sakura petals, white peach nectar, and crisp alpine mountain water.',
-    image: '/uploads/c96094d56906441e8ea5a8a6a4c0b429_img_1K.jpg',
+    image: '/uploads/photo_2026-09-15_00-08-32.jpg',
     badge: 'Seasonal Opus',
     color: 'from-pink-500/80 to-rose-900/80',
   },
