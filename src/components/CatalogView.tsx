@@ -47,7 +47,7 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
     title: 'Bones of what you belive 50\\50',
     subtitle: 'Signature Virtuoso Masterworks',
     description: 'Electric blue raspberry symphonies and deep contrapuntal espresso cacao fugues.',
-    image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=600&auto=format&fit=crop&q=80',
+    image: '/uploads/6eb3f514644c490e8c43dfe79a10e2ee_img_1K.jpg',
     badge: 'Core Series',
     color: 'from-sky-500/80 to-indigo-900/80',
   },
