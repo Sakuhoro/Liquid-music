@@ -17,6 +17,22 @@ import { soundEngine } from '../utils/audio';
  * - Minimalist CTA button (`В плейлист` / `В плейлисте`) with STRICTLY NO plus icon and NO price inside.
  */
 
+/**
+ * Sanitizes product title string by forcibly stripping musical artifact prefixes/suffixes
+ * such as "Spring op 4", "Spring Op.", "Op. 4", "Op 4", "Spring", etc.
+ */
+export function sanitizeTitle(title: string): string {
+  if (!title) return '';
+  return title
+    // Strip leading "Spring op 4", "Spring Op. 4", "Spring", "Op. 4", "Op 4", etc.
+    .replace(/^(?:Spring\s*(?:op\.?|opus)?\s*\d*|\bop\.?\s*\d+)\s*[-:]?\s*/gi, '')
+    // Strip trailing "Op. 4", "Op 4", "Spring op 4", etc.
+    .replace(/\s*[-:]?\s*(?:Spring\s*(?:op\.?|opus)?\s*\d*|\bop\.?\s*\d+)$/gi, '')
+    .replace(/^[\s\-:]+/, '')
+    .replace(/[\s\-:]+$/, '')
+    .trim();
+}
+
 export const ProductDetailModal: React.FC = () => {
   const inspectedProduct = useAppStore((state) => state.inspectedProduct);
   const setInspectedProduct = useAppStore((state) => state.setInspectedProduct);
@@ -113,10 +129,13 @@ export const ProductDetailModal: React.FC = () => {
             {/* Header with High-Contrast Typography & tracking-tight */}
             <div>
               <div className="text-xs font-mono uppercase tracking-widest text-amber-400 font-bold mb-2">
-                {inspectedProduct.category} • {inspectedProduct.opusNumber}
+                {inspectedProduct.category}
+                {inspectedProduct.opusNumber && sanitizeTitle(inspectedProduct.opusNumber)
+                  ? ` • ${sanitizeTitle(inspectedProduct.opusNumber)}`
+                  : ''}
               </div>
               <h2 className="text-4xl sm:text-5xl font-bold tracking-tight text-white font-sans drop-shadow-md leading-tight mb-3">
-                {inspectedProduct.name}
+                {sanitizeTitle(inspectedProduct.name)}
               </h2>
               <p className="text-base sm:text-lg leading-relaxed text-stone-200 font-sans font-normal opacity-95">
                 {inspectedProduct.description}

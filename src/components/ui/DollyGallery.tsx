@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, Disc, Sparkles } from 'lucide-react';
+import { Disc, Sparkles } from 'lucide-react';
 
 export interface DollyItem {
   id: string | number;
@@ -194,8 +194,8 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
         }
 
         if (isDraggingRef.current) {
-          const moveDeltaY = dragStartClientRef.current.y - e.clientY;
-          const posDelta = (moveDeltaY / (itemWidth * 0.8)) * dragSpeed;
+          const moveDeltaX = dragStartClientRef.current.x - e.clientX;
+          const posDelta = (moveDeltaX / (effectiveItemWidth * 0.9)) * dragSpeed;
           let next = dragStartPosRef.current + posDelta;
           if (!infinite) {
             next = Math.max(-0.2, Math.min(itemCount - 0.8, next));
@@ -219,6 +219,8 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
         try {
           el.releasePointerCapture(e.pointerId);
         } catch (_) {}
+        // Snap smoothly to nearest item index upon release
+        targetPosRef.current = Math.round(targetPosRef.current);
       }
     };
 
@@ -250,15 +252,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
       el.removeEventListener('mouseenter', handleMouseEnter);
       el.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [infinite, itemCount, itemWidth, wheelSpeed, dragSpeed]);
-
-  const goToNext = () => {
-    targetPosRef.current = Math.round(targetPosRef.current) + 1;
-  };
-
-  const goToPrev = () => {
-    targetPosRef.current = Math.round(targetPosRef.current) - 1;
-  };
+  }, [infinite, itemCount, effectiveItemWidth, wheelSpeed, dragSpeed]);
 
   if (itemCount === 0) return null;
 
@@ -445,47 +439,6 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Navigation Controls */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 z-50 bg-black/70 backdrop-blur-md border border-white/10 px-6 py-2.5 rounded-full shadow-2xl">
-        <button
-          onClick={goToPrev}
-          aria-label="Previous Vinyl"
-          className="min-w-[44px] min-h-[44px] rounded-full bg-white/10 hover:bg-amber-400 hover:text-black text-stone-200 flex items-center justify-center transition-all cursor-pointer active:scale-95"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        <div className="flex items-center gap-2">
-          {items.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => {
-                let diff = idx - getWrappedIndex(targetPosRef.current);
-                if (infinite) {
-                  const half = itemCount / 2;
-                  while (diff > half) diff -= itemCount;
-                  while (diff < -half) diff += itemCount;
-                }
-                targetPosRef.current += diff;
-              }}
-              aria-label={`Go to slide ${idx + 1}`}
-              className={`h-2 rounded-full transition-all cursor-pointer ${
-                activeIndex === idx
-                  ? 'w-6 bg-amber-400'
-                  : 'w-2 bg-white/30 hover:bg-white/60'
-              }`}
-            />
-          ))}
-        </div>
-
-        <button
-          onClick={goToNext}
-          aria-label="Next Vinyl"
-          className="w-9 h-9 rounded-full bg-white/10 hover:bg-amber-400 hover:text-black text-stone-200 flex items-center justify-center transition-all cursor-pointer active:scale-95"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-      </div>
     </div>
   );
 };

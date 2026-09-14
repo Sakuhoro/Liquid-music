@@ -26,8 +26,10 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const targetPosRef = useRef(0);
   const currentPosRef = useRef(0);
-  const touchStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const velocityRef = useRef(0);
+  const touchStartRef = useRef<{ x: number; y: number; time: number }>({ x: 0, y: 0, time: 0 });
   const touchPosStartRef = useRef(0);
+  const isSwipingRef = useRef(false);
 
   const [renderPos, setRenderPos] = useState(0);
   const [windowWidth, setWindowWidth] = useState<number>(
@@ -44,35 +46,81 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
     touchStartRef.current = {
       x: e.touches[0].clientX,
       y: e.touches[0].clientY,
+      time: performance.now(),
     };
     touchPosStartRef.current = targetPosRef.current;
+    isSwipingRef.current = true;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isSwipingRef.current) return;
     const dx = touchStartRef.current.x - e.touches[0].clientX;
     const dy = touchStartRef.current.y - e.touches[0].clientY;
 
+    // Prevent high friction during drag preview while keeping movement smooth
     if (Math.abs(dx) > Math.abs(dy)) {
-      const sensitivity = windowWidth < 640 ? 250 : 400;
-      const stepDelta = dx / sensitivity;
+      const dragSensitivity = windowWidth < 640 ? 300 : 450;
+      const stepDelta = dx / dragSensitivity;
       const maxIndex = Math.max(0, items.length - 1);
       targetPosRef.current = Math.max(0, Math.min(maxIndex, touchPosStartRef.current + stepDelta));
     }
   };
 
-  // Main physics loop (Lerp damping)
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isSwipingRef.current) return;
+    isSwipingRef.current = false;
+
+    const touchEnd = e.changedTouches[0];
+    const dx = touchStartRef.current.x - touchEnd.clientX;
+    const dy = touchStartRef.current.y - touchEnd.clientY;
+    const dt = Math.max(1, performance.now() - touchStartRef.current.time);
+    const velocity = Math.abs(dx) / dt; // px / ms
+
+    const maxIndex = Math.max(0, items.length - 1);
+    const startIndex = Math.round(touchPosStartRef.current);
+
+    // One-Swipe = One-Card Snapping Logic:
+    // If swipe distance > 40px or flick velocity > 0.35 px/ms, move strictly 1 card forward or backward
+    if (Math.abs(dx) > Math.abs(dy) && (Math.abs(dx) > 40 || velocity > 0.35)) {
+      if (dx > 0) {
+        // Swipe left -> Next card (+1)
+        targetPosRef.current = Math.min(maxIndex, startIndex + 1);
+      } else {
+        // Swipe right -> Previous card (-1)
+        targetPosRef.current = Math.max(0, startIndex - 1);
+      }
+    } else {
+      // Snap back to nearest single card center
+      targetPosRef.current = Math.max(0, Math.min(maxIndex, Math.round(targetPosRef.current)));
+    }
+  };
+
+  // Main physics loop (Spring dynamics for natural stopping effect)
   useEffect(() => {
     let animId: number;
     let lastTime = performance.now();
 
     const updateLoop = (now: number) => {
-      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
 
-      // Smooth pos damping towards targetPosRef
-      const diff = targetPosRef.current - currentPosRef.current;
-      const easing = 1 - Math.pow(1 - 0.85, dt * 60);
-      currentPosRef.current += diff * easing;
+      // Spring physics simulation (stiffness: 180, damping: 22)
+      const stiffness = 180;
+      const damping = 22;
+
+      const displacement = currentPosRef.current - targetPosRef.current;
+      const springForce = -stiffness * displacement;
+      const dampingForce = -damping * velocityRef.current;
+      const acceleration = springForce + dampingForce;
+
+      velocityRef.current += acceleration * dt;
+      currentPosRef.current += velocityRef.current * dt;
+
+      // Snap to exact target when velocity and displacement are negligible
+      if (Math.abs(velocityRef.current) < 0.001 && Math.abs(displacement) < 0.001) {
+        currentPosRef.current = targetPosRef.current;
+        velocityRef.current = 0;
+      }
 
       setRenderPos(currentPosRef.current);
 
@@ -128,6 +176,8 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
       ref={containerRef}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       className={`fixed inset-0 w-screen h-screen m-0 p-0 overflow-hidden bg-transparent text-white select-none z-10 flex flex-col justify-between touch-pan-y ${className}`}
       style={{ margin: 0, padding: 0 }}
     >
