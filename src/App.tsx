@@ -20,6 +20,8 @@ export default function App() {
   const isBgMusicPlaying = useAppStore((state) => state.isBgMusicPlaying);
   const fetchProducts = useAppStore((state) => state.fetchProducts);
   const fetchAudioSettings = useAppStore((state) => state.fetchAudioSettings);
+  const fetchRecipes = useAppStore((state) => state.fetchRecipes);
+  const fetchFlavorPrices = useAppStore((state) => state.fetchFlavorPrices);
   const setIsStudioModalOpen = useAppStore((state) => state.setIsStudioModalOpen);
 
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -30,15 +32,17 @@ export default function App() {
     isBgMusicPlayingRef.current = isBgMusicPlaying;
   }, [isBgMusicPlaying]);
 
-  // Fetch initial products & audio settings from persistent SQLite database and check /Liquidmusic/admin route
+  // Fetch initial products, audio settings, recipes, and flavor prices from backend API
   useEffect(() => {
     fetchProducts();
     fetchAudioSettings();
+    fetchRecipes();
+    fetchFlavorPrices();
 
     if (window.location.pathname.toLowerCase().includes('/admin')) {
       setIsStudioModalOpen(true);
     }
-  }, [fetchProducts, fetchAudioSettings, setIsStudioModalOpen]);
+  }, [fetchProducts, fetchAudioSettings, fetchRecipes, fetchFlavorPrices, setIsStudioModalOpen]);
 
   // Sync document class for dark/light mode
   useEffect(() => {

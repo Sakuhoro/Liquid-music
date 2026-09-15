@@ -1,6 +1,7 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { ProductItem, CollectionName, PlacedOrder, VolumeType, NicotineType } from '../types';
+import { ProductItem, CollectionName, PlacedOrder, VolumeType, NicotineType, RecipeItem } from '../types';
+import { parseRecipeText, formatRecipeText } from '../utils/recipeParser';
 import {
   X,
   Sliders,
@@ -34,6 +35,8 @@ import {
   BookOpen,
   Droplets,
   CheckCircle,
+  Save,
+  FileText,
 } from 'lucide-react';
 
 const ALL_COLLECTIONS: CollectionName[] = [
@@ -78,8 +81,21 @@ export const StudioAdminModal: React.FC = () => {
   const soundCloudUrl = useAppStore((state) => state.soundCloudUrl);
   const setSoundCloudUrl = useAppStore((state) => state.setSoundCloudUrl);
 
+  const recipes = useAppStore((state) => state.recipes);
+  const saveRecipe = useAppStore((state) => state.saveRecipe);
+
+  const flavorPrices = useAppStore((state) => state.flavorPrices);
+  const saveFlavorPrice = useAppStore((state) => state.saveFlavorPrice);
+
   const theme = useAppStore((state) => state.theme);
   const isDark = theme === 'dark';
+
+  // Recipe Editor State
+  const [selectedRecipeProductId, setSelectedRecipeProductId] = useState<string>(products[0]?.id || '');
+  const [recipeRawText, setRecipeRawText] = useState<string>('');
+  const [recipeMode, setRecipeMode] = useState<'table' | 'raw'>('table');
+  const [recipeNotice, setRecipeNotice] = useState<string | null>(null);
+  const [editingRecipeItems, setEditingRecipeItems] = useState<RecipeItem[]>([]);
 
   // Login form state
   const [usernameInput, setUsernameInput] = useState('');
@@ -117,6 +133,17 @@ export const StudioAdminModal: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const darkAudioInputRef = useRef<HTMLInputElement>(null);
   const lightAudioInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync active editing recipe items when selected product changes or tab switches
+  useEffect(() => {
+    if (!selectedRecipeProductId && products.length > 0) {
+      setSelectedRecipeProductId(products[0].id);
+    }
+    const currentRecipe = recipes.find((r) => r.productId === selectedRecipeProductId);
+    const items = currentRecipe ? currentRecipe.items : [];
+    setEditingRecipeItems(items);
+    setRecipeRawText(formatRecipeText(items));
+  }, [selectedRecipeProductId, recipes, products]);
 
   if (!isStudioModalOpen) return null;
 
@@ -963,55 +990,368 @@ export const StudioAdminModal: React.FC = () => {
                     </div>
                   )}
 
-                  {/* SUB-TAB 6.3.2: РЕЦЕПТЫ (RECIPES) */}
+                  {/* SUB-TAB 6.3.2: РЕЦЕПТЫ (RECIPES EDITOR) */}
                   {prodSubTab === 'recipes' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {products.map((p) => (
-                        <div key={p.id} className="p-5 rounded-2xl border border-white/15 bg-white/5 space-y-3">
-                          <div className="flex items-center gap-3">
-                            <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover border border-white/10" />
-                            <div>
-                              <h4 className="font-sans font-extrabold text-base text-white">{p.name}</h4>
-                              <span className="text-[10px] font-sans px-2 py-0.5 rounded-md bg-amber-400/20 text-amber-300 font-bold border border-amber-400/30">
-                                {p.category}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="space-y-1 text-xs font-sans text-stone-300">
-                            <div><strong>Базовое соотношение VG/PG:</strong> 70/30</div>
-                            <div><strong>Процент ароматизаторов:</strong> 15%</div>
-                            <div><strong>Рекомендуемый настои:</strong> 3-5 дней</div>
+                    <div className="space-y-6">
+                      {/* Product Selector Bar */}
+                      <div className="p-4 rounded-2xl border border-white/15 bg-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 w-full sm:w-auto">
+                          <BookOpen className="w-5 h-5 text-amber-400 shrink-0" />
+                          <div className="w-full sm:w-auto">
+                            <label className="block text-xs font-sans font-bold text-stone-300 mb-1">
+                              Выберите вкус для редактирования рецепта:
+                            </label>
+                            <select
+                              value={selectedRecipeProductId}
+                              onChange={(e) => setSelectedRecipeProductId(e.target.value)}
+                              className="w-full sm:w-80 px-3.5 py-2 rounded-xl border border-white/20 bg-slate-900 text-white font-sans text-xs font-bold focus:outline-none focus:border-amber-400"
+                            >
+                              {products.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name} ({p.category})
+                                </option>
+                              ))}
+                            </select>
                           </div>
                         </div>
-                      ))}
+
+                        {/* Mode Switcher & Actions */}
+                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                          <div className="bg-black/40 p-1 rounded-xl flex items-center gap-1 border border-white/10">
+                            <button
+                              onClick={() => setRecipeMode('table')}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-sans font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                                recipeMode === 'table' ? 'bg-amber-400 text-slate-950' : 'text-stone-300 hover:text-white'
+                              }`}
+                            >
+                              <Layers className="w-3.5 h-3.5" />
+                              Таблица
+                            </button>
+                            <button
+                              onClick={() => {
+                                setRecipeRawText(formatRecipeText(editingRecipeItems));
+                                setRecipeMode('raw');
+                              }}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-sans font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                                recipeMode === 'raw' ? 'bg-amber-400 text-slate-950' : 'text-stone-300 hover:text-white'
+                              }`}
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              Текст / Вставка
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              let finalItems = editingRecipeItems;
+                              if (recipeMode === 'raw') {
+                                finalItems = parseRecipeText(recipeRawText);
+                                setEditingRecipeItems(finalItems);
+                              }
+                              saveRecipe(selectedRecipeProductId, finalItems);
+                              setRecipeNotice('Рецепт успешно сохранен в базе данных!');
+                              setTimeout(() => setRecipeNotice(null), 2500);
+                            }}
+                            className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-sans font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                          >
+                            <Save className="w-4 h-4" />
+                            Сохранить рецепт
+                          </button>
+                        </div>
+                      </div>
+
+                      {recipeNotice && (
+                        <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-2">
+                          <Check className="w-4 h-4 shrink-0" />
+                          <span>{recipeNotice}</span>
+                        </div>
+                      )}
+
+                      {/* Recipe Display / Edit Area */}
+                      {recipeMode === 'table' ? (
+                        <div className="space-y-4">
+                          <div className="overflow-x-auto rounded-2xl border border-white/15 bg-black/40">
+                            <table className="w-full text-left border-collapse text-xs font-sans">
+                              <thead>
+                                <tr className="border-b border-white/20 bg-white/10 text-stone-200">
+                                  <th className="p-3 font-extrabold">Производитель (Vendor)</th>
+                                  <th className="p-3 font-extrabold">Название ароматизатора</th>
+                                  <th className="p-3 font-extrabold text-center">мл на 100мл (%)</th>
+                                  <th className="p-3 text-center font-extrabold">Действие</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {editingRecipeItems.length === 0 ? (
+                                  <tr>
+                                    <td colSpan={4} className="p-8 text-center text-stone-400 font-sans font-semibold">
+                                      Рецепт пока пуст. Нажмите &quot;Добавить компонент&quot; или переключитесь в текстовый режим.
+                                    </td>
+                                  </tr>
+                                ) : (
+                                  editingRecipeItems.map((item, idx) => (
+                                    <tr key={idx} className="border-b border-white/10 hover:bg-white/5 transition-colors">
+                                      <td className="p-2.5">
+                                        <input
+                                          type="text"
+                                          value={item.vendor}
+                                          onChange={(e) => {
+                                            const next = [...editingRecipeItems];
+                                            next[idx].vendor = e.target.value;
+                                            setEditingRecipeItems(next);
+                                          }}
+                                          className="w-24 px-2.5 py-1.5 rounded-lg border border-white/15 bg-white/5 text-xs font-bold text-amber-300 focus:outline-none focus:border-amber-400 uppercase"
+                                        />
+                                      </td>
+                                      <td className="p-2.5">
+                                        <input
+                                          type="text"
+                                          value={item.name}
+                                          onChange={(e) => {
+                                            const next = [...editingRecipeItems];
+                                            next[idx].name = e.target.value;
+                                            setEditingRecipeItems(next);
+                                          }}
+                                          className="w-full px-2.5 py-1.5 rounded-lg border border-white/15 bg-white/5 text-xs font-semibold text-white focus:outline-none focus:border-amber-400"
+                                        />
+                                      </td>
+                                      <td className="p-2.5 text-center">
+                                        <input
+                                          type="number"
+                                          step="0.1"
+                                          value={item.mlPer100ml}
+                                          onChange={(e) => {
+                                            const next = [...editingRecipeItems];
+                                            next[idx].mlPer100ml = parseFloat(e.target.value) || 0;
+                                            setEditingRecipeItems(next);
+                                          }}
+                                          className="w-24 px-2.5 py-1.5 rounded-lg border border-white/15 bg-white/5 text-xs font-mono font-bold text-amber-400 text-center focus:outline-none focus:border-amber-400"
+                                        />
+                                      </td>
+                                      <td className="p-2.5 text-center">
+                                        <button
+                                          onClick={() => {
+                                            const next = editingRecipeItems.filter((_, i) => i !== idx);
+                                            setEditingRecipeItems(next);
+                                          }}
+                                          className="p-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 transition-colors cursor-pointer"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              setEditingRecipeItems([
+                                ...editingRecipeItems,
+                                { vendor: 'CAP', name: 'New Flavor', mlPer100ml: 1 },
+                              ]);
+                            }}
+                            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-stone-200 font-sans font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                          >
+                            <Plus className="w-4 h-4 text-amber-400" />
+                            Добавить компонент
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-xs text-stone-300 font-sans">
+                            Вставьте рецепт списком (автоматически распознаются типы опечаток, слипшиеся вендоры и десятичные запятые):
+                          </p>
+                          <textarea
+                            rows={10}
+                            value={recipeRawText}
+                            onChange={(e) => {
+                              setRecipeRawText(e.target.value);
+                              const parsed = parseRecipeText(e.target.value);
+                              setEditingRecipeItems(parsed);
+                            }}
+                            placeholder={`CAP Grapefruit 4\nCAPJuicy Orange 5\nCAP Sweet Guava 7\nCAP Sweet Tangerine2\nFA Blood Orange 2\nFA Passion (passionfruit) 2,5\nTPA Dragonfruit 0,5\nCAPSuper Sweet 0,5`}
+                            className="w-full p-4 rounded-2xl border border-white/15 bg-black/60 font-mono text-xs text-amber-300 focus:outline-none focus:border-amber-400 leading-relaxed"
+                          />
+                          <p className="text-[11px] text-stone-400 font-mono">
+                            Распознано компонентов: <span className="text-amber-400 font-bold">{editingRecipeItems.length}</span>
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* SUB-TAB 6.3.3: АРОМЫ (AROMAS CALCULATION) */}
+                  {/* SUB-TAB 6.3.3: АРОМЫ (CONSOLIDATED FLAVORINGS & COST CALCULATOR) */}
                   {prodSubTab === 'aromas' && (
-                    <div className="p-6 rounded-2xl border border-white/15 bg-white/5 space-y-4">
-                      <h4 className="text-base font-sans font-extrabold text-white">
-                        Расчет требуемого объема ароматизаторов (15% от заказанного объема)
-                      </h4>
+                    <div className="space-y-6">
+                      {/* Summary Metrics Banner */}
+                      {(() => {
+                        // Calculate total required flavorings across all user orders
+                        const flavorMap = new Map<string, { vendor: string; name: string; totalMl: number }>();
 
-                      <div className="space-y-2">
-                        {products.map((prod) => {
-                          const totalBottles = getFlavorTotalBottles(prod.name, ordersHistory);
-                          const totalMl = totalBottles * 60; // Average 60ml per bottle standard
-                          const aromaMl = Math.round(totalMl * 0.15);
+                        for (const order of ordersHistory) {
+                          for (const item of order.items) {
+                            const volMl = parseInt(item.volume.replace('ml', ''), 10) || 30;
+                            const totalLiquidMl = volMl * item.quantity;
+                            const recipe = recipes.find((r) => r.productId === item.product.id);
 
-                          return (
-                            <div key={prod.id} className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
-                              <span className="font-sans font-bold text-sm text-white">{prod.name}</span>
-                              <div className="flex items-center gap-4 text-xs font-mono">
-                                <span className="text-stone-400">{totalBottles} флаконов</span>
-                                <span className="text-amber-400 font-bold">{aromaMl} мл концентрата</span>
+                            if (recipe && recipe.items) {
+                              for (const comp of recipe.items) {
+                                const key = `${comp.vendor.trim().toUpperCase()}:${comp.name.trim().toLowerCase()}`;
+                                const compMl = totalLiquidMl * (comp.mlPer100ml / 100);
+
+                                if (flavorMap.has(key)) {
+                                  const existing = flavorMap.get(key)!;
+                                  existing.totalMl += compMl;
+                                } else {
+                                  flavorMap.set(key, {
+                                    vendor: comp.vendor.trim().toUpperCase(),
+                                    name: comp.name.trim(),
+                                    totalMl: compMl,
+                                  });
+                                }
+                              }
+                            }
+                          }
+                        }
+
+                        const aggregatedList = Array.from(flavorMap.values()).sort((a, b) =>
+                          a.vendor.localeCompare(b.vendor) || a.name.localeCompare(b.name)
+                        );
+
+                        // Calculate totals
+                        let totalMlSum = 0;
+                        let totalCostSum = 0;
+
+                        aggregatedList.forEach((item) => {
+                          totalMlSum += item.totalMl;
+                          const key = `${item.vendor}:${item.name.toLowerCase()}`;
+                          const priceRecord = flavorPrices.find((fp) => fp.key === key);
+                          const pricePer10ml = priceRecord ? priceRecord.pricePer10ml : 100;
+                          const cost = (item.totalMl / 10) * pricePer10ml;
+                          totalCostSum += cost;
+                        });
+
+                        return (
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              <div className="p-5 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-md flex items-center justify-between">
+                                <div>
+                                  <p className="text-xs font-sans uppercase font-extrabold text-stone-400 tracking-wider">
+                                    Уникальных ароматизаторов
+                                  </p>
+                                  <h3 className="text-3xl font-extrabold font-sans text-amber-400 mt-1">
+                                    {aggregatedList.length}
+                                  </h3>
+                                </div>
+                                <div className="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-400">
+                                  <Droplets className="w-6 h-6" />
+                                </div>
+                              </div>
+
+                              <div className="p-5 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-md flex items-center justify-between">
+                                <div>
+                                  <p className="text-xs font-sans uppercase font-extrabold text-stone-400 tracking-wider">
+                                    Общий требуемый объём
+                                  </p>
+                                  <h3 className="text-3xl font-extrabold font-sans text-emerald-400 mt-1">
+                                    {totalMlSum.toFixed(1)} мл
+                                  </h3>
+                                </div>
+                                <div className="w-12 h-12 rounded-2xl bg-emerald-400/10 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
+                                  <Package className="w-6 h-6" />
+                                </div>
+                              </div>
+
+                              <div className="p-5 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-md flex items-center justify-between">
+                                <div>
+                                  <p className="text-xs font-sans uppercase font-extrabold text-stone-400 tracking-wider">
+                                    Общая стоимость закупки
+                                  </p>
+                                  <h3 className="text-3xl font-extrabold font-sans text-amber-400 mt-1">
+                                    {Math.round(totalCostSum)} ₽
+                                  </h3>
+                                </div>
+                                <div className="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-400">
+                                  <DollarSign className="w-6 h-6" />
+                                </div>
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
+
+                            {/* Aggregated Flavorings Procurement Table */}
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-sans font-extrabold text-white">
+                                  Сводный список ароматизаторов по всем заказам
+                                </h4>
+                                <span className="text-xs text-stone-400 font-mono">
+                                  Цены сохраняются в БД автоматически (за 10мл)
+                                </span>
+                              </div>
+
+                              <div className="overflow-x-auto rounded-2xl border border-white/15 bg-black/40">
+                                <table className="w-full text-left border-collapse text-xs font-sans">
+                                  <thead>
+                                    <tr className="border-b border-white/20 bg-white/10 text-stone-200">
+                                      <th className="p-3 font-extrabold">Вендор (Vendor)</th>
+                                      <th className="p-3 font-extrabold">Ароматизатор</th>
+                                      <th className="p-3 text-center font-extrabold">Потребность (мл)</th>
+                                      <th className="p-3 text-center font-extrabold">Цена за 10мл (₽)</th>
+                                      <th className="p-3 text-right font-extrabold">Итого закупка (₽)</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {aggregatedList.length === 0 ? (
+                                      <tr>
+                                        <td colSpan={5} className="p-8 text-center text-stone-400 font-sans font-semibold">
+                                          Заказы отсутствуют или рецепты не заданы.
+                                        </td>
+                                      </tr>
+                                    ) : (
+                                      aggregatedList.map((item) => {
+                                        const key = `${item.vendor}:${item.name.toLowerCase()}`;
+                                        const priceRecord = flavorPrices.find((fp) => fp.key === key);
+                                        const pricePer10ml = priceRecord ? priceRecord.pricePer10ml : 100;
+                                        const cost = (item.totalMl / 10) * pricePer10ml;
+
+                                        return (
+                                          <tr key={key} className="border-b border-white/10 hover:bg-white/5 transition-colors">
+                                            <td className="p-3 font-mono font-bold text-amber-300">
+                                              {item.vendor}
+                                            </td>
+                                            <td className="p-3 font-bold text-white">
+                                              {item.name}
+                                            </td>
+                                            <td className="p-3 text-center font-mono font-extrabold text-emerald-400">
+                                              {item.totalMl.toFixed(1)} мл
+                                            </td>
+                                            <td className="p-3 text-center">
+                                              <input
+                                                type="number"
+                                                step="5"
+                                                value={pricePer10ml}
+                                                onChange={(e) => {
+                                                  const val = parseFloat(e.target.value) || 0;
+                                                  saveFlavorPrice(item.vendor, item.name, val);
+                                                }}
+                                                className="w-24 px-2.5 py-1.5 rounded-lg border border-white/15 bg-white/5 font-mono text-xs text-amber-400 text-center font-bold focus:outline-none focus:border-amber-400"
+                                              />
+                                            </td>
+                                            <td className="p-3 text-right font-mono font-extrabold text-amber-400">
+                                              {Math.round(cost)} ₽
+                                            </td>
+                                          </tr>
+                                        );
+                                      })
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>

@@ -40,6 +40,21 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS recipes (
+    productId TEXT PRIMARY KEY,
+    items TEXT NOT NULL,
+    updatedAt TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS flavor_prices (
+    key TEXT PRIMARY KEY,
+    vendor TEXT NOT NULL,
+    name TEXT NOT NULL,
+    pricePer10ml REAL NOT NULL,
+    currency TEXT DEFAULT 'RUB',
+    updatedAt TEXT
+  );
 `);
 
 export const INITIAL_PRODUCTS_SEED = [
@@ -253,7 +268,129 @@ function seedDatabase() {
   }
 }
 
+export const INITIAL_RECIPES_SEED = [
+  {
+    productId: 'blue-raspberry-symphony',
+    items: [
+      { vendor: 'CAP', name: 'Grapefruit', mlPer100ml: 4 },
+      { vendor: 'CAP', name: 'Juicy Orange', mlPer100ml: 5 },
+      { vendor: 'CAP', name: 'Sweet Guava', mlPer100ml: 7 },
+      { vendor: 'CAP', name: 'Sweet Tangerine', mlPer100ml: 2 },
+      { vendor: 'FA', name: 'Blood Orange', mlPer100ml: 2 },
+      { vendor: 'FA', name: 'Passion (passionfruit)', mlPer100ml: 2.5 },
+      { vendor: 'TPA', name: 'Dragonfruit', mlPer100ml: 0.5 },
+      { vendor: 'CAP', name: 'Super Sweet', mlPer100ml: 0.5 },
+    ],
+  },
+  {
+    productId: 'vanilla-caramel-resonance',
+    items: [
+      { vendor: 'TPA', name: 'Vanilla Custard', mlPer100ml: 5 },
+      { vendor: 'FW', name: 'Caramel Candy', mlPer100ml: 4 },
+      { vendor: 'CAP', name: 'Super Sweet', mlPer100ml: 0.5 },
+    ],
+  },
+  {
+    productId: 'root-beer-crescendo',
+    items: [
+      { vendor: 'TPA', name: 'Root Beer', mlPer100ml: 6 },
+      { vendor: 'FA', name: 'Vanilla Classic', mlPer100ml: 2 },
+      { vendor: 'CAP', name: 'Super Sweet', mlPer100ml: 0.5 },
+    ],
+  },
+  {
+    productId: 'sakura-blossom-sonata',
+    items: [
+      { vendor: 'FA', name: 'White Peach', mlPer100ml: 4 },
+      { vendor: 'INW', name: 'Cherry Blossom', mlPer100ml: 2 },
+      { vendor: 'CAP', name: 'Super Sweet', mlPer100ml: 0.5 },
+    ],
+  },
+  {
+    productId: 'golden-mango-rhapsody',
+    items: [
+      { vendor: 'CAP', name: 'Sweet Mango', mlPer100ml: 6 },
+      { vendor: 'FA', name: 'Passion Fruit', mlPer100ml: 3 },
+      { vendor: 'TPA', name: 'Key Lime', mlPer100ml: 1 },
+    ],
+  },
+  {
+    productId: 'nordic-frost-nocturne',
+    items: [
+      { vendor: 'TPA', name: 'Spearmint', mlPer100ml: 4 },
+      { vendor: 'FA', name: 'Peppermint', mlPer100ml: 2 },
+      { vendor: 'INW', name: 'Fir Needle', mlPer100ml: 0.5 },
+    ],
+  },
+  {
+    productId: 'espresso-cacao-fugue',
+    items: [
+      { vendor: 'FA', name: 'Espresso', mlPer100ml: 3 },
+      { vendor: 'TPA', name: 'Chocolate Fudge Brownie', mlPer100ml: 4 },
+      { vendor: 'FW', name: 'Hazelnut', mlPer100ml: 2 },
+    ],
+  },
+  {
+    productId: 'harvest-apple-prelude',
+    items: [
+      { vendor: 'CAP', name: 'Apple Pie', mlPer100ml: 5 },
+      { vendor: 'FA', name: 'Fuji Apple', mlPer100ml: 3 },
+      { vendor: 'TPA', name: 'Cinnamon Sugar Cookie', mlPer100ml: 2 },
+    ],
+  },
+  {
+    productId: 'celestial-grape-etude',
+    items: [
+      { vendor: 'INW', name: 'Grape', mlPer100ml: 5 },
+      { vendor: 'FA', name: 'Aloe Vera', mlPer100ml: 2 },
+      { vendor: 'CAP', name: 'Super Sweet', mlPer100ml: 0.5 },
+    ],
+  },
+];
+
+export const INITIAL_FLAVOR_PRICES_SEED = [
+  { vendor: 'CAP', name: 'Grapefruit', pricePer10ml: 120 },
+  { vendor: 'CAP', name: 'Juicy Orange', pricePer10ml: 110 },
+  { vendor: 'CAP', name: 'Sweet Guava', pricePer10ml: 130 },
+  { vendor: 'CAP', name: 'Sweet Tangerine', pricePer10ml: 115 },
+  { vendor: 'FA', name: 'Blood Orange', pricePer10ml: 140 },
+  { vendor: 'FA', name: 'Passion (passionfruit)', pricePer10ml: 150 },
+  { vendor: 'TPA', name: 'Dragonfruit', pricePer10ml: 100 },
+  { vendor: 'CAP', name: 'Super Sweet', pricePer10ml: 160 },
+];
+
+function seedRecipesAndPrices() {
+  const recipeCount = db.prepare('SELECT COUNT(*) as count FROM recipes').get().count;
+  if (recipeCount === 0) {
+    const insertRecipe = db.prepare(`
+      INSERT INTO recipes (productId, items, updatedAt) VALUES (?, ?, ?)
+    `);
+    const insertMany = db.transaction((recipes) => {
+      for (const r of recipes) {
+        insertRecipe.run(r.productId, JSON.stringify(r.items), new Date().toISOString());
+      }
+    });
+    insertMany(INITIAL_RECIPES_SEED);
+  }
+
+  const priceCount = db.prepare('SELECT COUNT(*) as count FROM flavor_prices').get().count;
+  if (priceCount === 0) {
+    const insertPrice = db.prepare(`
+      INSERT INTO flavor_prices (key, vendor, name, pricePer10ml, currency, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    const insertManyPrices = db.transaction((prices) => {
+      for (const p of prices) {
+        const key = `${p.vendor.trim().toUpperCase()}:${p.name.trim().toLowerCase()}`;
+        insertPrice.run(key, p.vendor, p.name, p.pricePer10ml, 'RUB', new Date().toISOString());
+      }
+    });
+    insertManyPrices(INITIAL_FLAVOR_PRICES_SEED);
+  }
+}
+
 seedDatabase();
+seedRecipesAndPrices();
 
 export function getAllProducts() {
   const rows = db.prepare('SELECT * FROM products ORDER BY rowid ASC').all();
@@ -353,6 +490,63 @@ export function setSetting(key, value) {
     ON CONFLICT(key) DO UPDATE SET value = excluded.value
   `);
   stmt.run(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+}
+
+// Recipe operations
+export function getAllRecipes() {
+  const rows = db.prepare('SELECT * FROM recipes').all();
+  return rows.map((row) => ({
+    productId: row.productId,
+    items: typeof row.items === 'string' ? JSON.parse(row.items) : row.items,
+    updatedAt: row.updatedAt,
+  }));
+}
+
+export function setRecipe(productId, items) {
+  const stmt = db.prepare(`
+    INSERT INTO recipes (productId, items, updatedAt) VALUES (?, ?, ?)
+    ON CONFLICT(productId) DO UPDATE SET items = excluded.items, updatedAt = excluded.updatedAt
+  `);
+  const now = new Date().toISOString();
+  stmt.run(productId, JSON.stringify(items), now);
+  return { productId, items, updatedAt: now };
+}
+
+export function deleteRecipe(productId) {
+  const stmt = db.prepare('DELETE FROM recipes WHERE productId = ?');
+  stmt.run(productId);
+  return { productId };
+}
+
+// Flavor Price operations
+export function getAllFlavorPrices() {
+  const rows = db.prepare('SELECT * FROM flavor_prices').all();
+  return rows.map((row) => ({
+    key: row.key,
+    vendor: row.vendor,
+    name: row.name,
+    pricePer10ml: row.pricePer10ml,
+    currency: row.currency || 'RUB',
+    updatedAt: row.updatedAt,
+  }));
+}
+
+export function setFlavorPrice(vendor, name, pricePer10ml, currency = 'RUB') {
+  const key = `${vendor.trim().toUpperCase()}:${name.trim().toLowerCase()}`;
+  const stmt = db.prepare(`
+    INSERT INTO flavor_prices (key, vendor, name, pricePer10ml, currency, updatedAt)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(key) DO UPDATE SET pricePer10ml = excluded.pricePer10ml, currency = excluded.currency, updatedAt = excluded.updatedAt
+  `);
+  const now = new Date().toISOString();
+  stmt.run(key, vendor.trim(), name.trim(), Number(pricePer10ml), currency, now);
+  return { key, vendor: vendor.trim(), name: name.trim(), pricePer10ml: Number(pricePer10ml), currency, updatedAt: now };
+}
+
+export function deleteFlavorPrice(key) {
+  const stmt = db.prepare('DELETE FROM flavor_prices WHERE key = ?');
+  stmt.run(key);
+  return { key };
 }
 
 export default db;

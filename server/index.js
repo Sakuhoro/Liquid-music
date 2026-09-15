@@ -12,6 +12,12 @@ import {
   resetProducts,
   getSetting,
   setSetting,
+  getAllRecipes,
+  setRecipe,
+  deleteRecipe,
+  getAllFlavorPrices,
+  setFlavorPrice,
+  deleteFlavorPrice,
 } from './db.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -138,6 +144,70 @@ app.post('/api/products/reset', (req, res) => {
   try {
     const products = resetProducts()
     res.json(products)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Recipes API Endpoints
+app.get('/api/recipes', (req, res) => {
+  try {
+    const recipes = getAllRecipes()
+    res.json(recipes)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/recipes', (req, res) => {
+  try {
+    const { productId, items } = req.body
+    if (!productId || !Array.isArray(items)) {
+      return res.status(400).json({ error: 'productId and items array are required' })
+    }
+    const result = setRecipe(productId, items)
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.delete('/api/recipes/:productId', (req, res) => {
+  try {
+    const result = deleteRecipe(req.params.productId)
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Flavor Prices API Endpoints
+app.get('/api/flavor-prices', (req, res) => {
+  try {
+    const prices = getAllFlavorPrices()
+    res.json(prices)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/flavor-prices', (req, res) => {
+  try {
+    const { vendor, name, pricePer10ml, currency } = req.body
+    if (!vendor || !name || pricePer10ml === undefined) {
+      return res.status(400).json({ error: 'vendor, name, and pricePer10ml are required' })
+    }
+    const result = setFlavorPrice(vendor, name, pricePer10ml, currency || 'RUB')
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.delete('/api/flavor-prices/:key', (req, res) => {
+  try {
+    const result = deleteFlavorPrice(req.params.key)
+    res.json(result)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

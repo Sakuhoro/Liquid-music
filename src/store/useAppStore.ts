@@ -9,6 +9,8 @@ import {
   PlacedOrder,
   CollectionName,
   CollectionVideosConfig,
+  Recipe,
+  FlavorPrice,
 } from '../types';
 import {
   INITIAL_PRODUCTS,
@@ -102,6 +104,15 @@ interface AppState {
   deleteProduct: (id: string) => Promise<void>;
   resetProducts: () => Promise<void>;
 
+  // Recipes & Flavor Pricing Actions
+  recipes: Recipe[];
+  flavorPrices: FlavorPrice[];
+  fetchRecipes: () => Promise<void>;
+  saveRecipe: (productId: string, items: Recipe['items']) => Promise<void>;
+  fetchFlavorPrices: () => Promise<void>;
+  saveFlavorPrice: (vendor: string, name: string, pricePer10ml: number, currency?: string) => Promise<void>;
+  deleteFlavorPrice: (key: string) => Promise<void>;
+
   // Active inspected product modal
   inspectedProduct: ProductItem | null;
   setInspectedProduct: (prod: ProductItem | null) => void;
@@ -157,6 +168,109 @@ export const useAppStore = create<AppState>()(
       // View state
       viewMode: 'hero',
       setViewMode: (viewMode) => set({ viewMode }),
+
+      // Recipes & Flavor Prices
+      recipes: [],
+      flavorPrices: [],
+
+      fetchRecipes: async () => {
+        try {
+          const res = await fetch('/api/recipes');
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              set({ recipes: data });
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to fetch recipes from backend API:', err);
+        }
+      },
+
+      saveRecipe: async (productId, items) => {
+        set((state) => {
+          const existingIndex = state.recipes.findIndex((r) => r.productId === productId);
+          const newRecipe: Recipe = { productId, items, updatedAt: new Date().toISOString() };
+          let updatedRecipes: Recipe[];
+          if (existingIndex >= 0) {
+            updatedRecipes = [...state.recipes];
+            updatedRecipes[existingIndex] = newRecipe;
+          } else {
+            updatedRecipes = [...state.recipes, newRecipe];
+          }
+          return { recipes: updatedRecipes };
+        });
+
+        try {
+          await fetch('/api/recipes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId, items }),
+          });
+        } catch (err) {
+          console.error('Failed to save recipe via API:', err);
+        }
+      },
+
+      fetchFlavorPrices: async () => {
+        try {
+          const res = await fetch('/api/flavor-prices');
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              set({ flavorPrices: data });
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to fetch flavor prices from backend API:', err);
+        }
+      },
+
+      saveFlavorPrice: async (vendor, name, pricePer10ml, currency = 'RUB') => {
+        const key = `${vendor.trim().toUpperCase()}:${name.trim().toLowerCase()}`;
+        set((state) => {
+          const existingIndex = state.flavorPrices.findIndex((fp) => fp.key === key);
+          const newPrice: FlavorPrice = {
+            key,
+            vendor: vendor.trim(),
+            name: name.trim(),
+            pricePer10ml,
+            currency,
+            updatedAt: new Date().toISOString(),
+          };
+          let updatedPrices: FlavorPrice[];
+          if (existingIndex >= 0) {
+            updatedPrices = [...state.flavorPrices];
+            updatedPrices[existingIndex] = newPrice;
+          } else {
+            updatedPrices = [...state.flavorPrices, newPrice];
+          }
+          return { flavorPrices: updatedPrices };
+        });
+
+        try {
+          await fetch('/api/flavor-prices', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vendor, name, pricePer10ml, currency }),
+          });
+        } catch (err) {
+          console.error('Failed to save flavor price via API:', err);
+        }
+      },
+
+      deleteFlavorPrice: async (key) => {
+        set((state) => ({
+          flavorPrices: state.flavorPrices.filter((fp) => fp.key !== key),
+        }));
+        try {
+          await fetch(`/api/flavor-prices/${encodeURIComponent(key)}`, {
+            method: 'DELETE',
+          });
+        } catch (err) {
+          console.error('Failed to delete flavor price via API:', err);
+        }
+      },
 
       // Active collection & Archive status
       activeCollection: 'All',
@@ -658,6 +772,8 @@ export const useAppStore = create<AppState>()(
         lightMusicUrl: state.lightMusicUrl,
         soundCloudUrl: state.soundCloudUrl,
         products: state.products,
+        recipes: state.recipes,
+        flavorPrices: state.flavorPrices,
         isAdminLoggedIn: state.isAdminLoggedIn,
       }),
     }

@@ -75,3 +75,24 @@ export interface CollectionVideosConfig {
   'Permanent 1': string;
   'Permanent 2': string;
 }
+
+export interface RecipeItem {
+  vendor: string;
+  name: string;
+  mlPer100ml: number;
+}
+
+export interface Recipe {
+  productId: string;
+  items: RecipeItem[];
+  updatedAt?: string;
+}
+
+export interface FlavorPrice {
+  key: string;
+  vendor: string;
+  name: string;
+  pricePer10ml: number;
+  currency?: string;
+  updatedAt?: string;
+}
