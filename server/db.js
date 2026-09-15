@@ -666,6 +666,25 @@ export const INITIAL_PRODUCTS_SEED = [
     accentColor: '#fb923c',
     isFeatured: 0,
   },
+  {
+    id: 'clearest-blue',
+    name: 'Clearest Blue',
+    subtitle: 'Vibrant Lychee, Shisha Raspberry, Cactus Nectar & Vanilla Marshmallow',
+    description: 'An uplifting blue melody blending sweet lychee, wild raspberries, dragonfruit nectar, desert cactus, and pillowy vanilla marshmallow.',
+    image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=500&auto=format&fit=crop&q=80',
+    basePrice: 300,
+    category: 'Summer',
+    musicalKey: 'E♭ Major',
+    bpm: 126,
+    opusNumber: '',
+    aromaticChords: {
+      top: 'Sweet Lychee, FLV Lychee',
+      heart: 'Shisha Raspberry, TPA Raspberry, Dragonfruit',
+      base: 'INW Cactus, Pear, Marshmallow Vanilla',
+    },
+    accentColor: '#38bdf8',
+    isFeatured: 0,
+  },
 ];
 
 // Helper to seed initial products if empty
@@ -1053,6 +1072,20 @@ export const INITIAL_RECIPES_SEED = [
       { vendor: 'CAP', name: 'Super Sweet', mlPer100ml: 1 },
     ],
   },
+  {
+    productId: 'clearest-blue',
+    items: [
+      { vendor: 'CAP', name: 'Sweet Lychee', mlPer100ml: 2.5 },
+      { vendor: 'FLV', name: 'Lychee', mlPer100ml: 2.5 },
+      { vendor: 'FA', name: 'Pear', mlPer100ml: 0.5 },
+      { vendor: 'INW', name: 'Cactus', mlPer100ml: 0.3 },
+      { vendor: 'INW', name: 'Shisha Raspberry', mlPer100ml: 2.5 },
+      { vendor: 'FLV', name: 'Marshmallow (Vanilla)', mlPer100ml: 0.5 },
+      { vendor: 'TPA', name: 'Dragonfruit', mlPer100ml: 0.5 },
+      { vendor: 'TPA', name: 'Raspberry', mlPer100ml: 2.5 },
+      { vendor: 'CAP', name: 'Super Sweet', mlPer100ml: 0.5 },
+    ],
+  },
 ];
 
 export const INITIAL_FLAVOR_PRICES_SEED = [
@@ -1181,6 +1214,11 @@ export const INITIAL_FLAVOR_PRICES_SEED = [
   { vendor: 'Hangsen', name: 'French Vanilla', pricePer10ml: 135 },
   { vendor: 'VT', name: 'Devon cream', pricePer10ml: 160 },
   { vendor: 'VT', name: 'Croissant', pricePer10ml: 170 },
+  { vendor: 'CAP', name: 'Sweet Lychee', pricePer10ml: 130 },
+  { vendor: 'FLV', name: 'Lychee', pricePer10ml: 155 },
+  { vendor: 'INW', name: 'Shisha Raspberry', pricePer10ml: 150 },
+  { vendor: 'FLV', name: 'Marshmallow (Vanilla)', pricePer10ml: 145 },
+  { vendor: 'TPA', name: 'Raspberry', pricePer10ml: 105 },
 ];
 
 function seedRecipesAndPrices() {

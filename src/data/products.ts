@@ -629,4 +629,23 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     accentColor: '#fb923c',
     isFeatured: false,
   },
+  {
+    id: 'clearest-blue',
+    name: 'Clearest Blue',
+    subtitle: 'Vibrant Lychee, Shisha Raspberry, Cactus Nectar & Vanilla Marshmallow',
+    description: 'An uplifting blue melody blending sweet lychee, wild raspberries, dragonfruit nectar, desert cactus, and pillowy vanilla marshmallow.',
+    image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=500&auto=format&fit=crop&q=80',
+    basePrice: 300,
+    category: 'Summer',
+    musicalKey: 'E♭ Major',
+    bpm: 126,
+    opusNumber: '',
+    aromaticChords: {
+      top: 'Sweet Lychee, FLV Lychee',
+      heart: 'Shisha Raspberry, TPA Raspberry, Dragonfruit',
+      base: 'INW Cactus, Pear, Marshmallow Vanilla',
+    },
+    accentColor: '#38bdf8',
+    isFeatured: false,
+  },
 ];
