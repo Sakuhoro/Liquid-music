@@ -47,6 +47,15 @@ const ALL_COLLECTIONS: CollectionName[] = [
   'Permanent 2',
 ];
 
+const COLLECTION_DISPLAY_NAMES: Record<string, string> = {
+  All: 'Все коллекции',
+  Spring: 'Весенняя',
+  Summer: 'Летняя',
+  Autumn: 'Осенняя',
+  'Permanent 1': 'Permanent 1',
+  'Permanent 2': 'Permanent 2',
+};
+
 const VOLUMES: VolumeType[] = ['30ml', '60ml', '120ml'];
 const NICOTINES: NicotineType[] = ['0mg', '1.5mg', '3mg', '6mg'];
 
@@ -91,11 +100,54 @@ export const StudioAdminModal: React.FC = () => {
   const isDark = theme === 'dark';
 
   // Recipe Editor State
+  const [recipeCollectionFilter, setRecipeCollectionFilter] = useState<CollectionName | 'All'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const colParam = params.get('collection');
+      if (colParam) {
+        const found = ALL_COLLECTIONS.find(
+          (c) =>
+            c.toLowerCase().replace(/\s+/g, '') === colParam.toLowerCase().replace(/\s+/g, '') ||
+            COLLECTION_DISPLAY_NAMES[c]?.toLowerCase() === colParam.toLowerCase()
+        );
+        if (found) return found;
+      }
+    }
+    return 'All';
+  });
+
   const [selectedRecipeProductId, setSelectedRecipeProductId] = useState<string>(products[0]?.id || '');
   const [recipeRawText, setRecipeRawText] = useState<string>('');
   const [recipeMode, setRecipeMode] = useState<'table' | 'raw'>('table');
   const [recipeNotice, setRecipeNotice] = useState<string | null>(null);
   const [editingRecipeItems, setEditingRecipeItems] = useState<RecipeItem[]>([]);
+
+  // Sync recipeCollectionFilter to URL search params
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (recipeCollectionFilter === 'All') {
+        url.searchParams.delete('collection');
+      } else {
+        url.searchParams.set('collection', recipeCollectionFilter.toLowerCase().replace(/\s+/g, ''));
+      }
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [recipeCollectionFilter]);
+
+  const filteredRecipeProducts = useMemo(() => {
+    if (recipeCollectionFilter === 'All') return products;
+    return products.filter((p) => p.category === recipeCollectionFilter);
+  }, [products, recipeCollectionFilter]);
+
+  useEffect(() => {
+    if (filteredRecipeProducts.length > 0) {
+      const exists = filteredRecipeProducts.some((p) => p.id === selectedRecipeProductId);
+      if (!exists) {
+        setSelectedRecipeProductId(filteredRecipeProducts[0].id);
+      }
+    }
+  }, [filteredRecipeProducts, selectedRecipeProductId]);
 
   // Login form state
   const [usernameInput, setUsernameInput] = useState('');
@@ -144,6 +196,22 @@ export const StudioAdminModal: React.FC = () => {
     setEditingRecipeItems(items);
     setRecipeRawText(formatRecipeText(items));
   }, [selectedRecipeProductId, recipes, products]);
+
+  // Facet Counts for Tab 6.2 (Products)
+  const productCountsByCollection = useMemo(() => {
+    const counts: Record<string, number> = { All: products.length };
+    ALL_COLLECTIONS.forEach((c) => {
+      counts[c] = 0;
+    });
+    for (const p of products) {
+      if (counts[p.category] !== undefined) {
+        counts[p.category] += 1;
+      } else {
+        counts[p.category] = 1;
+      }
+    }
+    return counts;
+  }, [products]);
 
   if (!isStudioModalOpen) return null;
 
@@ -716,25 +784,25 @@ export const StudioAdminModal: React.FC = () => {
                       <span className="text-xs font-sans font-extrabold opacity-70 shrink-0">Фильтр:</span>
                       <button
                         onClick={() => setProductCollectionFilter('All')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-sans font-bold cursor-pointer whitespace-nowrap ${
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-sans font-bold cursor-pointer whitespace-nowrap transition-colors ${
                           productCollectionFilter === 'All'
-                            ? 'bg-amber-400 text-slate-950'
+                            ? 'bg-amber-400 text-slate-950 shadow-md'
                             : 'bg-white/10 text-stone-300 hover:bg-white/20'
                         }`}
                       >
-                        Все ({products.length})
+                        Все ({productCountsByCollection.All || 0})
                       </button>
                       {ALL_COLLECTIONS.map((col) => (
                         <button
                           key={col}
                           onClick={() => setProductCollectionFilter(col)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-sans font-bold cursor-pointer whitespace-nowrap ${
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-sans font-bold cursor-pointer whitespace-nowrap transition-colors ${
                             productCollectionFilter === col
-                              ? 'bg-amber-400 text-slate-950'
+                              ? 'bg-amber-400 text-slate-950 shadow-md'
                               : 'bg-white/10 text-stone-300 hover:bg-white/20'
                           }`}
                         >
-                          {col}
+                          {COLLECTION_DISPLAY_NAMES[col] || col} ({productCountsByCollection[col] || 0})
                         </button>
                       ))}
                     </div>
@@ -993,6 +1061,40 @@ export const StudioAdminModal: React.FC = () => {
                   {/* SUB-TAB 6.3.2: РЕЦЕПТЫ (RECIPES EDITOR) */}
                   {prodSubTab === 'recipes' && (
                     <div className="space-y-6">
+                      {/* Collection Segment Filter Tabs */}
+                      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none p-3 rounded-2xl bg-black/30 border border-white/10">
+                        <span className="text-xs font-sans font-extrabold text-stone-300 shrink-0 flex items-center gap-1.5 mr-1">
+                          <Filter className="w-3.5 h-3.5 text-amber-400" />
+                          Коллекция:
+                        </span>
+                        <button
+                          onClick={() => setRecipeCollectionFilter('All')}
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-sans font-bold cursor-pointer whitespace-nowrap transition-colors ${
+                            recipeCollectionFilter === 'All'
+                              ? 'bg-amber-400 text-slate-950 shadow-md'
+                              : 'bg-white/10 text-stone-300 hover:bg-white/20'
+                          }`}
+                        >
+                          Все коллекции ({products.length})
+                        </button>
+                        {ALL_COLLECTIONS.map((col) => {
+                          const count = products.filter((p) => p.category === col).length;
+                          return (
+                            <button
+                              key={col}
+                              onClick={() => setRecipeCollectionFilter(col)}
+                              className={`px-3.5 py-1.5 rounded-xl text-xs font-sans font-bold cursor-pointer whitespace-nowrap transition-colors ${
+                                recipeCollectionFilter === col
+                                  ? 'bg-amber-400 text-slate-950 shadow-md'
+                                  : 'bg-white/10 text-stone-300 hover:bg-white/20'
+                              }`}
+                            >
+                              {COLLECTION_DISPLAY_NAMES[col] || col} ({count})
+                            </button>
+                          );
+                        })}
+                      </div>
+
                       {/* Product Selector Bar */}
                       <div className="p-4 rounded-2xl border border-white/15 bg-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -1006,9 +1108,9 @@ export const StudioAdminModal: React.FC = () => {
                               onChange={(e) => setSelectedRecipeProductId(e.target.value)}
                               className="w-full sm:w-80 px-3.5 py-2 rounded-xl border border-white/20 bg-slate-900 text-white font-sans text-xs font-bold focus:outline-none focus:border-amber-400"
                             >
-                              {products.map((p) => (
+                              {filteredRecipeProducts.map((p) => (
                                 <option key={p.id} value={p.id}>
-                                  {p.name} ({p.category})
+                                  {p.name} ({COLLECTION_DISPLAY_NAMES[p.category] || p.category})
                                 </option>
                               ))}
                             </select>
@@ -1187,8 +1289,8 @@ export const StudioAdminModal: React.FC = () => {
                     <div className="space-y-6">
                       {/* Summary Metrics Banner */}
                       {(() => {
-                        // Calculate total required flavorings across all user orders
-                        const flavorMap = new Map<string, { vendor: string; name: string; totalMl: number }>();
+                        // Calculate total required flavorings across all user orders with normalized keys
+                        const flavorMap = new Map<string, { vendor: string; name: string; totalMl: number; key: string }>();
 
                         for (const order of ordersHistory) {
                           for (const item of order.items) {
@@ -1198,16 +1300,19 @@ export const StudioAdminModal: React.FC = () => {
 
                             if (recipe && recipe.items) {
                               for (const comp of recipe.items) {
-                                const key = `${comp.vendor.trim().toUpperCase()}:${comp.name.trim().toLowerCase()}`;
+                                const cleanVendor = comp.vendor.trim().toUpperCase();
+                                const cleanName = comp.name.trim().replace(/\s+/g, ' ');
+                                const canonicalKey = `${cleanVendor}_${cleanName.toLowerCase()}`;
                                 const compMl = totalLiquidMl * (comp.mlPer100ml / 100);
 
-                                if (flavorMap.has(key)) {
-                                  const existing = flavorMap.get(key)!;
+                                if (flavorMap.has(canonicalKey)) {
+                                  const existing = flavorMap.get(canonicalKey)!;
                                   existing.totalMl += compMl;
                                 } else {
-                                  flavorMap.set(key, {
-                                    vendor: comp.vendor.trim().toUpperCase(),
-                                    name: comp.name.trim(),
+                                  flavorMap.set(canonicalKey, {
+                                    key: canonicalKey,
+                                    vendor: cleanVendor,
+                                    name: cleanName,
                                     totalMl: compMl,
                                   });
                                 }
@@ -1226,12 +1331,18 @@ export const StudioAdminModal: React.FC = () => {
 
                         aggregatedList.forEach((item) => {
                           totalMlSum += item.totalMl;
-                          const key = `${item.vendor}:${item.name.toLowerCase()}`;
-                          const priceRecord = flavorPrices.find((fp) => fp.key === key);
+                          const key1 = `${item.vendor}:${item.name.toLowerCase()}`;
+                          const key2 = `${item.vendor}_${item.name.toLowerCase()}`;
+                          const priceRecord = flavorPrices.find((fp) => fp.key === key1 || fp.key === key2);
                           const pricePer10ml = priceRecord ? priceRecord.pricePer10ml : 100;
                           const cost = (item.totalMl / 10) * pricePer10ml;
                           totalCostSum += cost;
                         });
+
+                        const formattedVolume =
+                          totalMlSum >= 1000
+                            ? `${(totalMlSum / 1000).toFixed(2)} л (${totalMlSum.toFixed(0)} мл)`
+                            : `${totalMlSum.toFixed(1)} мл`;
 
                         return (
                           <div className="space-y-6">
@@ -1239,7 +1350,7 @@ export const StudioAdminModal: React.FC = () => {
                               <div className="p-5 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-md flex items-center justify-between">
                                 <div>
                                   <p className="text-xs font-sans uppercase font-extrabold text-stone-400 tracking-wider">
-                                    Уникальных ароматизаторов
+                                    Уникальных ароматизаторов к заказу
                                   </p>
                                   <h3 className="text-3xl font-extrabold font-sans text-amber-400 mt-1">
                                     {aggregatedList.length}
@@ -1253,10 +1364,10 @@ export const StudioAdminModal: React.FC = () => {
                               <div className="p-5 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-md flex items-center justify-between">
                                 <div>
                                   <p className="text-xs font-sans uppercase font-extrabold text-stone-400 tracking-wider">
-                                    Общий требуемый объём
+                                    Общий объем концентратов к заказу
                                   </p>
                                   <h3 className="text-3xl font-extrabold font-sans text-emerald-400 mt-1">
-                                    {totalMlSum.toFixed(1)} мл
+                                    {formattedVolume}
                                   </h3>
                                 </div>
                                 <div className="w-12 h-12 rounded-2xl bg-emerald-400/10 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
@@ -1267,7 +1378,7 @@ export const StudioAdminModal: React.FC = () => {
                               <div className="p-5 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-md flex items-center justify-between">
                                 <div>
                                   <p className="text-xs font-sans uppercase font-extrabold text-stone-400 tracking-wider">
-                                    Общая стоимость закупки
+                                    Примерная стоимость закупки
                                   </p>
                                   <h3 className="text-3xl font-extrabold font-sans text-amber-400 mt-1">
                                     {Math.round(totalCostSum)} ₽
@@ -1310,13 +1421,14 @@ export const StudioAdminModal: React.FC = () => {
                                       </tr>
                                     ) : (
                                       aggregatedList.map((item) => {
-                                        const key = `${item.vendor}:${item.name.toLowerCase()}`;
-                                        const priceRecord = flavorPrices.find((fp) => fp.key === key);
+                                        const key1 = `${item.vendor}:${item.name.toLowerCase()}`;
+                                        const key2 = `${item.vendor}_${item.name.toLowerCase()}`;
+                                        const priceRecord = flavorPrices.find((fp) => fp.key === key1 || fp.key === key2);
                                         const pricePer10ml = priceRecord ? priceRecord.pricePer10ml : 100;
                                         const cost = (item.totalMl / 10) * pricePer10ml;
 
                                         return (
-                                          <tr key={key} className="border-b border-white/10 hover:bg-white/5 transition-colors">
+                                          <tr key={item.key} className="border-b border-white/10 hover:bg-white/5 transition-colors">
                                             <td className="p-3 font-mono font-bold text-amber-300">
                                               {item.vendor}
                                             </td>

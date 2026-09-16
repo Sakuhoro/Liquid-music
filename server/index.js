@@ -2,6 +2,7 @@ import express from 'express'
 import path from 'path'
 import fs from 'fs'
 import multer from 'multer'
+import crypto from 'crypto'
 import { exec } from 'child_process'
 import { fileURLToPath } from 'url'
 import {
@@ -41,7 +42,8 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname) || (file.mimetype.includes('audio') ? '.mp3' : '.png')
-    const name = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}${ext}`
+    const uuid = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9)
+    const name = `${uuid}-${Date.now()}${ext}`
     cb(null, name)
   },
 })

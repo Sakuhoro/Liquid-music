@@ -1271,22 +1271,25 @@ export function addProduct(prod) {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  stmt.run(
-    prod.id,
-    prod.name,
-    prod.subtitle || '',
-    prod.description || '',
-    prod.image,
-    prod.basePrice,
-    prod.category,
-    prod.musicalKey || 'C Major',
-    prod.bpm || 120,
-    prod.opusNumber || '',
-    JSON.stringify(prod.aromaticChords || { top: '', heart: '', base: '' }),
-    prod.accentColor || '#38bdf8',
-    prod.isFeatured ? 1 : 0,
-    new Date().toISOString()
-  );
+  const runTx = db.transaction(() => {
+    stmt.run(
+      prod.id,
+      prod.name,
+      prod.subtitle || '',
+      prod.description || '',
+      prod.image,
+      prod.basePrice,
+      prod.category,
+      prod.musicalKey || 'C Major',
+      prod.bpm || 120,
+      prod.opusNumber || '',
+      JSON.stringify(prod.aromaticChords || { top: '', heart: '', base: '' }),
+      prod.accentColor || '#38bdf8',
+      prod.isFeatured ? 1 : 0,
+      new Date().toISOString()
+    );
+  });
+  runTx();
 
   return prod;
 }
@@ -1309,34 +1312,43 @@ export function updateProduct(prod) {
     WHERE id = ?
   `);
 
-  stmt.run(
-    prod.name,
-    prod.subtitle || '',
-    prod.description || '',
-    prod.image,
-    prod.basePrice,
-    prod.category,
-    prod.musicalKey || 'C Major',
-    prod.bpm || 120,
-    prod.opusNumber || '',
-    JSON.stringify(prod.aromaticChords || { top: '', heart: '', base: '' }),
-    prod.accentColor || '#38bdf8',
-    prod.isFeatured ? 1 : 0,
-    prod.id
-  );
+  const runTx = db.transaction(() => {
+    stmt.run(
+      prod.name,
+      prod.subtitle || '',
+      prod.description || '',
+      prod.image,
+      prod.basePrice,
+      prod.category,
+      prod.musicalKey || 'C Major',
+      prod.bpm || 120,
+      prod.opusNumber || '',
+      JSON.stringify(prod.aromaticChords || { top: '', heart: '', base: '' }),
+      prod.accentColor || '#38bdf8',
+      prod.isFeatured ? 1 : 0,
+      prod.id
+    );
+  });
+  runTx();
 
   return prod;
 }
 
 export function deleteProduct(id) {
   const stmt = db.prepare('DELETE FROM products WHERE id = ?');
-  stmt.run(id);
+  const runTx = db.transaction(() => {
+    stmt.run(id);
+  });
+  runTx();
   return { id };
 }
 
 export function resetProducts() {
-  db.prepare('DELETE FROM products').run();
-  seedDatabase();
+  const runTx = db.transaction(() => {
+    db.prepare('DELETE FROM products').run();
+    seedDatabase();
+  });
+  runTx();
   return getAllProducts();
 }
 
@@ -1351,7 +1363,10 @@ export function setSetting(key, value) {
     INSERT INTO settings (key, value) VALUES (?, ?)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value
   `);
-  stmt.run(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+  const runTx = db.transaction(() => {
+    stmt.run(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+  });
+  runTx();
 }
 
 // Recipe operations
@@ -1370,13 +1385,19 @@ export function setRecipe(productId, items) {
     ON CONFLICT(productId) DO UPDATE SET items = excluded.items, updatedAt = excluded.updatedAt
   `);
   const now = new Date().toISOString();
-  stmt.run(productId, JSON.stringify(items), now);
+  const runTx = db.transaction(() => {
+    stmt.run(productId, JSON.stringify(items), now);
+  });
+  runTx();
   return { productId, items, updatedAt: now };
 }
 
 export function deleteRecipe(productId) {
   const stmt = db.prepare('DELETE FROM recipes WHERE productId = ?');
-  stmt.run(productId);
+  const runTx = db.transaction(() => {
+    stmt.run(productId);
+  });
+  runTx();
   return { productId };
 }
 
@@ -1401,13 +1422,19 @@ export function setFlavorPrice(vendor, name, pricePer10ml, currency = 'RUB') {
     ON CONFLICT(key) DO UPDATE SET pricePer10ml = excluded.pricePer10ml, currency = excluded.currency, updatedAt = excluded.updatedAt
   `);
   const now = new Date().toISOString();
-  stmt.run(key, vendor.trim(), name.trim(), Number(pricePer10ml), currency, now);
+  const runTx = db.transaction(() => {
+    stmt.run(key, vendor.trim(), name.trim(), Number(pricePer10ml), currency, now);
+  });
+  runTx();
   return { key, vendor: vendor.trim(), name: name.trim(), pricePer10ml: Number(pricePer10ml), currency, updatedAt: now };
 }
 
 export function deleteFlavorPrice(key) {
   const stmt = db.prepare('DELETE FROM flavor_prices WHERE key = ?');
-  stmt.run(key);
+  const runTx = db.transaction(() => {
+    stmt.run(key);
+  });
+  runTx();
   return { key };
 }
 
