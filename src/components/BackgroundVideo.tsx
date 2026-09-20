@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 
 export const BackgroundVideo: React.FC = () => {
   const theme = useAppStore((state) => state.theme);
+  const activeCollection = useAppStore((state) => state.activeCollection);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const isDark = theme === 'dark';
@@ -11,8 +12,19 @@ export const BackgroundVideo: React.FC = () => {
   const HERO_VIDEO_LIGHT = '/videos/role-act-as-a-master-animato.mp4';
   const HERO_VIDEO_DARK = '/videos/night-head.mp4';
 
-  // Theme-driven background; active collection does not switch the video anymore
-  const currentVideoSrc = isDark ? HERO_VIDEO_DARK : HERO_VIDEO_LIGHT;
+  // Dedicated Summer collection videos (theme-driven variants)
+  const SUMMER_VIDEO_LIGHT = '/videos/summer-lite.mp4';
+  const SUMMER_VIDEO_DARK = '/videos/summer-dark.mp4';
+
+  // Only play Summer videos when the user selects the Summer collection from the gallery
+  const isSummerCollection = activeCollection === 'Summer';
+  const currentVideoSrc = isSummerCollection
+    ? isDark
+      ? SUMMER_VIDEO_DARK
+      : SUMMER_VIDEO_LIGHT
+    : isDark
+      ? HERO_VIDEO_DARK
+      : HERO_VIDEO_LIGHT;
 
   useEffect(() => {
     const playSafe = async () => {
