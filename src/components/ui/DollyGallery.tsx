@@ -398,7 +398,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                     )}
 
                     {item.description && sanitizeRussianText(item.description, false) && (
-                      <p className="text-xs sm:text-sm font-sans text-stone-300 leading-relaxed line-clamp-3 mt-1 antialiased">
+                      <p className="text-xs sm:text-sm font-sans text-amber-300 leading-relaxed line-clamp-3 mt-1 antialiased">
                         {sanitizeRussianText(item.description, false)}
                       </p>
                     )}
@@ -431,7 +431,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
               {activeItem.name}
             </h3>
             {activeItem.description && sanitizeRussianText(activeItem.description, false) ? (
-              <p className="text-xs font-sans text-stone-300 line-clamp-2 mt-0.5 leading-relaxed antialiased">
+              <p className="text-xs font-sans text-amber-300 line-clamp-2 mt-0.5 leading-relaxed antialiased">
                 {sanitizeRussianText(activeItem.description, false)}
               </p>
             ) : activeItem.subtitle && sanitizeRussianText(activeItem.subtitle, true) ? (
