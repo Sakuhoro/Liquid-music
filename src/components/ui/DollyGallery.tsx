@@ -6,9 +6,12 @@ import { sanitizeRussianText } from '../../utils/sanitizeText';
 
 export interface DollyItem {
   id: string | number;
-  name: string;
+  name?: string;
+  title?: string;
   subtitle?: string;
   description?: string;
+  admin_description?: string;
+  adminDescription?: string;
   basePrice?: number;
   opusNumber?: string;
   image: string;
@@ -388,18 +391,12 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                     </div>
 
                     <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-snug drop-shadow-md">
-                      {item.name}
+                      {item.name || item.title}
                     </h3>
 
-                    {item.subtitle && sanitizeRussianText(item.subtitle, true) && (
-                      <p className="text-sm font-sans text-amber-300 font-semibold leading-snug">
-                        {sanitizeRussianText(item.subtitle, true)}
-                      </p>
-                    )}
-
-                    {item.description && sanitizeRussianText(item.description, false) && (
+                    {(item.admin_description || item.adminDescription || item.description) && (
                       <p className="text-xs sm:text-sm font-sans text-stone-300 leading-relaxed line-clamp-3 mt-1 antialiased">
-                        {sanitizeRussianText(item.description, false)}
+                        {sanitizeRussianText(item.admin_description || item.adminDescription || item.description, false)}
                       </p>
                     )}
                   </motion.div>
@@ -428,17 +425,13 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
               </span>
             </div>
             <h3 className="font-sans text-xl font-extrabold text-white tracking-tight leading-snug">
-              {activeItem.name}
+              {activeItem.name || activeItem.title}
             </h3>
-            {activeItem.description && sanitizeRussianText(activeItem.description, false) ? (
+            {(activeItem.admin_description || activeItem.adminDescription || activeItem.description) && (
               <p className="text-xs font-sans text-stone-300 line-clamp-2 mt-0.5 leading-relaxed antialiased">
-                {sanitizeRussianText(activeItem.description, false)}
+                {sanitizeRussianText(activeItem.admin_description || activeItem.adminDescription || activeItem.description, false)}
               </p>
-            ) : activeItem.subtitle && sanitizeRussianText(activeItem.subtitle, true) ? (
-              <p className="text-xs font-sans text-amber-300/90 font-medium line-clamp-2 mt-0.5 leading-relaxed antialiased">
-                {sanitizeRussianText(activeItem.subtitle, true)}
-              </p>
-            ) : null}
+            )}
             <div className="mt-1 text-[11px] font-sans text-amber-400 font-bold">
               Нажмите, чтобы открыть →
             </div>
