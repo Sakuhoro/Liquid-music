@@ -120,6 +120,7 @@ export const StudioAdminModal: React.FC = () => {
   const [recipeRawText, setRecipeRawText] = useState<string>('');
   const [recipeMode, setRecipeMode] = useState<'table' | 'raw'>('table');
   const [recipeNotice, setRecipeNotice] = useState<string | null>(null);
+  const [recipeSearchQuery, setRecipeSearchQuery] = useState<string>('');
   const [editingRecipeItems, setEditingRecipeItems] = useState<RecipeItem[]>([]);
 
   // Sync recipeCollectionFilter to URL search params
@@ -136,9 +137,19 @@ export const StudioAdminModal: React.FC = () => {
   }, [recipeCollectionFilter]);
 
   const filteredRecipeProducts = useMemo(() => {
-    if (recipeCollectionFilter === 'All') return products;
-    return products.filter((p) => p.category === recipeCollectionFilter);
-  }, [products, recipeCollectionFilter]);
+    const q = recipeSearchQuery.trim().toLowerCase();
+    const byCollection =
+      recipeCollectionFilter === 'All'
+        ? products
+        : products.filter((p) => p.category === recipeCollectionFilter);
+    if (!q) return byCollection;
+    return byCollection.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.subtitle || '').toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q)
+    );
+  }, [products, recipeCollectionFilter, recipeSearchQuery]);
 
   useEffect(() => {
     if (filteredRecipeProducts.length > 0) {
@@ -1103,6 +1114,21 @@ export const StudioAdminModal: React.FC = () => {
                             <label className="block text-xs font-sans font-bold text-stone-300 mb-1">
                               Выберите вкус для редактирования рецепта:
                             </label>
+                            <div className="relative w-full sm:w-80">
+                              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
+                              <input
+                                type="text"
+                                placeholder="Поиск вкуса по названию..."
+                                value={recipeSearchQuery}
+                                onChange={(e) => setRecipeSearchQuery(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2 rounded-xl text-xs border border-white/15 bg-slate-900 focus:outline-none focus:border-amber-400 text-white font-sans"
+                              />
+                            </div>
+                            {recipeSearchQuery.trim() && (
+                              <p className="text-[11px] font-sans text-amber-300/80 mt-1.5">
+                                Найдено вкусов: {filteredRecipeProducts.length}
+                              </p>
+                            )}
                             <select
                               value={selectedRecipeProductId}
                               onChange={(e) => setSelectedRecipeProductId(e.target.value)}
