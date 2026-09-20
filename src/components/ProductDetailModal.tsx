@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { VolumeType, NicotineType } from '../types';
 import { calculatePrice, VOLUME_PRICING, NICOTINE_PRICING } from '../data/products';
+import { sanitizeRussianText } from '../utils/sanitizeText';
 import {
   X,
   Volume2,
@@ -143,7 +144,7 @@ export const ProductDetailModal: React.FC = () => {
                 {sanitizeTitle(inspectedProduct.name)}
               </h2>
               <p className="text-base sm:text-lg leading-relaxed text-stone-200 font-sans font-normal opacity-95">
-                {inspectedProduct.description}
+                {sanitizeRussianText(inspectedProduct.description)}
               </p>
             </div>
 
@@ -152,9 +153,9 @@ export const ProductDetailModal: React.FC = () => {
 
               {/* Volume Segmented Control */}
               <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs font-sans tracking-wider uppercase text-stone-300 antialiased">
+                <div className="flex justify-between items-center text-sm sm:text-base font-sans tracking-wider uppercase text-stone-300 antialiased">
                   <span className="font-extrabold text-white">Объём флакона (ml):</span>
-                  <span className="text-amber-400 font-extrabold font-sans text-sm tracking-tight">{volPrice} ₽</span>
+                  <span className="text-amber-400 font-extrabold font-sans text-base sm:text-lg tracking-tight">{volPrice} ₽</span>
                 </div>
 
                 {/* Segmented Control Pills */}
@@ -165,14 +166,14 @@ export const ProductDetailModal: React.FC = () => {
                       <button
                         key={v}
                         onClick={() => setSelectedVolume(v)}
-                        className={`relative py-3 px-2 rounded-xl text-center font-sans antialiased transition-all duration-300 cursor-pointer min-h-[46px] flex flex-col items-center justify-center ${
+                        className={`relative py-3 px-2 rounded-xl text-center font-sans antialiased transition-all duration-300 cursor-pointer min-h-[48px] flex flex-col items-center justify-center ${
                           isSelected
                             ? 'bg-amber-400 text-slate-950 font-extrabold shadow-lg shadow-amber-400/30 scale-[1.02]'
                             : 'text-stone-200 hover:text-white hover:bg-white/10 font-bold'
                         }`}
                       >
-                        <div className="text-sm font-extrabold tracking-tight">{v}</div>
-                        <div className={`text-[11px] font-semibold mt-0.5 ${isSelected ? 'text-slate-950/90' : 'text-stone-400'}`}>
+                        <div className="text-base sm:text-lg font-extrabold tracking-tight">{v}</div>
+                        <div className={`text-xs sm:text-sm font-semibold mt-0.5 ${isSelected ? 'text-slate-950/90' : 'text-stone-400'}`}>
                           {VOLUME_PRICING[v]} ₽
                         </div>
                       </button>
@@ -183,9 +184,9 @@ export const ProductDetailModal: React.FC = () => {
 
               {/* Nicotine Segmented Control */}
               <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs font-sans tracking-wider uppercase text-stone-300 antialiased">
+                <div className="flex justify-between items-center text-sm sm:text-base font-sans tracking-wider uppercase text-stone-300 antialiased">
                   <span className="font-extrabold text-white">Крепость никотина:</span>
-                  <span className="text-amber-400 font-extrabold font-sans text-sm tracking-tight">
+                  <span className="text-amber-400 font-extrabold font-sans text-base sm:text-lg tracking-tight">
                     {nicPrice > 0 ? `+${nicPrice} ₽` : '0 ₽'}
                   </span>
                 </div>
@@ -198,14 +199,14 @@ export const ProductDetailModal: React.FC = () => {
                       <button
                         key={n}
                         onClick={() => setSelectedNicotine(n)}
-                        className={`relative py-3 px-1.5 rounded-xl text-center font-sans antialiased transition-all duration-300 cursor-pointer min-h-[46px] flex flex-col items-center justify-center ${
+                        className={`relative py-3 px-1.5 rounded-xl text-center font-sans antialiased transition-all duration-300 cursor-pointer min-h-[48px] flex flex-col items-center justify-center ${
                           isSelected
                             ? 'bg-amber-400 text-slate-950 font-extrabold shadow-lg shadow-amber-400/30 scale-[1.02]'
                             : 'text-stone-200 hover:text-white hover:bg-white/10 font-bold'
                         }`}
                       >
-                        <div className="text-sm font-extrabold tracking-tight">{n}</div>
-                        <div className={`text-[11px] font-semibold mt-0.5 ${isSelected ? 'text-slate-950/90' : 'text-stone-400'}`}>
+                        <div className="text-base sm:text-lg font-extrabold tracking-tight">{n}</div>
+                        <div className={`text-xs sm:text-sm font-semibold mt-0.5 ${isSelected ? 'text-slate-950/90' : 'text-stone-400'}`}>
                           {n === '0mg' ? '0₽' : `+${NICOTINE_PRICING[n]}₽`}
                         </div>
                       </button>
@@ -219,10 +220,10 @@ export const ProductDetailModal: React.FC = () => {
             {/* CTA Footer Row: Premium Typography Price Display & Clean Minimalist Order Button */}
             <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               <div>
-                <div className="text-xs font-sans uppercase tracking-widest text-stone-300 mb-0.5 font-extrabold antialiased">
+                <div className="text-sm sm:text-base font-sans uppercase tracking-widest text-stone-300 mb-0.5 font-extrabold antialiased">
                   Итоговая стоимость
                 </div>
-                <div className="text-4xl sm:text-5xl font-extrabold font-sans text-amber-400 tracking-tight antialiased">
+                <div className="text-5xl sm:text-6xl font-extrabold font-sans text-amber-400 tracking-tight antialiased">
                   {totalPrice} ₽
                 </div>
               </div>

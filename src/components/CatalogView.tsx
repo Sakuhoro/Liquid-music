@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import SkewedCarousel, { SkewedCarouselItem } from './ui/skewed-carousel';
 import DollyGallery from './ui/DollyGallery';
+import { sanitizeRussianText } from '../utils/sanitizeText';
 
 // Metadata for Collection Skewed Cards
 const COLLECTION_CARDS: SkewedCarouselItem[] = [
@@ -254,7 +255,7 @@ export const CatalogView: React.FC = () => {
                     <p className={`font-sans text-xs line-clamp-2 mt-1.5 leading-relaxed antialiased font-medium ${
                       isDark ? 'text-stone-300 opacity-90' : 'text-slate-700 opacity-90'
                     }`}>
-                      {product.description}
+                      {sanitizeRussianText(product.description)}
                     </p>
                   </div>
                   <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">

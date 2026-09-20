@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Disc, Sparkles } from 'lucide-react';
 import { getItemScale } from '../../utils/vinylScale';
+import { sanitizeRussianText } from '../../utils/sanitizeText';
 
 export interface DollyItem {
   id: string | number;
@@ -313,8 +314,6 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
           const scale = dynamicPulse;
           const isMouseHovered = hoveredItemId === item.id;
           const showPopup = isFocused || isMouseHovered;
-          const isSpringItem = item.category === 'Spring' || item.category?.toLowerCase() === 'spring';
-
           return (
             <div
               key={item.id}
@@ -392,15 +391,15 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                       {item.name}
                     </h3>
 
-                    {!isSpringItem && item.subtitle && (
+                    {item.subtitle && sanitizeRussianText(item.subtitle, true) && (
                       <p className="text-sm font-sans text-amber-300 font-semibold leading-snug">
-                        {item.subtitle}
+                        {sanitizeRussianText(item.subtitle, true)}
                       </p>
                     )}
 
-                    {!isSpringItem && item.description && (
+                    {item.description && sanitizeRussianText(item.description, false) && (
                       <p className="text-xs sm:text-sm font-sans text-stone-300 leading-relaxed line-clamp-3 mt-1 antialiased">
-                        {item.description}
+                        {sanitizeRussianText(item.description, false)}
                       </p>
                     )}
                   </motion.div>
@@ -431,9 +430,9 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
             <h3 className="font-sans text-xl font-extrabold text-white tracking-tight leading-snug">
               {activeItem.name}
             </h3>
-            {!(activeItem.category === 'Spring' || activeItem.category?.toLowerCase() === 'spring') && activeItem.description && (
+            {activeItem.description && sanitizeRussianText(activeItem.description, false) && (
               <p className="text-xs font-sans text-stone-300 line-clamp-2 mt-0.5 leading-relaxed antialiased">
-                {activeItem.description}
+                {sanitizeRussianText(activeItem.description, false)}
               </p>
             )}
             <div className="mt-1 text-[11px] font-sans text-amber-400 font-bold">

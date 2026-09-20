@@ -118,8 +118,8 @@ export const INITIAL_PRODUCTS_SEED = [
   {
     id: 'sakura-blossom-sonata',
     name: 'Sakura Blossom Sonata',
-    subtitle: 'Delicate Piano Cantabile of White Peach & Spring Floral Dew',
-    description: 'A delicate spring sonata in D-flat major. Japanese Shimizu white peach nectar infused with handpicked cherry blossoms and sweet mountain spring water.',
+    subtitle: 'Нежная пианино-кантабиле из белого персика и весенней росы',
+    description: 'Утонченная весенняя соната в ре-диез мажоре. Нектар японского белого персика Шимизу с цветущей сакурой и горной весенней водой.',
     image: 'https://images.unsplash.com/photo-1528183429752-a97d0bf99b5a?w=500&auto=format&fit=crop&q=80',
     basePrice: 300,
     category: 'Spring',
@@ -232,8 +232,8 @@ export const INITIAL_PRODUCTS_SEED = [
   {
     id: 'renee',
     name: 'Renee',
-    subtitle: 'Refreshing Symphony of Italian Lemon, Bergamot & Green Tea',
-    description: 'An elegant citrus-tea harmony featuring crisp Sicilian lemons, fragrant bergamot, and delicate green tea notes.',
+    subtitle: 'Освежающая симфония сицилийского лимона, бергамота и зеленого чая',
+    description: 'Изящная цитрусово-чайная гармония сочных сицилийских лимонов, ароматного бергамота и изысканных нот зеленого чая.',
     image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=500&auto=format&fit=crop&q=80',
     basePrice: 300,
     category: 'Spring',
@@ -251,8 +251,8 @@ export const INITIAL_PRODUCTS_SEED = [
   {
     id: 'on-a-green',
     name: 'On a Green',
-    subtitle: 'Soothing Blend of Lemon Tea & Wild Sweet Teas',
-    description: 'A soothing and vibrant tea infusion blending citrusy lemon tea with rich green and sweet tea undertones.',
+    subtitle: 'Успокаивающий купаж лимонного и дикого зеленого чая',
+    description: 'Успокаивающий и яркий чайный настои с цитрусовым лимонным чаем и насыщенными зелеными нотами.',
     image: 'https://images.unsplash.com/photo-1528183429752-a97d0bf99b5a?w=500&auto=format&fit=crop&q=80',
     basePrice: 300,
     category: 'Spring',
@@ -327,8 +327,8 @@ export const INITIAL_PRODUCTS_SEED = [
   {
     id: 'spring-true-colors',
     name: 'Spring True Colors',
-    subtitle: 'Vibrant Mint Candy, Citrus Lime & Lemonade Refreshment',
-    description: 'A glowing spring medley of spearmint leaves, cold pressed tahity lime, mint candy, and sparkling lemonade.',
+    subtitle: 'Яркая мятная карамель, таитянский лайм и освежающий лимонад',
+    description: 'Яркий весенний микс из свежей мяты, холодного таитянского лайма, мятных конфет и искрящегося лимонада.',
     image: 'https://images.unsplash.com/photo-1528183429752-a97d0bf99b5a?w=500&auto=format&fit=crop&q=80',
     basePrice: 300,
     category: 'Spring',
@@ -403,8 +403,8 @@ export const INITIAL_PRODUCTS_SEED = [
   {
     id: 'boop',
     name: 'Boop',
-    subtitle: 'Effervescent Tarragon Soda, Anise, Sicilian Lemon & Marshmallow',
-    description: 'A nostalgic Slavic tarragon soda (Тархун) enriched with Sicilian lemon, anise spice, pillowy marshmallow, and lemonade.',
+    subtitle: 'Шипучий тархун, анис, сицилийский лимон и маршмеллоу',
+    description: 'Ностальгический тархун, обогащенный сочным сицилийским лимоном, анисом, нежным маршмеллоу и лимонадом.',
     image: 'https://images.unsplash.com/photo-1528183429752-a97d0bf99b5a?w=500&auto=format&fit=crop&q=80',
     basePrice: 300,
     category: 'Spring',
@@ -460,8 +460,8 @@ export const INITIAL_PRODUCTS_SEED = [
   {
     id: 'daydreaming',
     name: 'Daydreaming',
-    subtitle: 'Lush Forest Fruit Medley, Alpine Strawberry & Bavarian Cream',
-    description: 'A romantic dream of wild forest berries and Alpine strawberries submerged in luxurious Bavarian cream and candy syrup.',
+    subtitle: 'Сочный микс лесных ягод, альпийская земляника и баварский крем',
+    description: 'Романтическая фантазия из диких лесных ягод и альпийской земляники в роскошном баварском креме.',
     image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=500&auto=format&fit=crop&q=80',
     basePrice: 300,
     category: 'Spring',
@@ -555,8 +555,8 @@ export const INITIAL_PRODUCTS_SEED = [
   {
     id: 'birth-of-a-wish',
     name: 'Birth of a Wish',
-    subtitle: 'Ethereal Green & Fuji Apple, Pear Nectar & Floral Hibiscus',
-    description: 'A delicate and dreamlike blend of crisp green apple, juicy Fuji apple, sweet pear, vanilla classic, soft cream, and hibiscus floral notes.',
+    subtitle: 'Воздушное зеленое яблоко Фуджи, грушевый нектар и гибискус',
+    description: 'Утонченное и сказочное сочетание хрустящего зеленого яблока Фуджи, сочной груши, классической ванили и гибискуса.',
     image: 'https://images.unsplash.com/photo-1528183429752-a97d0bf99b5a?w=500&auto=format&fit=crop&q=80',
     basePrice: 300,
     category: 'Spring',
@@ -593,8 +593,8 @@ export const INITIAL_PRODUCTS_SEED = [
   {
     id: 'which-breath',
     name: 'Which Breath',
-    subtitle: 'Botanical Juniper Gin, Herbal Basil & Crisp Pear Chill',
-    description: 'An ethereal botanical blend of fresh basil, botanical juniper gin, crisp pear nectar, sharp lime, and a subtle cooling finish.',
+    subtitle: 'Ботанический джин, свежий базилик и прохладная груша',
+    description: 'Эфирный ботанический микс из свежего базилика, можжевелового джина, спелой груши, лайма и легкой прохлады.',
     image: 'https://images.unsplash.com/photo-1517840901100-8179e982acb7?w=500&auto=format&fit=crop&q=80',
     basePrice: 300,
     category: 'Spring',
@@ -1253,6 +1253,21 @@ function seedRecipesAndPrices() {
 
 seedDatabase();
 seedRecipesAndPrices();
+
+// Ensure Spring items in existing DB table are updated to Russian descriptions
+function migrateSpringDescriptions() {
+  const springSeedItems = INITIAL_PRODUCTS_SEED.filter((p) => p.category === 'Spring');
+  const updateStmt = db.prepare(`
+    UPDATE products SET subtitle = ?, description = ? WHERE id = ?
+  `);
+  const runTx = db.transaction(() => {
+    for (const item of springSeedItems) {
+      updateStmt.run(item.subtitle, item.description, item.id);
+    }
+  });
+  runTx();
+}
+migrateSpringDescriptions();
 
 export function getAllProducts() {
   const rows = db.prepare('SELECT * FROM products ORDER BY rowid ASC').all();
