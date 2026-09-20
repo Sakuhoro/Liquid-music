@@ -426,6 +426,7 @@ export const StudioAdminModal: React.FC = () => {
       >
         {/* Close Button */}
         <button
+          id="close-studio-modal-btn"
           onClick={() => setIsStudioModalOpen(false)}
           className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer z-20"
         >
