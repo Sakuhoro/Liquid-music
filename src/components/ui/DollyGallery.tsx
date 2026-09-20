@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Disc, Sparkles } from 'lucide-react';
+import { getItemScale } from '../../utils/vinylScale';
 
 export interface DollyItem {
   id: string | number;
@@ -312,6 +313,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
           const scale = dynamicPulse;
           const isMouseHovered = hoveredItemId === item.id;
           const showPopup = isFocused || isMouseHovered;
+          const isSpringItem = item.category === 'Spring' || item.category?.toLowerCase() === 'spring';
 
           return (
             <div
@@ -353,10 +355,9 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="w-full h-full object-cover pointer-events-none"
+                    style={{ transform: `scale(${getItemScale(item)})` }}
+                    className="w-full h-full object-cover pointer-events-none transition-transform duration-300"
                   />
-                  {/* Spindle hole */}
-                  <div className="vinyl-hole absolute w-[12%] h-[12%] rounded-full bg-stone-950 border border-black/50 shadow-inner z-10"></div>
                 </div>
               </div>
 
@@ -391,13 +392,13 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                       {item.name}
                     </h3>
 
-                    {item.subtitle && (
+                    {!isSpringItem && item.subtitle && (
                       <p className="text-sm font-sans text-amber-300 font-semibold leading-snug">
                         {item.subtitle}
                       </p>
                     )}
 
-                    {item.description && (
+                    {!isSpringItem && item.description && (
                       <p className="text-xs sm:text-sm font-sans text-stone-300 leading-relaxed line-clamp-3 mt-1 antialiased">
                         {item.description}
                       </p>
@@ -430,9 +431,11 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
             <h3 className="font-sans text-xl font-extrabold text-white tracking-tight leading-snug">
               {activeItem.name}
             </h3>
-            <p className="text-xs font-sans text-stone-300 line-clamp-2 mt-0.5 leading-relaxed antialiased">
-              {activeItem.description}
-            </p>
+            {!(activeItem.category === 'Spring' || activeItem.category?.toLowerCase() === 'spring') && activeItem.description && (
+              <p className="text-xs font-sans text-stone-300 line-clamp-2 mt-0.5 leading-relaxed antialiased">
+                {activeItem.description}
+              </p>
+            )}
             <div className="mt-1 text-[11px] font-sans text-amber-400 font-bold">
               Нажмите, чтобы открыть →
             </div>

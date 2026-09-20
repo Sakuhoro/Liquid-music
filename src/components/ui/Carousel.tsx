@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useMotionValue, useTransform, MotionValue } from 'motion/react';
+import { getItemScale } from '../../utils/vinylScale';
 
 import './Carousel.css';
 
@@ -62,11 +63,15 @@ function CarouselItem({
         <div className="vinyl-spin-wrapper">
           <div className="vinyl-label">
             {item?.image ? (
-              <img src={item.image} alt={titleText} className="vinyl-image" />
+              <img
+                src={item.image}
+                alt={titleText}
+                className="vinyl-image"
+                style={{ transform: `scale(${getItemScale(item)})` }}
+              />
             ) : (
               <span className="carousel-icon-container">{item?.icon}</span>
             )}
-            <div className="vinyl-hole"></div>
           </div>
           <div className="vinyl-title-tooltip">{titleText}</div>
         </div>
