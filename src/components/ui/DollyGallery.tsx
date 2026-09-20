@@ -430,11 +430,15 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
             <h3 className="font-sans text-xl font-extrabold text-white tracking-tight leading-snug">
               {activeItem.name}
             </h3>
-            {activeItem.description && sanitizeRussianText(activeItem.description, false) && (
+            {activeItem.description && sanitizeRussianText(activeItem.description, false) ? (
               <p className="text-xs font-sans text-stone-300 line-clamp-2 mt-0.5 leading-relaxed antialiased">
                 {sanitizeRussianText(activeItem.description, false)}
               </p>
-            )}
+            ) : activeItem.subtitle && sanitizeRussianText(activeItem.subtitle, true) ? (
+              <p className="text-xs font-sans text-amber-300/90 font-medium line-clamp-2 mt-0.5 leading-relaxed antialiased">
+                {sanitizeRussianText(activeItem.subtitle, true)}
+              </p>
+            ) : null}
             <div className="mt-1 text-[11px] font-sans text-amber-400 font-bold">
               Нажмите, чтобы открыть →
             </div>
