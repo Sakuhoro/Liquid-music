@@ -6,7 +6,6 @@ import {
   Lock,
   UserCheck,
   UserPlus,
-  Disc,
   Sliders,
   AlertCircle,
   CheckSquare,
@@ -119,29 +118,10 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
       <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Header Badge & Master Track Icon */}
-      <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
-        <div className="flex items-center gap-2">
-          <Disc className="w-6 h-6 text-amber-400 animate-spin-slow shrink-0" />
-          <span className="text-xs font-mono tracking-widest uppercase text-amber-400 font-bold">
-            Studio Master Gate • 24-Bit / 192kHz
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono text-emerald-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>STUDIO ONLINE</span>
-        </div>
-      </div>
-
-      {/* Title & Subtitle */}
-      <div className="mb-6">
-        <h2 className="font-serif text-2xl sm:text-3xl font-normal tracking-tight text-white">
-          Студийный доступ / Studio Access
-        </h2>
-        <p className="text-sm text-stone-400 mt-1.5 leading-relaxed font-sans">
-          Вход для звукорежиссеров и резидентов
-        </p>
-      </div>
+      {/* Title */}
+      <h2 className="font-serif text-2xl sm:text-3xl font-normal tracking-tight text-white mb-6">
+        Вход для звукорежиссеров
+      </h2>
 
       {/* Mode Switcher Tabs */}
       <div className="grid grid-cols-2 p-1 mb-6 rounded-2xl bg-white/[0.06] border border-white/10 font-mono text-sm">

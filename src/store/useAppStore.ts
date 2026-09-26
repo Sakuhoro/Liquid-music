@@ -18,30 +18,6 @@ import {
   NICOTINE_PRICING,
 } from '../data/products';
 
-export const MOCK_EXISTING_USERS: AuthUser[] = [
-  {
-    name: 'Воронова Елена Дмитриевна',
-    phone: '+7 (999) 111-22-33',
-    telegram: '@White_blooming',
-    registeredAt: '2026-01-15',
-    role: 'ADMIN',
-  },
-  {
-    name: 'Смирнов Алексей Викторович',
-    phone: '+7 (916) 555-44-33',
-    telegram: '@alex_vapor',
-    registeredAt: '2026-02-10',
-    role: 'USER',
-  },
-  {
-    name: 'Ковалев Дмитрий Андреевич',
-    phone: '+7 (925) 777-88-99',
-    telegram: '@sound_master',
-    registeredAt: '2026-03-01',
-    role: 'USER',
-  },
-];
-
 export const DEFAULT_COLLECTION_VIDEOS: CollectionVideosConfig = {
   Spring: '/videos/role-act-as-a-master-animato.mp4',
   Summer: '/videos/role-act-as-a-master-animato.mp4',
@@ -136,7 +112,6 @@ interface AppState {
 
   // Authentication for Clients
   currentUser: AuthUser | null;
-  existingUsers: AuthUser[];
   isAuthModalOpen: boolean;
   authModalContext: 'checkout' | 'account' | null;
   openAuthModal: (context?: 'checkout' | 'account') => void;
@@ -568,7 +543,6 @@ export const useAppStore = create<AppState>()(
 
       // Client Authentication
       currentUser: null,
-      existingUsers: MOCK_EXISTING_USERS,
       isAuthModalOpen: false,
       authModalContext: null,
 
@@ -794,7 +768,6 @@ export const useAppStore = create<AppState>()(
         theme: state.theme,
         cart: state.cart,
         currentUser: state.currentUser,
-        existingUsers: state.existingUsers,
         ordersHistory: state.ordersHistory,
         collectionVideos: state.collectionVideos,
         darkMusicUrl: state.darkMusicUrl,
