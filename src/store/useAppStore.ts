@@ -89,10 +89,16 @@ interface AppState {
   isSoundCloudOpen: boolean;
   setIsSoundCloudOpen: (open: boolean) => void;
 
-  // Admin Auth Logic (Protected: @White_blooming / 365Dca586)
+  // Admin Auth Logic
+  //
+  // The admin gate is verified by the server, exactly like a normal login: the
+  // browser posts the credentials to /api/auth/login, which compares them
+  // against the bcrypt hash in the `users` table and returns the role. No
+  // credential and no privileged identity is hardcoded here, so reading the
+  // shipped JavaScript no longer grants access to the admin cabinet.
   isAdminLoggedIn: boolean;
-  adminLogin: (username: string, pass: string) => boolean;
-  adminLogout: () => void;
+  adminLogin: (username: string, pass: string) => Promise<boolean>;
+  adminLogout: () => Promise<void>;
   isStudioModalOpen: boolean;
   setIsStudioModalOpen: (open: boolean) => void;
 
@@ -135,12 +141,6 @@ interface AppState {
   authModalContext: 'checkout' | 'account' | null;
   openAuthModal: (context?: 'checkout' | 'account') => void;
   closeAuthModal: () => void;
-  authenticateUser: (
-    name: string,
-    phone: string,
-    telegram: string,
-    password?: string
-  ) => { success: boolean; error?: string };
   loginWithApi: (params: {
     telegramId: string;
     password: string;
@@ -378,19 +378,39 @@ export const useAppStore = create<AppState>()(
 
       // Admin Auth Logic
       isAdminLoggedIn: false,
-      adminLogin: (username, pass) => {
-        const cleanUser = username.trim();
-        const cleanPass = pass.trim();
-        if (
-          (cleanUser === '@White_blooming' || cleanUser.toLowerCase() === '@white_blooming') &&
-          cleanPass === '365Dca586'
-        ) {
-          set({ isAdminLoggedIn: true });
+      adminLogin: async (username, pass) => {
+        const telegramId = username.trim();
+        if (!telegramId || !pass) return false;
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegramId, password: pass, rememberMe: true }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data?.user) return false;
+          // The server already validated the password against the bcrypt hash;
+          // only its role decides whether the admin cabinet unlocks.
+          if (data.user.role !== 'ADMIN') return false;
+          set({
+            currentUser: data.user as AuthUser,
+            isAdminLoggedIn: true,
+          });
           return true;
+        } catch {
+          return false;
         }
-        return false;
       },
-      adminLogout: () => set({ isAdminLoggedIn: false }),
+      // Ends the server-side session too, otherwise the httpOnly cookie would
+      // silently sign the admin back in on the next page load.
+      adminLogout: async () => {
+        try {
+          await fetch('/api/auth/logout', { method: 'POST' });
+        } catch (err) {
+          console.warn('Failed to logout admin via API:', err);
+        }
+        set({ isAdminLoggedIn: false, currentUser: null });
+      },
       isStudioModalOpen: false,
       setIsStudioModalOpen: (isStudioModalOpen) => set({ isStudioModalOpen }),
 
@@ -566,8 +586,7 @@ export const useAppStore = create<AppState>()(
             if (data.authenticated && data.user) {
               const user: AuthUser = data.user;
               const isAdmin =
-                user.role === 'ADMIN' ||
-                user.telegram.toLowerCase() === '@white_blooming';
+                user.role === 'ADMIN';
               set({
                 currentUser: user,
                 isAdminLoggedIn: isAdmin,
@@ -592,8 +611,7 @@ export const useAppStore = create<AppState>()(
           }
           const user: AuthUser = data.user;
           const isAdmin =
-            user.role === 'ADMIN' ||
-            user.telegram.toLowerCase() === '@white_blooming';
+            user.role === 'ADMIN';
           set({
             currentUser: user,
             isAdminLoggedIn: isAdmin,
@@ -618,8 +636,7 @@ export const useAppStore = create<AppState>()(
           }
           const user: AuthUser = data.user;
           const isAdmin =
-            user.role === 'ADMIN' ||
-            user.telegram.toLowerCase() === '@white_blooming';
+            user.role === 'ADMIN';
           set({
             currentUser: user,
             isAdminLoggedIn: isAdmin,
@@ -642,94 +659,6 @@ export const useAppStore = create<AppState>()(
           isAdminLoggedIn: false,
           isAccountModalOpen: false,
         });
-      },
-
-      authenticateUser: (name, phone, telegram, password) => {
-        const { existingUsers, currentUser } = get();
-
-        const cleanName = name.trim();
-        const cleanPhone = phone.trim().replace(/[^\d+]/g, '');
-        const cleanTelegram = telegram.trim().toLowerCase();
-        const cleanPassword = password ? password.trim() : '';
-
-        // Validate password length (min 9 characters)
-        if (cleanPassword.length < 9) {
-          return {
-            success: false,
-            error: 'Пароль должен содержать минимум 9 символов.',
-          };
-        }
-
-        // Check if signing in as Admin
-        const isAdmin =
-          (cleanTelegram === '@white_blooming' || cleanTelegram === 'white_blooming') &&
-          cleanPassword === '365Dca586';
-
-        const role = isAdmin ? 'ADMIN' : 'USER';
-
-        if (isAdmin) {
-          set({ isAdminLoggedIn: true });
-        }
-
-        if (
-          currentUser &&
-          currentUser.telegram.toLowerCase() === cleanTelegram
-        ) {
-          set((state) => ({
-            currentUser: { ...state.currentUser!, role },
-          }));
-          return { success: true };
-        }
-
-        const duplicateTelegram = existingUsers.find(
-          (u) =>
-            u.telegram.toLowerCase() === cleanTelegram &&
-            u.telegram.toLowerCase() !== currentUser?.telegram.toLowerCase()
-        );
-
-        const duplicatePhone = existingUsers.find(
-          (u) =>
-            u.phone.replace(/[^\d+]/g, '') === cleanPhone &&
-            u.phone.replace(/[^\d+]/g, '') !==
-              currentUser?.phone.replace(/[^\d+]/g, '')
-        );
-
-        const duplicateName = existingUsers.find(
-          (u) =>
-            u.name.toLowerCase() === cleanName.toLowerCase() &&
-            u.name.toLowerCase() !== currentUser?.name.toLowerCase()
-        );
-
-        if (duplicateTelegram || duplicatePhone || duplicateName) {
-          // If existing user matching details, log them in
-          const existingMatch = duplicateTelegram || duplicatePhone || duplicateName;
-          if (existingMatch) {
-            const userRole = existingMatch.role || (isAdmin ? 'ADMIN' : 'USER');
-            set({
-              currentUser: { ...existingMatch, role: userRole },
-              isAdminLoggedIn: userRole === 'ADMIN',
-              isAuthModalOpen: false,
-            });
-            return { success: true };
-          }
-        }
-
-        const newUser: AuthUser = {
-          name: cleanName,
-          phone: phone.trim(),
-          telegram: telegram.startsWith('@') ? telegram.trim() : `@${telegram.trim()}`,
-          registeredAt: new Date().toISOString().split('T')[0],
-          role,
-        };
-
-        set((state) => ({
-          currentUser: newUser,
-          existingUsers: [...state.existingUsers, newUser],
-          isAdminLoggedIn: role === 'ADMIN',
-          isAuthModalOpen: false,
-        }));
-
-        return { success: true };
       },
 
       logout: () =>

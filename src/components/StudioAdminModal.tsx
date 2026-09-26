@@ -229,11 +229,12 @@ export const StudioAdminModal: React.FC = () => {
 
   if (!isStudioModalOpen) return null;
 
-  // Handle Admin Login: strictly @White_Blooming / 365Dca586
-  const handleAdminLoginSubmit = (e: React.FormEvent) => {
+  // Handle Admin Login: credentials are verified by the server against the
+  // bcrypt hash in the `users` table; this component never sees a password.
+  const handleAdminLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
-    const success = adminLogin(usernameInput, passwordInput);
+    const success = await adminLogin(usernameInput, passwordInput);
     if (!success) {
       setAuthError('Неверный логин или пароль администратора. Доступ заблокирован.');
     }
