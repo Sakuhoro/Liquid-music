@@ -141,6 +141,20 @@ interface AppState {
     telegram: string,
     password?: string
   ) => { success: boolean; error?: string };
+  loginWithApi: (params: {
+    telegramId: string;
+    password: string;
+    rememberMe: boolean;
+  }) => Promise<{ success: boolean; error?: string }>;
+  registerWithApi: (params: {
+    fullName: string;
+    phone: string;
+    telegramId: string;
+    password: string;
+    rememberMe: boolean;
+  }) => Promise<{ success: boolean; error?: string }>;
+  hydrateSession: () => Promise<void>;
+  logoutWithApi: () => Promise<void>;
   logout: () => void;
 
   // Modals & Account
@@ -543,6 +557,92 @@ export const useAppStore = create<AppState>()(
 
       closeAuthModal: () =>
         set({ isAuthModalOpen: false, authModalContext: null }),
+
+      hydrateSession: async () => {
+        try {
+          const res = await fetch('/api/auth/me');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.authenticated && data.user) {
+              const user: AuthUser = data.user;
+              const isAdmin =
+                user.role === 'ADMIN' ||
+                user.telegram.toLowerCase() === '@white_blooming';
+              set({
+                currentUser: user,
+                isAdminLoggedIn: isAdmin,
+              });
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to hydrate session:', err);
+        }
+      },
+
+      loginWithApi: async ({ telegramId, password, rememberMe }) => {
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegramId, password, rememberMe }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            return { success: false, error: data.error || 'Ошибка входа в студию.' };
+          }
+          const user: AuthUser = data.user;
+          const isAdmin =
+            user.role === 'ADMIN' ||
+            user.telegram.toLowerCase() === '@white_blooming';
+          set({
+            currentUser: user,
+            isAdminLoggedIn: isAdmin,
+            isAuthModalOpen: false,
+          });
+          return { success: true };
+        } catch (err) {
+          return { success: false, error: 'Ошибка соединения с сервером.' };
+        }
+      },
+
+      registerWithApi: async ({ fullName, phone, telegramId, password, rememberMe }) => {
+        try {
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fullName, phone, telegramId, password, rememberMe }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            return { success: false, error: data.error || 'Ошибка регистрации.' };
+          }
+          const user: AuthUser = data.user;
+          const isAdmin =
+            user.role === 'ADMIN' ||
+            user.telegram.toLowerCase() === '@white_blooming';
+          set({
+            currentUser: user,
+            isAdminLoggedIn: isAdmin,
+            isAuthModalOpen: false,
+          });
+          return { success: true };
+        } catch (err) {
+          return { success: false, error: 'Ошибка соединения с сервером.' };
+        }
+      },
+
+      logoutWithApi: async () => {
+        try {
+          await fetch('/api/auth/logout', { method: 'POST' });
+        } catch (err) {
+          console.warn('Failed to logout via API:', err);
+        }
+        set({
+          currentUser: null,
+          isAdminLoggedIn: false,
+          isAccountModalOpen: false,
+        });
+      },
 
       authenticateUser: (name, phone, telegram, password) => {
         const { existingUsers, currentUser } = get();

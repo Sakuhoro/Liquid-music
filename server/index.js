@@ -3,6 +3,9 @@ import path from 'path'
 import fs from 'fs'
 import multer from 'multer'
 import crypto from 'crypto'
+import cookieParser from 'cookie-parser'
+import bcrypt from 'bcryptjs'
+import { z } from 'zod'
 import { exec } from 'child_process'
 import { fileURLToPath } from 'url'
 import {
@@ -19,15 +22,22 @@ import {
   getAllFlavorPrices,
   setFlavorPrice,
   deleteFlavorPrice,
+  findUserByTelegramOrPhone,
+  findUserByTelegram,
+  createUser,
+  createSession,
+  getSessionUser,
+  deleteSession,
 } from './db.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 const PORT = process.env.PORT || 3000
 
-// Parse JSON and URL-encoded request bodies
+// Parse JSON and URL-encoded request bodies & cookies
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ extended: true, limit: '50mb' }))
+app.use(cookieParser())
 
 // Uploads directory
 const uploadsDir = path.join(__dirname, '..', 'data', 'uploads')
@@ -210,6 +220,156 @@ app.delete('/api/flavor-prices/:key', (req, res) => {
   try {
     const result = deleteFlavorPrice(req.params.key)
     res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Authentication API Schemas & Routes
+const registerSchema = z.object({
+  fullName: z.string().min(2, 'Пожалуйста, введите полное ФИО.'),
+  phone: z.string().min(10, 'Укажите корректный номер телефона (не менее 10 цифр).'),
+  telegramId: z.string().min(1, 'Укажите корректный Telegram ID.'),
+  password: z.string().min(9, 'Пароль должен содержать минимум 9 символов.'),
+  rememberMe: z.boolean().optional(),
+})
+
+const loginSchema = z.object({
+  telegramId: z.string().min(1, 'Укажите Telegram ID.'),
+  password: z.string().min(9, 'Пароль должен содержать минимум 9 символов.'),
+  rememberMe: z.boolean().optional(),
+})
+
+app.post('/api/auth/register', (req, res) => {
+  try {
+    const parseResult = registerSchema.safeParse(req.body)
+    if (!parseResult.success) {
+      const issue = parseResult.error.issues[0]
+      return res.status(400).json({ error: issue.message })
+    }
+
+    const { fullName, phone, telegramId, password, rememberMe } = parseResult.data
+
+    // Check duplicate rule: matching phone OR matching telegramId
+    const existing = findUserByTelegramOrPhone(telegramId, phone)
+    if (existing) {
+      return res.status(400).json({ error: 'Звукорежиссер уже есть на студии' })
+    }
+
+    const passwordHash = bcrypt.hashSync(password, 10)
+    const newUser = createUser({
+      fullName,
+      phone,
+      telegramId,
+      passwordHash,
+      role: 'USER',
+    })
+
+    const session = createSession(newUser.id, Boolean(rememberMe))
+
+    res.cookie('lm_session', session.token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000,
+    })
+
+    return res.status(201).json({
+      success: true,
+      user: {
+        id: newUser.id,
+        name: newUser.fullName,
+        phone: newUser.phone,
+        telegram: newUser.telegramId.startsWith('@') ? newUser.telegramId : `@${newUser.telegramId}`,
+        registeredAt: newUser.createdAt.split('T')[0],
+        role: newUser.role,
+      },
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const parseResult = loginSchema.safeParse(req.body)
+    if (!parseResult.success) {
+      const issue = parseResult.error.issues[0]
+      return res.status(400).json({ error: issue.message })
+    }
+
+    const { telegramId, password, rememberMe } = parseResult.data
+
+    const user = findUserByTelegram(telegramId)
+    if (!user) {
+      return res.status(401).json({ error: 'Звукорежиссер не найден или неверный пароль.' })
+    }
+
+    const isValidPassword = bcrypt.compareSync(password, user.passwordHash)
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Звукорежиссер не найден или неверный пароль.' })
+    }
+
+    const session = createSession(user.id, Boolean(rememberMe))
+
+    res.cookie('lm_session', session.token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000,
+    })
+
+    return res.json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.fullName,
+        phone: user.phone,
+        telegram: user.telegramId.startsWith('@') ? user.telegramId : `@${user.telegramId}`,
+        registeredAt: user.createdAt.split('T')[0],
+        role: user.role,
+      },
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.get('/api/auth/me', (req, res) => {
+  try {
+    const token = req.cookies?.lm_session || req.headers.authorization?.replace('Bearer ', '')
+    if (!token) {
+      return res.json({ authenticated: false, user: null })
+    }
+
+    const user = getSessionUser(token)
+    if (!user) {
+      res.clearCookie('lm_session')
+      return res.json({ authenticated: false, user: null })
+    }
+
+    return res.json({
+      authenticated: true,
+      user: {
+        id: user.id,
+        name: user.fullName,
+        phone: user.phone,
+        telegram: user.telegramId.startsWith('@') ? user.telegramId : `@${user.telegramId}`,
+        registeredAt: user.createdAt.split('T')[0],
+        role: user.role,
+      },
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/auth/logout', (req, res) => {
+  try {
+    const token = req.cookies?.lm_session
+    if (token) {
+      deleteSession(token)
+    }
+    res.clearCookie('lm_session')
+    return res.json({ success: true })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

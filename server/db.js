@@ -1,6 +1,8 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -56,6 +58,28 @@ db.exec(`
     currency TEXT DEFAULT 'RUB',
     updatedAt TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    fullName TEXT NOT NULL,
+    phone TEXT NOT NULL UNIQUE,
+    telegramId TEXT NOT NULL UNIQUE,
+    passwordHash TEXT NOT NULL,
+    role TEXT DEFAULT 'USER',
+    createdAt TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    userId TEXT NOT NULL,
+    tokenHash TEXT NOT NULL,
+    expiresAt TEXT NOT NULL,
+    createdAt TEXT NOT NULL,
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegramId ON users(telegramId);
 `);
 
 // Artwork scale bounds mirrored from ART_SCALE_MIN / ART_SCALE_MAX in
@@ -1287,8 +1311,31 @@ function seedRecipesAndPrices() {
   }
 }
 
+function seedUsers() {
+  const adminTelegram = 'white_blooming';
+  const existingAdmin = db.prepare('SELECT * FROM users WHERE telegramId = ?').get(adminTelegram);
+  if (!existingAdmin) {
+    const adminPass = '365Dca586';
+    const hash = bcrypt.hashSync(adminPass, 10);
+    const id = crypto.randomUUID ? crypto.randomUUID() : 'admin-' + Date.now();
+    db.prepare(`
+      INSERT INTO users (id, fullName, phone, telegramId, passwordHash, role, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      'Воронова Елена Дмитриевна',
+      '+79991112233',
+      adminTelegram,
+      hash,
+      'ADMIN',
+      new Date().toISOString()
+    );
+  }
+}
+
 seedDatabase();
 seedRecipesAndPrices();
+seedUsers();
 
 export function getAllProducts() {
   const rows = db.prepare('SELECT * FROM products ORDER BY rowid ASC').all();
@@ -1475,6 +1522,101 @@ export function deleteFlavorPrice(key) {
   });
   runTx();
   return { key };
+}
+
+// User & Session DB operations
+export function findUserByTelegramOrPhone(telegramId, phone) {
+  const cleanTg = telegramId ? telegramId.trim().replace(/^@/, '').toLowerCase() : '';
+  const cleanPhoneDigits = phone ? phone.replace(/[^\d]/g, '') : '';
+
+  if (cleanTg) {
+    const byTg = db.prepare('SELECT * FROM users WHERE LOWER(telegramId) = ?').get(cleanTg);
+    if (byTg) return byTg;
+  }
+
+  if (cleanPhoneDigits && cleanPhoneDigits.length >= 10) {
+    const rows = db.prepare('SELECT * FROM users').all();
+    for (const u of rows) {
+      const uPhoneDigits = u.phone.replace(/[^\d]/g, '');
+      if (uPhoneDigits && uPhoneDigits.length >= 10 && uPhoneDigits.endsWith(cleanPhoneDigits.slice(-10))) {
+        return u;
+      }
+    }
+  }
+  return null;
+}
+
+export function findUserByTelegram(telegramId) {
+  const cleanTg = telegramId ? telegramId.trim().replace(/^@/, '').toLowerCase() : '';
+  if (!cleanTg) return null;
+  return db.prepare('SELECT * FROM users WHERE LOWER(telegramId) = ?').get(cleanTg) || null;
+}
+
+export function findUserById(userId) {
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(userId) || null;
+}
+
+export function createUser({ fullName, phone, telegramId, passwordHash, role = 'USER' }) {
+  const id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 10);
+  const cleanTg = telegramId.trim().replace(/^@/, '');
+  const createdAt = new Date().toISOString();
+
+  const stmt = db.prepare(`
+    INSERT INTO users (id, fullName, phone, telegramId, passwordHash, role, createdAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const runTx = db.transaction(() => {
+    stmt.run(id, fullName.trim(), phone.trim(), cleanTg, passwordHash, role, createdAt);
+  });
+  runTx();
+
+  return { id, fullName: fullName.trim(), phone: phone.trim(), telegramId: cleanTg, role, createdAt };
+}
+
+export function createSession(userId, rememberMe = false) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const id = crypto.randomUUID ? crypto.randomUUID() : 'sess-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
+  // Long-lived (30 days) if rememberMe, otherwise 24 hours
+  const ttlMs = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+  const expiresAt = new Date(Date.now() + ttlMs).toISOString();
+  const createdAt = new Date().toISOString();
+
+  const stmt = db.prepare(`
+    INSERT INTO sessions (id, userId, tokenHash, expiresAt, createdAt)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+
+  db.transaction(() => {
+    stmt.run(id, userId, tokenHash, expiresAt, createdAt);
+  })();
+
+  return { token, expiresAt };
+}
+
+export function getSessionUser(token) {
+  if (!token) return null;
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const session = db.prepare('SELECT * FROM sessions WHERE tokenHash = ?').get(tokenHash);
+  if (!session) return null;
+
+  if (new Date(session.expiresAt) < new Date()) {
+    deleteSession(token);
+    return null;
+  }
+
+  const user = findUserById(session.userId);
+  if (!user) return null;
+
+  const { passwordHash, ...userClean } = user;
+  return userClean;
+}
+
+export function deleteSession(token) {
+  if (!token) return;
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  db.prepare('DELETE FROM sessions WHERE tokenHash = ?').run(tokenHash);
 }
 
 export default db;

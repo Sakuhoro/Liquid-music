@@ -16,6 +16,7 @@ export const AccountModal: React.FC = () => {
   const isAccountModalOpen = useAppStore((state) => state.isAccountModalOpen);
   const setIsAccountModalOpen = useAppStore((state) => state.setIsAccountModalOpen);
   const currentUser = useAppStore((state) => state.currentUser);
+  const logoutWithApi = useAppStore((state) => state.logoutWithApi);
   const logout = useAppStore((state) => state.logout);
   const ordersHistory = useAppStore((state) => state.ordersHistory);
   const theme = useAppStore((state) => state.theme);
@@ -130,7 +131,10 @@ export const AccountModal: React.FC = () => {
         {/* Actions */}
         <div className="flex items-center justify-between pt-4 border-t border-white/10">
           <button
-            onClick={logout}
+            onClick={() => {
+              logoutWithApi();
+              logout();
+            }}
             className="px-4 py-2 rounded-xl text-rose-400 hover:bg-rose-500/10 text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
