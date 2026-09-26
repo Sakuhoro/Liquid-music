@@ -22,6 +22,7 @@ export default function App() {
   const fetchAudioSettings = useAppStore((state) => state.fetchAudioSettings);
   const fetchRecipes = useAppStore((state) => state.fetchRecipes);
   const fetchFlavorPrices = useAppStore((state) => state.fetchFlavorPrices);
+  const hydrateSession = useAppStore((state) => state.hydrateSession);
   const setIsStudioModalOpen = useAppStore((state) => state.setIsStudioModalOpen);
 
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -38,6 +39,7 @@ export default function App() {
     fetchAudioSettings();
     fetchRecipes();
     fetchFlavorPrices();
+    hydrateSession();
 
     if (window.location.pathname.toLowerCase().includes('/admin')) {
       setIsStudioModalOpen(true);
