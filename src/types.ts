@@ -8,6 +8,15 @@ export type CollectionName =
   | 'Permanent 1'
   | 'Permanent 2';
 
+// Public-facing collection titles. Used instead of the internal "Permanent 1"/"Permanent 2" keys.
+export const COLLECTION_TITLES: Partial<Record<CollectionName, string>> = {
+  'Permanent 1': 'Bones of what you Believe',
+  'Permanent 2': 'Velvet Distortion',
+};
+
+export const getCollectionTitle = (collection: CollectionName): string =>
+  COLLECTION_TITLES[collection] ?? `${collection} Collection`;
+
 export interface VolumeOption {
   volume: VolumeType;
   price: number; // in ₽
@@ -37,6 +46,8 @@ export interface ProductItem {
     base: string;
   };
   accentColor: string;
+  // Artwork scale inside the 80% vinyl label circle. Editable in the admin cabinet.
+  artScale?: number;
   isFeatured?: boolean;
 }
 

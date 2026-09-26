@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import {
   CollectionName,
+  getCollectionTitle,
 } from '../types';
 import {
   Search,
@@ -19,46 +20,41 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
   {
     id: 'Spring',
     title: 'Весенняя коллекция',
-    subtitle: 'Floral Cantabile & Spring Blossom Dew',
-    description: 'Delicate sakura petals, white peach nectar, and crisp alpine mountain water.',
+    description: 'Нежная акустическая симфония, в которой тонкие и воздушные гармонии плавно сменяют зимнюю тишину.',
     image: '/uploads/photo_2026-09-15_00-08-32.jpg',
-    badge: 'Seasonal Opus',
+    badge: 'Сезонная коллекция',
     color: 'from-pink-500/80 to-rose-900/80',
   },
   {
     id: 'Summer',
     title: 'Летняя коллекция',
-    subtitle: 'Tropical Vivace & Root Beer Crescendos',
-    description: 'Sun-drenched Alphonso mango, effervescent sassafras, key lime zest, and coastal ice.',
+    description: 'Энергичный ритм главного фестиваля под открытым небом, в темпе бесконечных теплых ночей.',
     image: '/uploads/photo_2026-09-15_00-00-09.jpg',
-    badge: 'Seasonal Opus',
+    badge: 'Сезонная коллекция',
     color: 'from-amber-400/80 to-orange-900/80',
   },
   {
     id: 'Autumn',
     title: 'Зимняя коллекция',
-    subtitle: 'Warm Acoustic Resonance & Spiced Orchards',
-    description: 'Bourbon vanilla caramel, torched brown sugar, honeycrisp apple, and charred oak.',
+    description: 'Глубокие, согревающие аккорды и неторопливые инструментальные мелодии, созданные, чтобы укутать вас уютом в сезон холодов и вьюг.',
     image: '/uploads/photo_2026-09-15_00-00-17.jpg',
-    badge: 'Seasonal Opus',
+    badge: 'Сезонная коллекция',
     color: 'from-orange-500/80 to-stone-900/80',
   },
   {
     id: 'Permanent 1',
-    title: 'Bones of what you belive 50\\50',
-    subtitle: 'Signature Virtuoso Masterworks',
-    description: 'Electric blue raspberry symphonies and deep contrapuntal espresso cacao fugues.',
+    title: 'Bones of what you Believe',
+    description: 'Эмоциональные, честные и захватывающие композиции, которые долго остаются в сердце с искрящимся эхо.',
     image: '/uploads/6eb3f514644c490e8c43dfe79a10e2ee_img_1K.jpg',
-    badge: 'Core Series',
+    badge: 'Постоянная коллекция',
     color: 'from-sky-500/80 to-indigo-900/80',
   },
   {
     id: 'Permanent 2',
     title: 'Velvet Distortion',
-    subtitle: 'Ethereal Sub-Zero Nocturnes & Kyoho Études',
     description: 'Nordic spearmint, frosted fir resins, and soothing aloe vera grape harmonies.',
     image: '/uploads/velvet-distortion.png',
-    badge: 'Core Series',
+    badge: 'Постоянная коллекция',
     color: 'from-emerald-500/80 to-teal-900/80',
   },
 ];
@@ -131,7 +127,7 @@ export const CatalogView: React.FC = () => {
                 isDark ? 'text-white' : 'text-slate-950'
               }`}
             >
-              {`${activeCollection} Collection`}
+              {getCollectionTitle(activeCollection)}
             </h2>
             <p
               className={`text-sm sm:text-base mt-2 max-w-xl font-sans font-normal antialiased leading-relaxed ${

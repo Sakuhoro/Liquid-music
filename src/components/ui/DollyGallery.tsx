@@ -3,6 +3,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Disc, Sparkles } from 'lucide-react';
 import { getItemScale } from '../../utils/vinylScale';
 import { sanitizeRussianText } from '../../utils/sanitizeText';
+import { CollectionName, getCollectionTitle } from '../../types';
+
+// Public collection name ("Bones of what you Believe" / "Velvet Distortion") instead of the internal "Permanent 1"/"Permanent 2" key
+const getDollyItemCollectionTitle = (category?: unknown): string =>
+  category ? getCollectionTitle(category as CollectionName) : 'Liquid Music';
 
 export interface DollyItem {
   id: string | number;
@@ -82,9 +87,21 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
   const [pointerOffset, setPointerOffset] = useState({ x: 0, y: 0 });
   const [scrollVelocity, setScrollVelocity] = useState(0);
   const [hoveredItemId, setHoveredItemId] = useState<string | number | null>(null);
+  // Intrinsic aspect ratio (naturalWidth / naturalHeight) of every artwork that
+  // has finished loading, keyed by image src. Drives the automatic label fit.
+  const [artworkAspects, setArtworkAspects] = useState<Record<string, number>>({});
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1200
   );
+
+  const measureArtwork = useCallback((src: string, img: HTMLImageElement) => {
+    const { naturalWidth: w, naturalHeight: h } = img;
+    if (!w || !h) return;
+    const aspect = w / h;
+    setArtworkAspects((prev) =>
+      Math.abs(prev[src] - aspect) < 0.0005 ? prev : { ...prev, [src]: aspect }
+    );
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -349,13 +366,14 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                     'inset 0 0 20px rgba(255,255,255,0.2), 0 20px 40px rgba(0,0,0,0.85)',
                 }}
               >
-                {/* Vinyl Central Label "Яблоко" (80% circle) */}
-                <div className="vinyl-label relative w-[80%] h-[80%] rounded-full bg-white flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.8)] border border-amber-400/30">
+                {/* Vinyl Central Label (80% circle) */}
+                <div className="vinyl-label relative w-[80%] h-[80%] rounded-full flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.8)] border border-amber-400/30">
                   <img
                     src={item.image}
                     alt={item.name}
-                    style={{ transform: `scale(${getItemScale(item)})` }}
-                    className="w-full h-full object-cover pointer-events-none transition-transform duration-300"
+                    onLoad={(e) => measureArtwork(item.image, e.currentTarget)}
+                    style={{ transform: `scale(${getItemScale(item, artworkAspects[item.image])})` }}
+                    className="w-full h-full object-cover rounded-full pointer-events-none transition-transform duration-300"
                   />
                 </div>
               </div>
@@ -384,7 +402,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                   >
                     <div className="flex items-center gap-1.5 text-amber-400 text-xs font-mono uppercase tracking-widest font-bold">
                       <Sparkles className="w-4 h-4" />
-                      <span>{item.category || 'Liquid Music'}</span>
+                      <span>{getDollyItemCollectionTitle(item.category)}</span>
                     </div>
 
                     <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-snug drop-shadow-md">
@@ -424,7 +442,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono text-amber-400 font-bold uppercase tracking-wider">
-                {activeItem.category || 'Liquid Music'}
+                {getDollyItemCollectionTitle(activeItem.category)}
               </span>
             </div>
             <h3 className="font-sans text-xl font-extrabold text-white tracking-tight leading-snug">

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { ProductItem, CollectionName, PlacedOrder, VolumeType, NicotineType, RecipeItem } from '../types';
+import { ART_SCALE_MIN, ART_SCALE_MAX, ART_SCALE_DEFAULT, clampArtScale, getItemScale } from '../utils/vinylScale';
 import { parseRecipeText, formatRecipeText } from '../utils/recipeParser';
 import {
   X,
@@ -178,6 +179,8 @@ export const StudioAdminModal: React.FC = () => {
   const [productCollectionFilter, setProductCollectionFilter] = useState<CollectionName | 'All'>('All');
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
+  // Intrinsic aspect ratio of the artwork being edited, for the vinyl preview
+  const [previewAspect, setPreviewAspect] = useState<number | null>(null);
 
   // Production Focus Mode state
   const [focusedFlavorName, setFocusedFlavorName] = useState<string | null>(null);
@@ -368,6 +371,7 @@ export const StudioAdminModal: React.FC = () => {
         base: 'Базовый аккорд',
       },
       accentColor: '#38bdf8',
+      artScale: ART_SCALE_DEFAULT,
     };
     addProduct(newProd);
     setEditingProduct(newProd);
@@ -1803,6 +1807,89 @@ export const StudioAdminModal: React.FC = () => {
                             <Upload className="w-4 h-4 text-amber-500" />
                             <span>Загрузить фото с компьютера</span>
                           </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl border border-white/15 bg-white/[0.03] space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="block font-bold text-xs uppercase tracking-wider">
+                          Масштаб обложки на виниле
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditingProduct({ ...editingProduct, artScale: ART_SCALE_DEFAULT })
+                          }
+                          disabled={clampArtScale(editingProduct.artScale) === ART_SCALE_DEFAULT}
+                          className="text-[10px] font-bold uppercase tracking-wider text-amber-400 hover:text-amber-300 disabled:opacity-30 disabled:hover:text-amber-400 cursor-pointer disabled:cursor-default transition-colors"
+                        >
+                          Сбросить
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        {/* Vinyl preview using the exact geometry of the 3D gallery */}
+                        <div
+                          className="relative w-24 h-24 rounded-full shrink-0 flex items-center justify-center"
+                          style={{
+                            backgroundImage:
+                              'repeating-radial-gradient(#111, #111 4px, #252525 5px, #111 6px)',
+                            boxShadow:
+                              'inset 0 0 20px rgba(255,255,255,0.2), 0 10px 20px rgba(0,0,0,0.85)',
+                          }}
+                        >
+                          <div className="relative w-[80%] h-[80%] rounded-full flex items-center justify-center overflow-hidden border border-amber-400/30">
+                            {editingProduct.image && (
+                              <img
+                                src={editingProduct.image}
+                                alt="Превью винила"
+                                onLoad={(e) => {
+                                  const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+                                  if (w && h) setPreviewAspect(w / h);
+                                }}
+                                style={{ transform: `scale(${getItemScale(editingProduct, previewAspect)})` }}
+                                className="w-full h-full object-cover rounded-full pointer-events-none transition-transform duration-200"
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex-1 space-y-2 min-w-0">
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="range"
+                              min={ART_SCALE_MIN}
+                              max={ART_SCALE_MAX}
+                              step={0.01}
+                              value={clampArtScale(editingProduct.artScale)}
+                              onChange={(e) =>
+                                setEditingProduct({
+                                  ...editingProduct,
+                                  artScale: Number(e.target.value),
+                                })
+                              }
+                              className="flex-1 min-w-0 accent-amber-500 cursor-pointer"
+                            />
+                            <input
+                              type="number"
+                              min={ART_SCALE_MIN}
+                              max={ART_SCALE_MAX}
+                              step={0.01}
+                              value={clampArtScale(editingProduct.artScale)}
+                              onChange={(e) =>
+                                setEditingProduct({
+                                  ...editingProduct,
+                                  artScale: clampArtScale(Number(e.target.value)),
+                                })
+                              }
+                              className="w-16 px-2 py-1 rounded-lg border border-white/15 bg-white/5 focus:outline-none focus:border-amber-500 font-mono text-xs font-bold text-amber-400"
+                            />
+                          </div>
+                          <p className="text-[10px] font-medium opacity-60 leading-relaxed">
+                            Обложка всегда заполняет круглую этикетку целиком. 1.00 — по краю круга,
+                            больше — приблизить. Ниже 1.00 нельзя: по краям появятся белые полосы.
+                          </p>
                         </div>
                       </div>
                     </div>

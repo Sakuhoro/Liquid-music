@@ -53,16 +53,47 @@ export const Navigation: React.FC = () => {
           onClick={() => setViewMode('hero')}
           className="group focus:outline-none text-left cursor-pointer min-h-[44px] flex items-center"
         >
-          <span className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal tracking-tight transition-opacity duration-300 hover:opacity-85">
+          <span className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal tracking-tight transition-opacity duration-300 hover:opacity-85 whitespace-nowrap">
             Liquid Music
           </span>
         </button>
 
-        {/* Mobile quick controls if needed or kept inline */}
-        <div className="flex md:hidden items-center gap-2">
+        {/* Mobile quick controls: Background Music, Theme Toggle & Cart */}
+        <div className="flex md:hidden items-center gap-1.5 shrink-0">
+          {/* Background Ambient Music Toggle (Mobile) */}
+          <button
+            id="bg-music-toggle-btn-mobile"
+            onClick={toggleBgMusic}
+            aria-label={isBgMusicPlaying ? 'Mute Background Melody' : 'Play Background Melody'}
+            title={isBgMusicPlaying ? 'Mute Background Melody' : 'Play Background Melody'}
+            className="liquid-glass w-9 h-9 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
+          >
+            {isBgMusicPlaying ? (
+              <Volume2 className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            ) : (
+              <VolumeX className="w-3.5 h-3.5 opacity-60" />
+            )}
+          </button>
+
+          {/* Theme Toggle (Light / Dark) Mobile */}
+          <button
+            id="theme-mode-toggle-mobile"
+            onClick={toggleTheme}
+            aria-label={isDark ? 'Switch to Airy Daylight' : 'Switch to Musical Night'}
+            title={isDark ? 'Switch to Airy Daylight' : 'Switch to Musical Night'}
+            className="liquid-glass w-9 h-9 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
+          >
+            {isDark ? (
+              <Sun className="w-3.5 h-3.5 text-amber-300" />
+            ) : (
+              <Moon className="w-3.5 h-3.5 text-sky-800" />
+            )}
+          </button>
+
           <button
             id="open-cart-btn-mobile"
             onClick={() => setIsCartOpen(true)}
+            aria-label="Open cart"
             className="liquid-glass min-w-[44px] min-h-[44px] px-3.5 py-1.5 rounded-full flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4 opacity-80" />

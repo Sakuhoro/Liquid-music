@@ -33,6 +33,7 @@ db.exec(`
     aromaticChords TEXT,
     accentColor TEXT,
     isFeatured INTEGER DEFAULT 0,
+    artScale REAL DEFAULT 1.0,
     createdAt TEXT
   );
 
@@ -56,6 +57,41 @@ db.exec(`
     updatedAt TEXT
   );
 `);
+
+// Artwork scale bounds mirrored from ART_SCALE_MIN / ART_SCALE_MAX in
+// src/utils/vinylScale.ts. The minimum is 1.0: the label is a circle, so any
+// value below that would expose the label background as a white ring around the
+// cover.
+const ART_SCALE_MIN = 1.0;
+const ART_SCALE_MAX = 1.5;
+
+const normalizeArtScale = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1.0;
+  return Math.min(ART_SCALE_MAX, Math.max(ART_SCALE_MIN, Math.round(parsed * 100) / 100));
+};
+
+// Add the column to databases created before it existed.
+const productColumns = db.prepare('PRAGMA table_info(products)').all();
+if (!productColumns.some((col) => col.name === 'artScale')) {
+  db.exec('ALTER TABLE products ADD COLUMN artScale REAL DEFAULT 1.0');
+  console.log('[liquid-music] migrated products: added artScale column');
+}
+
+// The hand-tuned values that used to live in the hardcoded IMAGE_SCALE_OVERRIDES
+// table have already been copied onto the product records, so the legacy table is
+// gone from the code. Those values were tuned to shrink the artwork, which is what
+// produced the white ring inside the circular label. Lift every record back to 1.0
+// so the cover fills the label; the admin cabinet can still zoom in per product.
+const liftedArtScales = db.prepare(
+  'UPDATE products SET artScale = 1.0 WHERE artScale IS NOT NULL AND artScale < 1.0'
+).run();
+
+if (liftedArtScales.changes > 0) {
+  console.log(
+    `[liquid-music] migrated products: artScale lifted to 1.0 for ${liftedArtScales.changes} product(s)`
+  );
+}
 
 export const INITIAL_PRODUCTS_SEED = [
   {
@@ -1267,8 +1303,8 @@ export function addProduct(prod) {
   const stmt = db.prepare(`
     INSERT INTO products (
       id, name, subtitle, description, image, basePrice, category,
-      musicalKey, bpm, opusNumber, aromaticChords, accentColor, isFeatured, createdAt
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      musicalKey, bpm, opusNumber, aromaticChords, accentColor, isFeatured, artScale, createdAt
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const runTx = db.transaction(() => {
@@ -1286,6 +1322,7 @@ export function addProduct(prod) {
       JSON.stringify(prod.aromaticChords || { top: '', heart: '', base: '' }),
       prod.accentColor || '#38bdf8',
       prod.isFeatured ? 1 : 0,
+      normalizeArtScale(prod.artScale),
       new Date().toISOString()
     );
   });
@@ -1308,7 +1345,8 @@ export function updateProduct(prod) {
       opusNumber = ?,
       aromaticChords = ?,
       accentColor = ?,
-      isFeatured = ?
+      isFeatured = ?,
+      artScale = ?
     WHERE id = ?
   `);
 
@@ -1326,6 +1364,7 @@ export function updateProduct(prod) {
       JSON.stringify(prod.aromaticChords || { top: '', heart: '', base: '' }),
       prod.accentColor || '#38bdf8',
       prod.isFeatured ? 1 : 0,
+      normalizeArtScale(prod.artScale),
       prod.id
     );
   });

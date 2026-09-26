@@ -5,7 +5,6 @@ import { Disc } from 'lucide-react';
 export interface SkewedCarouselItem {
   id: string;
   title: string;
-  subtitle: string;
   description: string;
   image: string;
   badge: string;
@@ -252,11 +251,11 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
 
                   {/* Top Badge */}
-                  <div className="absolute top-5 left-5 right-5 flex justify-between items-center z-10">
-                    <span className="text-xs font-mono uppercase tracking-widest font-bold px-3.5 py-1.5 rounded-full bg-black/70 backdrop-blur-md text-amber-300 border border-amber-400/30">
+                  <div className="absolute top-5 left-5 right-5 flex justify-between items-center gap-3 z-10">
+                    <span className="text-[0.8125rem] sm:text-[1.125rem] font-mono uppercase tracking-wide sm:tracking-widest font-bold px-2.5 sm:px-5 py-1.5 sm:py-2.5 rounded-full bg-black/70 backdrop-blur-md text-amber-300 border border-amber-400/30">
                       {item.badge}
                     </span>
-                    <Disc className={`w-6 h-6 text-amber-400 ${isActive ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
+                    <Disc className={`w-6 h-6 shrink-0 text-amber-400 ${isActive ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
                   </div>
 
                   {/* Bottom Content - Scaled padding and typography for 1.5x cards */}
@@ -264,10 +263,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                     <h3 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
                       {item.title}
                     </h3>
-                    <p className="text-xs sm:text-base text-amber-300/90 font-mono mt-1 font-semibold">
-                      {item.subtitle}
-                    </p>
-                    <p className="text-[11px] sm:text-sm text-stone-300/90 font-sans mt-2 line-clamp-2 leading-relaxed">
+                    <p className="text-[11px] sm:text-sm text-amber-300/90 font-mono mt-3 line-clamp-2 leading-relaxed">
                       {item.description}
                     </p>
 
