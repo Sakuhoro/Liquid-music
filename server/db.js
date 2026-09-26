@@ -1318,13 +1318,19 @@ function seedUsers() {
     const adminPass = '365Dca586';
     const hash = bcrypt.hashSync(adminPass, 10);
     const id = crypto.randomUUID ? crypto.randomUUID() : 'admin-' + Date.now();
+    // Identity is intentionally not hardcoded here: a seeded name and phone
+    // would show up in the owner's account cabinet as if they had typed them at
+    // registration. Set ADMIN_FULL_NAME / ADMIN_PHONE in the environment, or
+    // edit the row in the cabinet after the first login.
+    const fullName = process.env.ADMIN_FULL_NAME || 'Администратор';
+    const phone = process.env.ADMIN_PHONE || 'не указан';
     db.prepare(`
       INSERT INTO users (id, fullName, phone, telegramId, passwordHash, role, createdAt)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(
       id,
-      'Воронова Елена Дмитриевна',
-      '+79991112233',
+      fullName,
+      phone,
       adminTelegram,
       hash,
       'ADMIN',
