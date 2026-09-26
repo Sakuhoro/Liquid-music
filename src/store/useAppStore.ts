@@ -650,78 +650,11 @@ export const useAppStore = create<AppState>()(
       isSuccessModalOpen: false,
       setIsSuccessModalOpen: (isSuccessModalOpen) => set({ isSuccessModalOpen }),
       lastPlacedOrder: null,
-      ordersHistory: [
-        {
-          orderId: 'LM-849201',
-          user: {
-            name: 'Воронова Елена Дмитриевна',
-            phone: '+7 (999) 111-22-33',
-            telegram: '@White_blooming',
-            registeredAt: '2026-01-15',
-            role: 'ADMIN',
-          },
-          items: [
-            {
-              id: 'blue-raspberry-symphony-120ml-0mg',
-              product: INITIAL_PRODUCTS[0],
-              volume: '120ml',
-              nicotine: '0mg',
-              volumePrice: 600,
-              nicotinePrice: 0,
-              totalUnitPrice: 600,
-              quantity: 2,
-            },
-            {
-              id: 'vanilla-caramel-resonance-60ml-3mg',
-              product: INITIAL_PRODUCTS[1],
-              volume: '60ml',
-              nicotine: '3mg',
-              volumePrice: 400,
-              nicotinePrice: 50,
-              totalUnitPrice: 450,
-              quantity: 1,
-            },
-          ],
-          subtotal: 1650,
-          createdAt: '2026-03-28 14:30',
-          status: 'Pending Verification',
-        },
-        {
-          orderId: 'LM-918234',
-          user: {
-            name: 'Смирнов Алексей Викторович',
-            phone: '+7 (916) 555-44-33',
-            telegram: '@alex_vapor',
-            registeredAt: '2026-02-10',
-            role: 'USER',
-          },
-          items: [
-            {
-              id: 'sakura-blossom-sonata-30ml-1.5mg',
-              product: INITIAL_PRODUCTS[3],
-              volume: '30ml',
-              nicotine: '1.5mg',
-              volumePrice: 300,
-              nicotinePrice: 50,
-              totalUnitPrice: 350,
-              quantity: 3,
-            },
-            {
-              id: 'nordic-frost-nocturne-120ml-6mg',
-              product: INITIAL_PRODUCTS[5],
-              volume: '120ml',
-              nicotine: '6mg',
-              volumePrice: 600,
-              nicotinePrice: 100,
-              totalUnitPrice: 700,
-              quantity: 1,
-            },
-          ],
-          subtotal: 1750,
-          createdAt: '2026-03-29 09:15',
-          status: 'Pending Verification',
-        },
-      ],
+      // No seeded orders: they carried invented buyer identities that surfaced
+      // in the admin orders table as if they were real customers. Orders now
+      // only appear once someone actually places one, bound to their own
+      // currentUser.
+      ordersHistory: [],
 
       deleteOrderHistory: (orderId: string) =>
         set((state) => ({
@@ -778,6 +711,14 @@ export const useAppStore = create<AppState>()(
         flavorPrices: state.flavorPrices,
         isAdminLoggedIn: state.isAdminLoggedIn,
       }),
+      version: 6,
+      // v5 and earlier persisted the seeded demo orders, complete with invented
+      // buyer names and phones. Drop them on the next load instead of leaving
+      // them in every visitor's localStorage, but keep the cart and settings.
+      migrate: (persistedState) => {
+        const state = persistedState as Partial<AppState>;
+        return { ...state, ordersHistory: [], lastPlacedOrder: null } as AppState;
+      },
     }
   )
 );
