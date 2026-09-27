@@ -284,11 +284,13 @@
    same name multiplied by --hall-type-scale, with the line-height Tailwind
    pairs with it, so swapping a class for its hall-* twin is a like-for-like
    replacement. */
-/* Per-surface scale overrides. A custom property set on an ancestor wins over
-   the :root default for everything inside it, so a surface that needs a
-   different ratio opts in here rather than restating every size. */
-.hall-type-scale-2 {
-  --hall-type-scale: 2;
+/* The order confirmation card. Width and type scale come off the same
+   factor, so the card reads as one object rather than a wide box around
+   oversized text. Sized as 1/1.4 of its previous 2x / max-w-4xl state:
+   896px wide, and 1.4x the base type instead of 2x. */
+.hall-receipt-card {
+  --hall-type-scale: 1.4;
+  max-width: 40rem; /* 56rem / 1.4 */
 }
 
 .hall-text-2xs {

@@ -26,15 +26,15 @@ export const OrderSuccessModal: React.FC = () => {
         if (e.target === e.currentTarget) setIsSuccessModalOpen(false);
       }}
     >
-      {/* hall-type-scale-2 lifts every hall-text-* size inside this card to
-          twice the base, and the card is widened to match so the receipt
-          lines keep a readable measure instead of wrapping into ribbons. */}
+      {/* hall-receipt-card supplies both the type scale and the width, so
+          the confirmation is sized as one object rather than a wide box
+          around oversized text. */}
       <div
         id="order-success-modal-card"
         role="dialog"
         aria-modal="true"
         aria-label="Заказ успешно оформлен"
-        className="hall-settle hall-type-scale-2 relative w-full max-w-4xl rounded-3xl overflow-hidden border p-6 sm:p-8 backdrop-blur-2xl"
+        className="hall-settle hall-receipt-card relative w-full rounded-3xl overflow-hidden border p-5 sm:p-6 backdrop-blur-2xl"
         style={{
           background: 'var(--hall-surface)',
           borderColor: 'var(--hall-border)',
@@ -45,33 +45,33 @@ export const OrderSuccessModal: React.FC = () => {
         <button
           onClick={() => setIsSuccessModalOpen(false)}
           aria-label="Закрыть"
-          className="hall-focusable absolute top-6 right-6 w-11 h-11 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
+          className="hall-focusable absolute top-5 right-5 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
           style={{ background: 'var(--hall-border)' }}
         >
-          <X className="w-6 h-6" />
+          <X className="w-4 h-4" />
         </button>
 
         <div className="flex flex-col items-center text-center mb-6">
           <div
-            className="w-24 h-24 rounded-full flex items-center justify-center mb-5"
+            className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
             style={{
               background: 'oklch(0.696 0.17 162 / 16%)',
               border: '1px solid oklch(0.696 0.17 162 / 32%)',
               color: 'oklch(0.79 0.17 162)',
             }}
           >
-            <CheckCircle2 className="w-12 h-12" />
+            <CheckCircle2 className="w-8 h-8" />
           </div>
 
           <div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full hall-text-sm font-mono mb-3"
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full hall-text-sm font-mono mb-2"
             style={{
               background: 'var(--hall-varnish-soft)',
               color: 'var(--hall-varnish)',
               border: '1px solid var(--hall-border-strong)',
             }}
           >
-            <Sparkles className="w-6 h-6" />
+            <Sparkles className="w-4 h-4" />
             <span>Заказ {lastPlacedOrder.orderId}</span>
           </div>
 
@@ -86,7 +86,7 @@ export const OrderSuccessModal: React.FC = () => {
 
         {/* Receipt */}
         <div
-          className="p-6 rounded-2xl space-y-4 mb-6"
+          className="p-4 rounded-2xl space-y-3 mb-5"
           style={{
             background: 'var(--hall-surface-raised)',
             border: '1px solid var(--hall-border)',
@@ -114,7 +114,7 @@ export const OrderSuccessModal: React.FC = () => {
             >
               Состав заказанной партитуры:
             </span>
-            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
               {lastPlacedOrder.items.map((item, idx) => (
                 <div
                   key={idx}
@@ -125,7 +125,7 @@ export const OrderSuccessModal: React.FC = () => {
                     <img
                       src={item.product.image}
                       alt={item.product.name}
-                      className="w-12 h-12 rounded-lg object-cover shrink-0"
+                      className="w-8 h-8 rounded-lg object-cover shrink-0"
                       style={{ border: '1px solid var(--hall-border)' }}
                     />
                     <span className="truncate">
@@ -150,7 +150,7 @@ export const OrderSuccessModal: React.FC = () => {
               style={{ borderTop: '1px solid var(--hall-border)', color: 'var(--tier-gold)' }}
             >
               <span className="flex items-center gap-2">
-                <Sparkles className="w-6 h-6" />
+                <Sparkles className="w-4 h-4" />
                 Скидка постоянного слушателя {lastPlacedOrder.discountPct}%
               </span>
               <span className="font-bold">−{formatRub(lastPlacedOrder.discountAmount)} ₽</span>
@@ -173,20 +173,20 @@ export const OrderSuccessModal: React.FC = () => {
             href="https://t.me/White_blooming"
             target="_blank"
             rel="noopener noreferrer"
-            className="hall-focusable hall-sheen w-full sm:flex-1 py-4 rounded-2xl font-semibold hall-text-sm flex items-center justify-center gap-2 cursor-pointer transition-transform duration-200 hover:scale-[1.015] active:scale-[0.985]"
+            className="hall-focusable hall-sheen w-full sm:flex-1 py-3 rounded-2xl font-semibold hall-text-sm flex items-center justify-center gap-2 cursor-pointer transition-transform duration-200 hover:scale-[1.015] active:scale-[0.985]"
             style={{
               background: 'var(--hall-varnish)',
               color: 'oklch(0.19 0.032 250)',
             }}
           >
-            <Send className="w-7 h-7" />
+            <Send className="w-5 h-5" />
             <span>Написать администратору в Telegram</span>
-            <ExternalLink className="w-5 h-5 opacity-70" />
+            <ExternalLink className="w-3.5 h-3.5 opacity-70" />
           </a>
 
           <button
             onClick={() => setIsSuccessModalOpen(false)}
-            className="hall-focusable w-full sm:w-auto px-8 py-4 rounded-2xl hall-text-sm font-mono transition-colors cursor-pointer"
+            className="hall-focusable w-full sm:w-auto px-6 py-3 rounded-2xl hall-text-sm font-mono transition-colors cursor-pointer"
             style={{ border: '1px solid var(--hall-border-strong)' }}
           >
             Закрыть
