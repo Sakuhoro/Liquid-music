@@ -7,7 +7,6 @@ import {
   Minus,
   Disc3,
   ArrowRight,
-  ShieldCheck,
   Sparkles,
   AlertCircle,
 } from 'lucide-react';
@@ -67,7 +66,6 @@ export const CartDrawer: React.FC = () => {
   const updateCartQuantity = useAppStore((state) => state.updateCartQuantity);
   const removeFromCart = useAppStore((state) => state.removeFromCart);
   const getCartSubtotal = useAppStore((state) => state.getCartSubtotal);
-  const currentUser = useAppStore((state) => state.currentUser);
   const placeOrder = useAppStore((state) => state.placeOrder);
   const loyalty = useAppStore((state) => state.loyalty);
   const isPlacingOrder = useAppStore((state) => state.isPlacingOrder);
@@ -88,8 +86,6 @@ export const CartDrawer: React.FC = () => {
   }, [isCartOpen]);
 
   if (!isCartOpen) return null;
-
-  const itemCount = cart.reduce((a, b) => a + b.quantity, 0);
 
   const handleCheckoutClick = async () => {
     setError(null);
@@ -147,11 +143,6 @@ export const CartDrawer: React.FC = () => {
                 <h3 className="font-serif hall-text-xl font-normal leading-tight tracking-tight">
                   Ваш плейлист
                 </h3>
-                {itemCount > 0 && (
-                  <p className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
-                    {itemCount} на весах
-                  </p>
-                )}
               </div>
             </div>
 
@@ -271,20 +262,6 @@ export const CartDrawer: React.FC = () => {
         {/* Footer: the total is the one place the discount is spelled out */}
         {cart.length > 0 && (
           <div className="p-6 space-y-4" style={{ borderTop: '1px solid var(--hall-border)' }}>
-            <div className="flex items-center justify-between hall-text-sm font-mono">
-              <span style={{ color: 'var(--hall-text-muted)' }}>Исполнитель</span>
-              {currentUser ? (
-                <span className="flex items-center gap-1.5" style={{ color: 'var(--tier-gold)' }}>
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  {currentUser.telegram}
-                </span>
-              ) : (
-                <span style={{ color: 'var(--hall-varnish)' }}>
-                  Нужен вход в аккаунт
-                </span>
-              )}
-            </div>
-
             <div className="space-y-1.5 hall-text-base font-mono">
               <div className="flex items-baseline justify-between" style={{ color: 'var(--hall-text-muted)' }}>
                 <span>Стоимость</span>
