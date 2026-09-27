@@ -9,3 +9,6 @@ data/
 uploads/
 public/uploads/
 !.env.example
+
+# local scratch databases, never the live one in data/
+server/*.db
