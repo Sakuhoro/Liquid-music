@@ -224,3 +224,209 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* ------------------------------------------------------------------
+   Concert Hall tokens
+   Named by intent rather than by colour, so the cart and the account
+   cabinet can be restyled without hunting through rgba() values. The
+   hall is deep navy with a warm varnish accent; the reading-room
+   variant keeps the same structure in daylight.
+   ------------------------------------------------------------------ */
+:root {
+  --motion-duration-fast: 100ms;
+  --motion-duration-base: 200ms;
+  --motion-duration-moderate: 300ms;
+  --motion-duration-slow: 500ms;
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --hall-surface: oklch(0.19 0.032 250);
+  --hall-surface-raised: oklch(0.24 0.036 250);
+  --hall-border: oklch(1 0 0 / 10%);
+  --hall-border-strong: oklch(1 0 0 / 18%);
+  --hall-varnish: oklch(0.79 0.142 78);
+  --hall-varnish-soft: oklch(0.79 0.142 78 / 14%);
+  --hall-text: oklch(0.96 0.008 85);
+  --hall-text-muted: oklch(0.96 0.008 85 / 58%);
+  --hall-text-faint: oklch(0.96 0.008 85 / 34%);
+  --hall-blur: 20px;
+  --hall-shadow: 0 24px 64px -12px oklch(0 0 0 / 55%);
+
+  /* Loyalty tiers, so a tier reads the same everywhere it appears. */
+  --tier-base: oklch(0.72 0.02 250);
+  --tier-silver: oklch(0.78 0.03 240);
+  --tier-gold: oklch(0.79 0.142 78);
+}
+
+.light {
+  --hall-surface: oklch(0.99 0.004 85);
+  --hall-surface-raised: oklch(0.96 0.008 85);
+  --hall-border: oklch(0.145 0.02 250 / 12%);
+  --hall-border-strong: oklch(0.145 0.02 250 / 22%);
+  --hall-varnish: oklch(0.62 0.135 62);
+  --hall-varnish-soft: oklch(0.62 0.135 62 / 12%);
+  --hall-text: oklch(0.21 0.03 250);
+  --hall-text-muted: oklch(0.21 0.03 250 / 62%);
+  --hall-text-faint: oklch(0.21 0.03 250 / 38%);
+  --hall-shadow: 0 24px 64px -16px oklch(0.2 0.03 250 / 22%);
+
+  --tier-base: oklch(0.52 0.02 250);
+  --tier-silver: oklch(0.56 0.03 240);
+  --tier-gold: oklch(0.62 0.135 62);
+}
+
+/* The vinyl disc that sits behind a cabinet header. Positioned by the
+   parent, so it can drift without affecting layout. */
+.hall-vinyl {
+  position: absolute;
+  inset-block-start: -3.5rem;
+  inset-inline-end: -3rem;
+  width: 13rem;
+  height: 13rem;
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 50% 50%, oklch(0.79 0.142 78 / 22%) 0 8%, transparent 9%),
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      oklch(1 0 0 / 5%) 0 1px,
+      transparent 1px 5px
+    ),
+    radial-gradient(circle at 50% 50%, oklch(0.16 0.02 250) 0 100%);
+  opacity: 0.5;
+  pointer-events: none;
+  animation: hall-spin 26s linear infinite;
+}
+
+.hall-vinyl-slow {
+  animation-duration: 44s;
+}
+
+@keyframes hall-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Signature motion for this pass: a short settle with a touch of
+   overshoot, used once per surface rather than on every element. */
+.hall-settle {
+  animation: hall-settle var(--motion-duration-slow) var(--motion-ease-out) both;
+}
+
+@keyframes hall-settle {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.004);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.hall-drawer-in {
+  animation: hall-drawer-in var(--motion-duration-moderate) var(--motion-ease-out) both;
+}
+
+@keyframes hall-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.hall-list-in {
+  animation: hall-list-in var(--motion-duration-moderate) var(--motion-ease-out) both;
+}
+
+@keyframes hall-list-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* A quiet pulse for the checkout button while the order is in flight, so
+   the request still reads as live after the click. */
+.hall-pending {
+  animation: hall-pending 1.4s var(--motion-ease-in-out) infinite;
+}
+
+@keyframes hall-pending {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.hall-focusable:focus-visible {
+  outline: 2px solid var(--hall-varnish);
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
+
+/* The loom runs a warm sheen across the primary action. */
+.hall-sheen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.hall-sheen::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: -60%;
+  width: 45%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    oklch(1 0 0 / 26%),
+    transparent
+  );
+  transform: skewX(-18deg);
+  animation: hall-sheen 3.6s var(--motion-ease-in-out) infinite;
+  pointer-events: none;
+}
+
+@keyframes hall-sheen {
+  0%,
+  62% {
+    inset-inline-start: -60%;
+  }
+  92%,
+  100% {
+    inset-inline-start: 130%;
+  }
+}
+
+/* Respect the OS setting. Every animation above collapses to its end
+   state, so nothing is left mid-transform or invisible. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .hall-vinyl,
+  .hall-sheen::after {
+    animation: none !important;
+  }
+}

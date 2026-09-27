@@ -104,9 +104,24 @@ export const OrderSuccessModal: React.FC = () => {
             </div>
           </div>
 
+          {lastPlacedOrder.discountAmount ? (
+            <div
+              className="flex items-center justify-between text-xs font-mono pt-3"
+              style={{ color: 'var(--tier-gold)' }}
+            >
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                Скидка постоянного слушателя {lastPlacedOrder.discountPct}%
+              </span>
+              <span className="font-bold">−{lastPlacedOrder.discountAmount} ₽</span>
+            </div>
+          ) : null}
+
           <div className="pt-3 border-t border-white/10 flex items-center justify-between font-serif text-xl font-bold">
             <span>Итоговая сумма:</span>
-            <span className="text-amber-400 text-2xl">{lastPlacedOrder.subtotal} ₽</span>
+            <span className="text-amber-400 text-2xl">
+              {new Intl.NumberFormat('ru-RU').format(lastPlacedOrder.subtotal)} ₽
+            </span>
           </div>
         </div>
 

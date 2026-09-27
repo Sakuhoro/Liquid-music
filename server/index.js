@@ -31,6 +31,7 @@ import {
   deleteSession,
   createOrder,
   getOrdersByUser,
+  getAllOrders,
   getLoyaltyForUser,
   calculateUnitPrice,
   VOLUME_PRICING,
@@ -469,6 +470,36 @@ app.post('/api/orders', requireAuth, (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+// Admin view of every order on the studio account. Admin only, because it
+// crosses account boundaries and carries buyer contact details.
+app.get('/api/admin/orders', requireAuth, (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Недостаточно прав.' })
+    }
+    const orders = getAllOrders()
+    return res.json({ orders: orders.map(mapAdminOrderForClient) })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Same order shape as the customer's own view, with the buyer attached so the
+// admin table can show who a row belongs to.
+function mapAdminOrderForClient(order) {
+  return {
+    ...mapOrderForClient(order),
+    user: {
+      id: order.userId,
+      name: order.fullName,
+      phone: order.phone,
+      telegram: order.telegramId,
+      registeredAt: order.fullName,
+      role: 'USER',
+    },
+  }
+}
 
 // Shape an order row for the client. The item rows are the frozen price and
 // product label from the moment of purchase, so a later product rename or price

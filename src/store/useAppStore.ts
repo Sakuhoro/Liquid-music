@@ -7,6 +7,7 @@ import {
   NicotineType,
   AuthUser,
   PlacedOrder,
+  LoyaltyState,
   CollectionName,
   CollectionVideosConfig,
   Recipe,
@@ -25,6 +26,42 @@ export const DEFAULT_COLLECTION_VIDEOS: CollectionVideosConfig = {
   'Permanent 1': '/videos/night-head.mp4',
   'Permanent 2': '/videos/night-head.mp4',
 };
+
+// The server returns an order with a flat item list keyed by productId, and
+// prices frozen at purchase time. The UI works with CartItem and a nested
+// product, so the row is reshaped here rather than in every component. subtotal
+// stays the amount actually paid, which is what the admin revenue figures sum.
+function toPlacedOrder(row: any, currentUser: AuthUser | null): PlacedOrder {
+  return {
+    orderId: row.orderId,
+    user: row.user || currentUser || {
+      name: '',
+      phone: '',
+      telegram: '',
+      registeredAt: '',
+    },
+    items: (row.items || []).map((item: any) => ({
+      id: `${item.productId}-${item.volume}-${item.nicotine}`,
+      product: {
+        id: item.productId,
+        name: item.productName,
+        image: item.productImage,
+      } as any,
+      volume: item.volume,
+      nicotine: item.nicotine,
+      volumePrice: item.volumePrice,
+      nicotinePrice: item.nicotinePrice,
+      totalUnitPrice: item.totalUnitPrice,
+      quantity: item.quantity,
+    })),
+    subtotal: row.total,
+    createdAt: new Date(row.createdAt).toLocaleString('ru-RU'),
+    status: row.status,
+    grossSubtotal: row.subtotal,
+    discountPct: row.discountPct,
+    discountAmount: row.discountAmount,
+  };
+}
 
 interface AppState {
   // Theme & Atmosphere
@@ -141,8 +178,15 @@ interface AppState {
   setIsSuccessModalOpen: (open: boolean) => void;
   lastPlacedOrder: PlacedOrder | null;
   ordersHistory: PlacedOrder[];
+  adminOrders: PlacedOrder[];
+  loyalty: LoyaltyState | null;
+  isPlacingOrder: boolean;
+  isLoadingOrders: boolean;
+  fetchOrders: () => Promise<void>;
+  fetchAdminOrders: () => Promise<void>;
+  refreshLoyalty: () => Promise<void>;
   deleteOrderHistory: (orderId: string) => void;
-  placeOrder: () => { success: boolean; requiresAuth?: boolean };
+  placeOrder: () => Promise<{ success: boolean; requiresAuth?: boolean; error?: string }>;
 }
 
 export const useAppStore = create<AppState>()(
@@ -564,7 +608,10 @@ export const useAppStore = create<AppState>()(
               set({
                 currentUser: user,
                 isAdminLoggedIn: isAdmin,
+                loyalty: data.loyalty || null,
               });
+              get().fetchOrders();
+              if (isAdmin) get().fetchAdminOrders();
             }
           }
         } catch (err) {
@@ -590,7 +637,10 @@ export const useAppStore = create<AppState>()(
             currentUser: user,
             isAdminLoggedIn: isAdmin,
             isAuthModalOpen: false,
+            loyalty: data.loyalty || null,
           });
+          get().fetchOrders();
+          if (isAdmin) get().fetchAdminOrders();
           return { success: true };
         } catch (err) {
           return { success: false, error: 'Ошибка соединения с сервером.' };
@@ -615,7 +665,10 @@ export const useAppStore = create<AppState>()(
             currentUser: user,
             isAdminLoggedIn: isAdmin,
             isAuthModalOpen: false,
+            loyalty: data.loyalty || null,
           });
+          get().fetchOrders();
+          if (isAdmin) get().fetchAdminOrders();
           return { success: true };
         } catch (err) {
           return { success: false, error: 'Ошибка соединения с сервером.' };
@@ -632,6 +685,10 @@ export const useAppStore = create<AppState>()(
           currentUser: null,
           isAdminLoggedIn: false,
           isAccountModalOpen: false,
+          ordersHistory: [],
+          adminOrders: [],
+          loyalty: null,
+          lastPlacedOrder: null,
         });
       },
 
@@ -640,6 +697,10 @@ export const useAppStore = create<AppState>()(
           currentUser: null,
           isAdminLoggedIn: false,
           isAccountModalOpen: false,
+          ordersHistory: [],
+          adminOrders: [],
+          loyalty: null,
+          lastPlacedOrder: null,
         }),
 
       // Account modal
@@ -650,19 +711,88 @@ export const useAppStore = create<AppState>()(
       isSuccessModalOpen: false,
       setIsSuccessModalOpen: (isSuccessModalOpen) => set({ isSuccessModalOpen }),
       lastPlacedOrder: null,
-      // No seeded orders: they carried invented buyer identities that surfaced
-      // in the admin orders table as if they were real customers. Orders now
-      // only appear once someone actually places one, bound to their own
-      // currentUser.
+      // Orders come from the server, not from localStorage: they have to
+      // survive a cache clear and follow the account to a second device. A
+      // locally stored order also let anyone inflate their own loyalty balance
+      // by editing the blob.
       ordersHistory: [],
+      adminOrders: [],
+      loyalty: null,
+      isPlacingOrder: false,
+      isLoadingOrders: false,
 
+      fetchOrders: async () => {
+        const { currentUser } = get();
+        if (!currentUser) {
+          set({ ordersHistory: [], loyalty: null });
+          return;
+        }
+        set({ isLoadingOrders: true });
+        try {
+          const res = await fetch('/api/orders');
+          if (res.status === 401) {
+            set({ ordersHistory: [], loyalty: null, isLoadingOrders: false });
+            return;
+          }
+          if (!res.ok) return;
+          const data = await res.json();
+          set({
+            ordersHistory: (data.orders || []).map((row: any) =>
+              toPlacedOrder(row, currentUser)
+            ),
+            loyalty: data.loyalty || null,
+          });
+        } catch (err) {
+          console.warn('Failed to load orders:', err);
+        } finally {
+          set({ isLoadingOrders: false });
+        }
+      },
+
+      fetchAdminOrders: async () => {
+        const { currentUser } = get();
+        if (!currentUser || currentUser.role !== 'ADMIN') {
+          set({ adminOrders: [] });
+          return;
+        }
+        try {
+          const res = await fetch('/api/admin/orders');
+          if (!res.ok) return;
+          const data = await res.json();
+          set({
+            adminOrders: (data.orders || []).map((row: any) =>
+              toPlacedOrder(row, currentUser)
+            ),
+          });
+        } catch (err) {
+          console.warn('Failed to load admin orders:', err);
+        }
+      },
+
+      refreshLoyalty: async () => {
+        const { currentUser } = get();
+        if (!currentUser) return;
+        try {
+          const res = await fetch('/api/auth/me');
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.loyalty) set({ loyalty: data.loyalty });
+        } catch (err) {
+          console.warn('Failed to refresh loyalty:', err);
+        }
+      },
+
+      // Present for the admin table's clear-row affordance. The order itself
+      // lives in the database, so this only drops it from the loaded list until
+      // the next fetch brings it back.
       deleteOrderHistory: (orderId: string) =>
         set((state) => ({
           ordersHistory: state.ordersHistory.filter((o) => o.orderId !== orderId),
+          adminOrders: state.adminOrders.filter((o) => o.orderId !== orderId),
         })),
 
-      placeOrder: () => {
-        const { currentUser, cart, getCartSubtotal } = get();
+      placeOrder: async () => {
+        const { currentUser, cart } = get();
 
         if (!currentUser) {
           set({ isAuthModalOpen: true, authModalContext: 'checkout' });
@@ -673,26 +803,55 @@ export const useAppStore = create<AppState>()(
           return { success: false };
         }
 
-        const subtotal = getCartSubtotal();
-        const orderId = `LM-${Math.floor(100000 + Math.random() * 900000)}`;
-        const newOrder: PlacedOrder = {
-          orderId,
-          user: currentUser,
-          items: [...cart],
-          subtotal,
-          createdAt: new Date().toLocaleString('ru-RU'),
-          status: 'Pending Verification',
-        };
+        set({ isPlacingOrder: true });
+        try {
+          // Only the choices go up. Prices, the loyalty discount and the total
+          // are all decided on the server.
+          const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              items: cart.map((item) => ({
+                productId: item.product.id,
+                volume: item.volume,
+                nicotine: item.nicotine,
+                quantity: item.quantity,
+              })),
+            }),
+          });
 
-        set((state) => ({
-          lastPlacedOrder: newOrder,
-          ordersHistory: [newOrder, ...state.ordersHistory],
-          cart: [],
-          isCartOpen: false,
-          isSuccessModalOpen: true,
-        }));
+          const data = await res.json().catch(() => ({}));
 
-        return { success: true };
+          if (res.status === 401) {
+            set({ currentUser: null, isAdminLoggedIn: false });
+            return { success: false, error: 'Сессия истекла. Войдите снова.' };
+          }
+
+          if (!res.ok) {
+            return {
+              success: false,
+              error: data.error || 'Не удалось оформить заказ.',
+            };
+          }
+
+          const placedOrder = toPlacedOrder(data.order, currentUser);
+          set((state) => ({
+            lastPlacedOrder: placedOrder,
+            ordersHistory: [placedOrder, ...state.ordersHistory],
+            loyalty: data.loyalty || state.loyalty,
+            cart: [],
+            isCartOpen: false,
+            isSuccessModalOpen: true,
+            isPlacingOrder: false,
+          }));
+          get().fetchAdminOrders();
+
+          return { success: true };
+        } catch (err) {
+          return { success: false, error: 'Ошибка соединения с сервером.' };
+        } finally {
+          set({ isPlacingOrder: false });
+        }
       },
     }),
     {
@@ -701,7 +860,6 @@ export const useAppStore = create<AppState>()(
         theme: state.theme,
         cart: state.cart,
         currentUser: state.currentUser,
-        ordersHistory: state.ordersHistory,
         collectionVideos: state.collectionVideos,
         darkMusicUrl: state.darkMusicUrl,
         lightMusicUrl: state.lightMusicUrl,
@@ -711,10 +869,10 @@ export const useAppStore = create<AppState>()(
         flavorPrices: state.flavorPrices,
         isAdminLoggedIn: state.isAdminLoggedIn,
       }),
-      version: 6,
-      // v5 and earlier persisted the seeded demo orders, complete with invented
-      // buyer names and phones. Drop them on the next load instead of leaving
-      // them in every visitor's localStorage, but keep the cart and settings.
+      version: 7,
+      // v6 and earlier kept orders in localStorage. They are no longer the
+      // source of truth, so the stored copy is dropped on the next load and the
+      // real history is fetched from the server instead.
       migrate: (persistedState) => {
         const state = persistedState as Partial<AppState>;
         return { ...state, ordersHistory: [], lastPlacedOrder: null } as AppState;

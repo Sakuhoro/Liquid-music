@@ -77,7 +77,11 @@ export const StudioAdminModal: React.FC = () => {
   const toggleArchiveCollection = useAppStore((state) => state.toggleArchiveCollection);
   const setArchiveAllCollections = useAppStore((state) => state.setArchiveAllCollections);
 
-  const ordersHistory = useAppStore((state) => state.ordersHistory);
+  // The signed-in admin's own history is not what this table shows: the
+  // production and revenue figures below need every order on the account,
+  // which comes from the admin-scoped endpoint.
+  const adminOrders = useAppStore((state) => state.adminOrders);
+  const fetchAdminOrders = useAppStore((state) => state.fetchAdminOrders);
   const deleteOrderHistory = useAppStore((state) => state.deleteOrderHistory);
 
   const collectionVideos = useAppStore((state) => state.collectionVideos);
@@ -227,6 +231,10 @@ export const StudioAdminModal: React.FC = () => {
     return counts;
   }, [products]);
 
+  useEffect(() => {
+    if (isStudioModalOpen) fetchAdminOrders();
+  }, [isStudioModalOpen, fetchAdminOrders]);
+
   if (!isStudioModalOpen) return null;
 
   // Handle Admin Login: credentials are verified by the server against the
@@ -241,12 +249,12 @@ export const StudioAdminModal: React.FC = () => {
   };
 
   // Metrics for Tab 6.1 (Orders)
-  const totalOrdersCount = ordersHistory.length;
-  const totalBottlesCount = ordersHistory.reduce(
+  const totalOrdersCount = adminOrders.length;
+  const totalBottlesCount = adminOrders.reduce(
     (sum, order) => sum + order.items.reduce((iSum, item) => iSum + item.quantity, 0),
     0
   );
-  const totalRevenueSum = ordersHistory.reduce((sum, order) => sum + order.subtotal, 0);
+  const totalRevenueSum = adminOrders.reduce((sum, order) => sum + order.subtotal, 0);
 
   // Filtered Products for Tab 6.2 (Products)
   const filteredProducts = products.filter((p) => {
@@ -660,13 +668,13 @@ export const StudioAdminModal: React.FC = () => {
                       Список текущих заказов
                     </h3>
 
-                    {ordersHistory.length === 0 ? (
+                    {adminOrders.length === 0 ? (
                       <div className="p-12 text-center text-stone-400 font-sans font-semibold">
                         Заказы отсутствуют.
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {ordersHistory.map((order) => {
+                        {adminOrders.map((order) => {
                           const orderBottles = order.items.reduce((s, i) => s + i.quantity, 0);
                           return (
                             <div
@@ -1020,7 +1028,7 @@ export const StudioAdminModal: React.FC = () => {
 
                                 <tbody>
                                   {displayedProducts.map((prod) => {
-                                    const totalForFlavor = getFlavorTotalBottles(prod.name, ordersHistory);
+                                    const totalForFlavor = getFlavorTotalBottles(prod.name, adminOrders);
                                     const isFocused = focusedFlavorName === prod.name;
 
                                     return (
@@ -1042,7 +1050,7 @@ export const StudioAdminModal: React.FC = () => {
 
                                         {VOLUMES.map((vol) =>
                                           NICOTINES.map((nic) => {
-                                            const count = getRequiredCount(prod.name, vol, nic, ordersHistory);
+                                            const count = getRequiredCount(prod.name, vol, nic, adminOrders);
                                             const hasValue = count > 0;
                                             return (
                                               <td
@@ -1323,7 +1331,7 @@ export const StudioAdminModal: React.FC = () => {
                         // Calculate total required flavorings across all user orders with normalized keys
                         const flavorMap = new Map<string, { vendor: string; name: string; totalMl: number; key: string }>();
 
-                        for (const order of ordersHistory) {
+                        for (const order of adminOrders) {
                           for (const item of order.items) {
                             const volMl = parseInt(item.volume.replace('ml', ''), 10) || 30;
                             const totalLiquidMl = volMl * item.quantity;

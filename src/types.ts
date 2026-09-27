@@ -70,13 +70,32 @@ export interface AuthUser {
   role?: 'ADMIN' | 'USER';
 }
 
+export interface LoyaltyState {
+  spend: number; // total actually paid across all orders
+  tier: 'BASE' | 'SILVER' | 'GOLD';
+  discountPct: number; // rate locked in by past spend
+  currentPct: number; // rate the next order will be charged at
+  nextThreshold: number | null; // spend needed for the next tier
+}
+
 export interface PlacedOrder {
   orderId: string;
   user: AuthUser;
   items: CartItem[];
-  subtotal: number;
+  subtotal: number; // amount actually paid
   createdAt: string;
   status: 'Pending Verification' | 'Confirmed';
+  grossSubtotal?: number; // before the loyalty discount
+  discountPct?: number;
+  discountAmount?: number;
+}
+
+export interface CheckoutSummary {
+  grossSubtotal: number;
+  discountPct: number;
+  discountAmount: number;
+  total: number;
+  loyalty: LoyaltyState | null;
 }
 
 export interface CollectionVideosConfig {

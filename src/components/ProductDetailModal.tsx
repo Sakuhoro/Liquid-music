@@ -65,7 +65,9 @@ export const ProductDetailModal: React.FC = () => {
   const handleAdd = () => {
     if (isArchived) return;
     addToCart(inspectedProduct, selectedVolume, selectedNicotine);
-    soundEngine.playSuccessTone();
+    // No confirmation tone here: adding to the satchel is a quiet, frequent
+    // action and a beep on each one got irritating. The button already flips
+    // to its added state, and the chord preview still has its own sound.
     setIsAdded(true);
     setTimeout(() => {
       setIsAdded(false);
