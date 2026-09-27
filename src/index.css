@@ -365,6 +365,16 @@
   }
 }
 
+/* The receipt's detail rows, same knob. A 14px monospace label plus a real
+   14-15 character Telegram handle came to 289px in a 264px column, so the
+   handle wrapped. 20% off both sides brings it to 234px, which leaves room
+   for the longest handle the database actually holds. */
+@media (width < 40rem) {
+  .hall-receipt-row {
+    --hall-type-scale: 0.8;
+  }
+}
+
 /* Signature motion for this pass: a short settle with a touch of
    overshoot, used once per surface rather than on every element. */
 .hall-settle {

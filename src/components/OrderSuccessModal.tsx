@@ -108,15 +108,16 @@ export const OrderSuccessModal: React.FC = () => {
             ].map(({ label, value, tone }) => (
               <div
                 key={label}
-                className="flex items-start justify-between gap-3 sm:gap-4 hall-text-sm font-mono pb-2 sm:pb-3"
+                className="hall-receipt-row flex items-start justify-between gap-2 sm:gap-4 hall-text-sm font-mono pb-2 sm:pb-3"
                 style={{ borderBottom: '1px solid var(--hall-border)' }}
               >
-                {/* The label never gives up its width, so a long Telegram
-                    handle gets the room it needs. It wraps under itself
-                    rather than clipping, and aligns to the top of a wrapped
-                    value instead of floating beside its middle. */}
+                {/* The label never gives up its width, so a Telegram handle gets
+                    the room it needs. The row takes 20% off both sides at once,
+                    which is what lets a real 14-15 character handle sit on one
+                    line beside its label. break-words rather than break-all, so
+                    an overlong value prefers a word boundary before it splits. */}
                 <span className="shrink-0" style={{ color: 'var(--hall-text-muted)' }}>{label}:</span>
-                <span className="font-bold min-w-0 text-right break-all" style={{ color: tone }}>{value}</span>
+                <span className="font-bold min-w-0 text-right break-words" style={{ color: tone }}>{value}</span>
               </div>
             ))}
 
