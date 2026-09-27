@@ -147,26 +147,26 @@ export const CatalogView: React.FC = () => {
               <button
                 onClick={() => setDisplayMode('dolly')}
                 title="3D Gallery"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                   displayMode === 'dolly'
                     ? 'bg-amber-500 text-stone-950 font-semibold shadow-md'
                     : isDark ? 'text-stone-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Film className="w-3.5 h-3.5" />
-                <span>3D Галерея</span>
+                <Film className="w-3.5 h-3.5 shrink-0" />
+                <span className="whitespace-nowrap">3D Галерея</span>
               </button>
               <button
                 onClick={() => setDisplayMode('grid')}
                 title="Сетка"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                   displayMode === 'grid'
                     ? 'bg-amber-500 text-stone-950 font-semibold shadow-md'
                     : isDark ? 'text-stone-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span>Сетка</span>
+                <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
+                <span className="whitespace-nowrap">Сетка</span>
               </button>
             </div>
 
