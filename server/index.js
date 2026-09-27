@@ -10,6 +10,7 @@ import { exec } from 'child_process'
 import { fileURLToPath } from 'url'
 import {
   getAllProducts,
+  getProductById,
   addProduct,
   updateProduct,
   deleteProduct,
@@ -28,6 +29,12 @@ import {
   createSession,
   getSessionUser,
   deleteSession,
+  createOrder,
+  getOrdersByUser,
+  getLoyaltyForUser,
+  calculateUnitPrice,
+  VOLUME_PRICING,
+  NICOTINE_PRICING,
 } from './db.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -356,6 +363,7 @@ app.get('/api/auth/me', (req, res) => {
         registeredAt: user.createdAt.split('T')[0],
         role: user.role,
       },
+      loyalty: getLoyaltyForUser(user.id),
     })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -374,6 +382,122 @@ app.post('/api/auth/logout', (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+// Orders & Loyalty API
+
+// Guards the order routes: unlike /api/auth/me this one answers 401, because a
+// caller that is not signed in has nothing to read here.
+function requireAuth(req, res, next) {
+  const token = req.cookies?.lm_session || req.headers.authorization?.replace('Bearer ', '')
+  if (!token) {
+    return res.status(401).json({ error: 'Требуется авторизация' })
+  }
+  const user = getSessionUser(token)
+  if (!user) {
+    res.clearCookie('lm_session')
+    return res.status(401).json({ error: 'Сессия истекла' })
+  }
+  req.user = user
+  next()
+}
+
+const orderItemSchema = z.object({
+  productId: z.string().min(1, 'Не указан товар.'),
+  volume: z.enum(['30ml', '60ml', '120ml'], { message: 'Неизвестный объем.' }),
+  nicotine: z.enum(['0mg', '1.5mg', '3mg', '6mg'], { message: 'Неизвестная крепость.' }),
+  quantity: z.number().int().min(1).max(999),
+})
+
+const createOrderSchema = z.object({
+  items: z.array(orderItemSchema).min(1, 'Корзина пуста.').max(60),
+})
+
+app.get('/api/orders', requireAuth, (req, res) => {
+  try {
+    const orders = getOrdersByUser(req.user.id)
+    return res.json({
+      orders: orders.map(mapOrderForClient),
+      loyalty: getLoyaltyForUser(req.user.id),
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/orders', requireAuth, (req, res) => {
+  try {
+    const parseResult = createOrderSchema.safeParse(req.body)
+    if (!parseResult.success) {
+      const issue = parseResult.error.issues[0]
+      return res.status(400).json({ error: issue.message })
+    }
+
+    // Price every line from the server-side matrix and the products table. The
+    // client never gets to say what an item costs or what it is called.
+    const items = []
+    for (const line of parseResult.data.items) {
+      const unitPrice = calculateUnitPrice(line.volume, line.nicotine)
+      if (unitPrice === null) {
+        return res.status(400).json({ error: 'Неизвестный объем или крепость.' })
+      }
+      const product = getProductById(line.productId)
+      if (!product) {
+        return res.status(400).json({ error: `Товар ${line.productId} больше не доступен.` })
+      }
+      items.push({
+        productId: product.id,
+        productName: product.name,
+        productImage: product.image,
+        volume: line.volume,
+        nicotine: line.nicotine,
+        volumePrice: VOLUME_PRICING[line.volume],
+        nicotinePrice: NICOTINE_PRICING[line.nicotine],
+        unitPrice,
+        quantity: line.quantity,
+      })
+    }
+
+    const order = createOrder({ userId: req.user.id, items })
+    const full = getOrdersByUser(req.user.id).find((o) => o.id === order.id)
+
+    return res.status(201).json({
+      success: true,
+      order: mapOrderForClient(full),
+      loyalty: getLoyaltyForUser(req.user.id),
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Shape an order row for the client. The item rows are the frozen price and
+// product label from the moment of purchase, so a later product rename or price
+// change does not rewrite history.
+function mapOrderForClient(order) {
+  if (!order) return null
+  return {
+    id: order.id,
+    orderId: order.orderId,
+    subtotal: order.subtotal,
+    discountPct: order.discountPct,
+    discountAmount: order.discountAmount,
+    total: order.total,
+    status: order.status,
+    createdAt: order.createdAt,
+    items: order.items.map((item) => ({
+      id: item.id,
+      productId: item.productId,
+      productName: item.productName,
+      productImage: item.productImage,
+      volume: item.volume,
+      nicotine: item.nicotine,
+      volumePrice: item.volumePrice,
+      nicotinePrice: item.nicotinePrice,
+      totalUnitPrice: item.unitPrice,
+      quantity: item.quantity,
+    })),
+  }
+}
 
 // Settings API Endpoints (e.g. for videos, audio settings)
 app.get('/api/settings/:key', (req, res) => {

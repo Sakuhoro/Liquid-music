@@ -80,7 +80,82 @@ db.exec(`
 
   CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
   CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegramId ON users(telegramId);
+
+  CREATE TABLE IF NOT EXISTS orders (
+    id TEXT PRIMARY KEY,
+    orderId TEXT NOT NULL UNIQUE,
+    userId TEXT NOT NULL,
+    subtotal INTEGER NOT NULL,
+    discountPct INTEGER NOT NULL DEFAULT 0,
+    discountAmount INTEGER NOT NULL DEFAULT 0,
+    total INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Pending Verification',
+    createdAt TEXT NOT NULL,
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS order_items (
+    id TEXT PRIMARY KEY,
+    orderId TEXT NOT NULL,
+    productId TEXT,
+    productName TEXT NOT NULL,
+    productImage TEXT,
+    volume TEXT NOT NULL,
+    nicotine TEXT NOT NULL,
+    volumePrice INTEGER NOT NULL,
+    nicotinePrice INTEGER NOT NULL,
+    unitPrice INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_orders_userId ON orders(userId);
+  CREATE INDEX IF NOT EXISTS idx_orders_createdAt ON orders(createdAt);
+  CREATE INDEX IF NOT EXISTS idx_order_items_orderId ON order_items(orderId);
 `);
+
+// Loyalty program: a customer who has spent more than 20 000 RUB in total gets
+// 5% off every later order, and more than 30 000 RUB gets 10%. The tier is
+// derived from what was actually paid (sum of orders.total), so a discount
+// never counts twice toward the next threshold.
+export const LOYALTY_TIERS = [
+  { minSpend: 30000, pct: 10, tier: 'GOLD' },
+  { minSpend: 20000, pct: 5, tier: 'SILVER' },
+  { minSpend: 0, pct: 0, tier: 'BASE' },
+];
+
+export function getLoyaltyTier(spend) {
+  const amount = Number(spend) || 0;
+  return LOYALTY_TIERS.find((t) => amount > t.minSpend) || LOYALTY_TIERS[LOYALTY_TIERS.length - 1];
+}
+
+// Pricing matrix, mirrored from VOLUME_PRICING / NICOTINE_PRICING in
+// src/data/products.ts. The order total is money the loyalty balance is derived
+// from, so it has to be recomputed here from the requested volume and nicotine
+// rather than read off the request body. A client that posts its own unitPrice
+// would otherwise be able to mint loyalty credit for free.
+export const VOLUME_PRICING = { '30ml': 300, '60ml': 550, '120ml': 900 };
+export const NICOTINE_PRICING = { '0mg': 0, '1.5mg': 15, '3mg': 30, '6mg': 60 };
+
+export function calculateUnitPrice(volume, nicotine) {
+  const vol = VOLUME_PRICING[volume];
+  const nic = NICOTINE_PRICING[nicotine];
+  if (vol === undefined || nic === undefined) return null;
+  return vol + nic;
+}
+
+// The loyalty balance lives on the user row so it survives without recomputing
+// the whole order history on every read. Both columns are denormalised on
+// purpose: they are the source of truth for the cart badge and the cabinet.
+const userColumns = db.prepare('PRAGMA table_info(users)').all();
+if (!userColumns.some((col) => col.name === 'loyaltySpend')) {
+  db.exec('ALTER TABLE users ADD COLUMN loyaltySpend INTEGER NOT NULL DEFAULT 0');
+  console.log('[liquid-music] migrated users: added loyaltySpend column');
+}
+if (!userColumns.some((col) => col.name === 'loyaltyDiscountPct')) {
+  db.exec('ALTER TABLE users ADD COLUMN loyaltyDiscountPct INTEGER NOT NULL DEFAULT 0');
+  console.log('[liquid-music] migrated users: added loyaltyDiscountPct column');
+}
 
 // Artwork scale bounds mirrored from ART_SCALE_MIN / ART_SCALE_MAX in
 // src/utils/vinylScale.ts. The minimum is 1.0: the label is a circle, so any
@@ -1352,6 +1427,18 @@ export function getAllProducts() {
   }));
 }
 
+// Used when an order line is priced, so the product label and image written into
+// history come from the catalogue rather than from the request.
+export function getProductById(id) {
+  const row = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
+  if (!row) return null;
+  return {
+    ...row,
+    isFeatured: Boolean(row.isFeatured),
+    aromaticChords: typeof row.aromaticChords === 'string' ? JSON.parse(row.aromaticChords) : row.aromaticChords,
+  };
+}
+
 export function addProduct(prod) {
   const stmt = db.prepare(`
     INSERT INTO products (
@@ -1623,6 +1710,111 @@ export function deleteSession(token) {
   if (!token) return;
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   db.prepare('DELETE FROM sessions WHERE tokenHash = ?').run(tokenHash);
+}
+
+// Order DB operations
+
+// An order is written together with its items and the loyalty balance bump in a
+// single transaction: a half-written order would leave the customer's spend and
+// their order list disagreeing about the same money.
+export function createOrder({ userId, items, status = 'Pending Verification' }) {
+  const now = new Date().toISOString();
+
+  const createUserOrder = db.transaction((payload) => {
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(payload.userId);
+    if (!user) throw new Error('Пользователь не найден');
+
+    const subtotal = payload.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+
+    // The tier is read from the balance accumulated by *previous* orders, so
+    // crossing a threshold only benefits the orders that come after it.
+    const tier = getLoyaltyTier(user.loyaltySpend);
+    const discountAmount = Math.round((subtotal * tier.pct) / 100);
+    const total = subtotal - discountAmount;
+
+    // Retry on the astronomically unlikely orderId collision instead of
+    // failing the checkout outright.
+    let orderId = `LM-${Date.now().toString(36).toUpperCase()}`;
+    while (db.prepare('SELECT 1 FROM orders WHERE orderId = ?').get(orderId)) {
+      orderId = `LM-${Date.now().toString(36).toUpperCase()}${Math.floor(Math.random() * 100)}`;
+    }
+
+    const id = crypto.randomUUID ? crypto.randomUUID() : `order-${Date.now()}`;
+    db.prepare(`
+      INSERT INTO orders (id, orderId, userId, subtotal, discountPct, discountAmount, total, status, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, orderId, payload.userId, subtotal, tier.pct, discountAmount, total, status, now);
+
+    const insertItem = db.prepare(`
+      INSERT INTO order_items (id, orderId, productId, productName, productImage, volume, nicotine, volumePrice, nicotinePrice, unitPrice, quantity)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const item of payload.items) {
+      insertItem.run(
+        crypto.randomUUID ? crypto.randomUUID() : `item-${Date.now()}-${Math.random()}`,
+        id,
+        item.productId ?? null,
+        item.productName,
+        item.productImage ?? null,
+        item.volume,
+        item.nicotine,
+        item.volumePrice,
+        item.nicotinePrice,
+        item.unitPrice,
+        item.quantity
+      );
+    }
+
+    const nextSpend = Number(user.loyaltySpend || 0) + total;
+    const nextTier = getLoyaltyTier(nextSpend);
+    db.prepare('UPDATE users SET loyaltySpend = ?, loyaltyDiscountPct = ? WHERE id = ?').run(
+      nextSpend,
+      nextTier.pct,
+      payload.userId
+    );
+
+    return { id, orderId, subtotal, discountPct: tier.pct, discountAmount, total, status, createdAt: now };
+  });
+
+  return createUserOrder({ userId, items, status });
+}
+
+export function getOrdersByUser(userId) {
+  const orders = db
+    .prepare('SELECT * FROM orders WHERE userId = ? ORDER BY createdAt DESC')
+    .all(userId);
+  if (orders.length === 0) return [];
+
+  const itemsStmt = db.prepare('SELECT * FROM order_items WHERE orderId = ?');
+  return orders.map((order) => ({ ...order, items: itemsStmt.all(order.id) }));
+}
+
+// Sum of every order placed by any user, for the admin orders tab.
+export function getAllOrders() {
+  const orders = db
+    .prepare(`
+      SELECT o.*, u.fullName, u.phone, u.telegramId
+      FROM orders o JOIN users u ON u.id = o.userId
+      ORDER BY o.createdAt DESC
+    `)
+    .all();
+  if (orders.length === 0) return [];
+
+  const itemsStmt = db.prepare('SELECT * FROM order_items WHERE orderId = ?');
+  return orders.map((order) => ({ ...order, items: itemsStmt.all(order.id) }));
+}
+
+export function getLoyaltyForUser(userId) {
+  const user = db.prepare('SELECT loyaltySpend, loyaltyDiscountPct FROM users WHERE id = ?').get(userId);
+  if (!user) return null;
+  const tier = getLoyaltyTier(user.loyaltySpend);
+  return {
+    spend: Number(user.loyaltySpend || 0),
+    tier: tier.tier,
+    discountPct: Number(user.loyaltyDiscountPct || 0),
+    currentPct: tier.pct,
+    nextThreshold: tier.pct === 0 ? 20000 : tier.pct === 5 ? 30000 : null,
+  };
 }
 
 export default db;
