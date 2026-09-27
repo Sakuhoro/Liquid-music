@@ -293,6 +293,18 @@
   max-width: 40rem; /* 56rem / 1.4 */
 }
 
+/* The same card on a phone. The width halves, and the type comes down to 1.0
+   rather than the 0.7 a literal halving would ask for: at 0.7 the smallest
+   label lands at 7.7px and the flavour rows at 9.8px, which fits the card on
+   screen only by becoming unreadable. 1.0 leaves an 11px label and 14px rows
+   and still takes about a third off the height. */
+@media (width < 40rem) {
+  .hall-receipt-card {
+    --hall-type-scale: 1;
+    max-width: 20rem;
+  }
+}
+
 .hall-text-2xs {
   font-size: calc(0.6875rem * var(--hall-type-scale));
   line-height: calc(1.125rem * var(--hall-type-scale));
@@ -405,6 +417,24 @@
   }
   50% {
     opacity: 0.55;
+  }
+}
+
+/* The confirmation notice that slides up when a composition joins the
+   playlist. Rises from below the thumb-reachable edge rather than fading in
+   place, so it reads as arriving from the shelf. */
+.hall-toast-in {
+  animation: hall-toast-in var(--motion-duration-moderate) var(--motion-ease-out) both;
+}
+
+@keyframes hall-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

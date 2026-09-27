@@ -114,21 +114,24 @@ export const OrderSuccessModal: React.FC = () => {
             >
                 Ваши композиции в плейлисте
               </span>
+            {/* Long flavour names wrap rather than clip. The list scrolls once
+                it runs past the cap, since a wide order would otherwise push
+                the total and the Telegram button off the bottom of a phone. */}
             <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
               {lastPlacedOrder.items.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-3 justify-between hall-text-sm font-mono hall-list-in"
+                  className="flex items-start gap-3 justify-between hall-text-sm font-mono hall-list-in"
                   style={{ animationDelay: `${Math.min(idx, 6) * 45}ms` }}
                 >
-                  <span className="flex items-center gap-3 min-w-0">
+                  <span className="flex items-start gap-3 min-w-0 flex-1">
                     <img
                       src={item.product.image}
                       alt={item.product.name}
-                      className="w-8 h-8 rounded-lg object-cover shrink-0"
+                      className="w-8 h-8 rounded-lg object-cover shrink-0 mt-0.5"
                       style={{ border: '1px solid var(--hall-border)' }}
                     />
-                    <span className="truncate">
+                    <span className="min-w-0 break-words hyphens-auto">
                       {item.quantity}× {item.product.name}
                       <span style={{ color: 'var(--hall-text-faint)' }}>
                         {' '}
@@ -136,7 +139,7 @@ export const OrderSuccessModal: React.FC = () => {
                       </span>
                     </span>
                   </span>
-                  <span className="font-bold shrink-0" style={{ color: 'var(--hall-varnish)' }}>
+                  <span className="font-bold shrink-0 text-right" style={{ color: 'var(--hall-varnish)' }}>
                     {formatRub(item.totalUnitPrice * item.quantity)} ₽
                   </span>
                 </div>

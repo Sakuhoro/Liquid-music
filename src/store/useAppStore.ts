@@ -147,6 +147,12 @@ interface AppState {
   getCartSubtotal: () => number;
   getCartItemCount: () => number;
 
+  // Transient notice shown after a composition joins the playlist. It carries
+  // an id rather than just the name so that adding the same flavour twice in
+  // a row still replays the notice instead of looking unchanged.
+  playlistToast: { id: number; productName: string } | null;
+  dismissPlaylistToast: () => void;
+
   // Authentication for Clients
   currentUser: AuthUser | null;
   isAuthModalOpen: boolean;
@@ -188,6 +194,10 @@ interface AppState {
   deleteOrderHistory: (orderId: string) => void;
   placeOrder: () => Promise<{ success: boolean; requiresAuth?: boolean; error?: string }>;
 }
+
+// Bumped per add, so the playlist notice replays on every addition. A module
+// counter rather than one in state, since it is never read by the UI.
+let playlistToastSeq = 0;
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -514,6 +524,8 @@ export const useAppStore = create<AppState>()(
       // Cart
       cart: [],
       isCartOpen: false,
+      playlistToast: null,
+      dismissPlaylistToast: () => set({ playlistToast: null }),
       setIsCartOpen: (isCartOpen) => set({ isCartOpen }),
 
       addToCart: (product, volume, nicotine) => {
@@ -523,6 +535,14 @@ export const useAppStore = create<AppState>()(
         const unitPrice = volPrice + nicPrice;
 
         set((state) => {
+          // Adding no longer throws the drawer open. It used to, which meant
+          // the whole playlist covered the shelf on every single addition, so
+          // picking three flavours in a row meant three full-screen
+          // interruptions. The notice says the same thing without stealing
+          // the view.
+          playlistToastSeq += 1;
+          const notice = { id: playlistToastSeq, productName: product.name };
+
           const existing = state.cart.find((item) => item.id === itemId);
           if (existing) {
             return {
@@ -531,7 +551,7 @@ export const useAppStore = create<AppState>()(
                   ? { ...item, quantity: item.quantity + 1 }
                   : item
               ),
-              isCartOpen: true,
+              playlistToast: notice,
             };
           }
           const newItem: CartItem = {
@@ -546,7 +566,7 @@ export const useAppStore = create<AppState>()(
           };
           return {
             cart: [...state.cart, newItem],
-            isCartOpen: true,
+            playlistToast: notice,
           };
         });
       },
@@ -841,6 +861,7 @@ export const useAppStore = create<AppState>()(
             loyalty: data.loyalty || state.loyalty,
             cart: [],
             isCartOpen: false,
+            playlistToast: null,
             isSuccessModalOpen: true,
             isPlacingOrder: false,
           }));

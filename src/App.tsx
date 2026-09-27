@@ -7,6 +7,7 @@ import { CatalogView } from './components/CatalogView';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { AuthModal } from './components/AuthModal';
 import { CartDrawer } from './components/CartDrawer';
+import { PlaylistToast } from './components/PlaylistToast';
 import { OrderSuccessModal } from './components/OrderSuccessModal';
 import { StudioAdminModal } from './components/StudioAdminModal';
 import { AccountModal } from './components/AccountModal';
@@ -158,6 +159,7 @@ export default function App() {
       <StudioAdminModal />
       <AccountModal />
       <SoundCloudPlayerModal />
+      <PlaylistToast />
     </main>
   );
 }

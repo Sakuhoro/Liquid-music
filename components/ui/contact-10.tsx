@@ -46,6 +46,20 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
     }
   };
 
+  // Registering asks for three fields where signing in asks for two, which on
+  // a phone made this the taller of the two cards by enough to push the submit
+  // button past the fold. So the register view gives up about a quarter of
+  // its padding, gaps and field heights, and only on a phone; sign-in and
+  // anything from md up keep the roomier metrics.
+  const isRegister = mode === 'register';
+  const cardPad = isRegister ? 'p-4 md:p-10' : 'p-6 sm:p-8 md:p-10';
+  const formGap = isRegister ? 'space-y-2.5 md:space-y-4' : 'space-y-4';
+  const labelGap = isRegister ? 'space-y-1 md:space-y-1.5' : 'space-y-1.5';
+  const fieldPad = isRegister ? 'py-2.5 md:py-3.5' : 'py-3.5';
+  const fieldInset = isRegister ? 'pl-10 md:pl-12' : 'pl-12';
+  const iconInset = isRegister ? 'left-3.5 md:left-4' : 'left-4';
+  const submitPad = isRegister ? 'py-3 md:py-4' : 'py-4';
+
   // Form Fields State
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -113,7 +127,7 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto rounded-3xl border border-white/20 bg-stone-950/90 p-6 sm:p-8 md:p-10 text-stone-100 shadow-2xl backdrop-blur-2xl relative overflow-hidden font-sans">
+    <div className={`w-full max-w-xl mx-auto rounded-3xl border border-white/20 bg-stone-950/90 ${cardPad} text-stone-100 shadow-2xl backdrop-blur-2xl relative overflow-hidden font-sans`}>
       {/* Studio Background Accents & Waveform Grid */}
       <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -160,16 +174,16 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
       )}
 
       {/* Input Form */}
-      <form onSubmit={handleSubmit} className="space-y-4 font-sans">
+      <form onSubmit={handleSubmit} className={`${formGap} font-sans`}>
         {mode === 'register' && (
           <>
             {/* Field: Full Name / ФИО */}
-            <div className="space-y-1.5">
+            <div className={labelGap}>
               <label className="block font-mono uppercase tracking-wider text-xs text-stone-300 font-bold">
                 ФИО (Полное имя):
               </label>
               <div className="relative">
-                <User className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
+                <User className={`w-5 h-5 absolute ${iconInset} top-1/2 -translate-y-1/2 text-stone-400`} />
                 <input
                   type="text"
                   required
@@ -179,18 +193,18 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
                     setFullName(e.target.value);
                     setClientError(null);
                   }}
-                  className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-white/15 bg-white/[0.05] text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-400 text-base transition-colors"
+                  className={`w-full ${fieldInset} pr-4 ${fieldPad} rounded-2xl border border-white/15 bg-white/[0.05] text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-400 text-base transition-colors`}
                 />
               </div>
             </div>
 
             {/* Field: Phone Number */}
-            <div className="space-y-1.5">
+            <div className={labelGap}>
               <label className="block font-mono uppercase tracking-wider text-xs text-stone-300 font-bold">
                 Номер Телефона:
               </label>
               <div className="relative">
-                <Phone className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
+                <Phone className={`w-5 h-5 absolute ${iconInset} top-1/2 -translate-y-1/2 text-stone-400`} />
                 <input
                   type="tel"
                   required
@@ -200,7 +214,7 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
                     setPhone(e.target.value);
                     setClientError(null);
                   }}
-                  className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-white/15 bg-white/[0.05] text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-400 text-base transition-colors"
+                  className={`w-full ${fieldInset} pr-4 ${fieldPad} rounded-2xl border border-white/15 bg-white/[0.05] text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-400 text-base transition-colors`}
                 />
               </div>
             </div>
@@ -208,12 +222,12 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
         )}
 
         {/* Field: Telegram ID */}
-        <div className="space-y-1.5">
+        <div className={labelGap}>
           <label className="block font-mono uppercase tracking-wider text-xs text-stone-300 font-bold">
             Telegram ID:
           </label>
           <div className="relative">
-            <Send className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
+            <Send className={`w-5 h-5 absolute ${iconInset} top-1/2 -translate-y-1/2 text-stone-400`} />
             <input
               type="text"
               required
@@ -227,18 +241,18 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
                 setTelegramId(val);
                 setClientError(null);
               }}
-              className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-white/15 bg-white/[0.05] text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-400 text-base font-mono transition-colors"
+              className={`w-full ${fieldInset} pr-4 ${fieldPad} rounded-2xl border border-white/15 bg-white/[0.05] text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-400 text-base font-mono transition-colors`}
             />
           </div>
         </div>
 
         {/* Field: Password */}
-        <div className="space-y-1.5">
+        <div className={labelGap}>
           <label className="block font-mono uppercase tracking-wider text-xs text-stone-300 font-bold">
             Пароль (мин. 9 символов):
           </label>
           <div className="relative">
-            <Lock className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
+            <Lock className={`w-5 h-5 absolute ${iconInset} top-1/2 -translate-y-1/2 text-stone-400`} />
             <input
               type="password"
               required
@@ -249,7 +263,7 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
                 setPassword(e.target.value);
                 setClientError(null);
               }}
-              className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-white/15 bg-white/[0.05] text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-400 text-base font-mono transition-colors"
+              className={`w-full ${fieldInset} pr-4 ${fieldPad} rounded-2xl border border-white/15 bg-white/[0.05] text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-400 text-base font-mono transition-colors`}
             />
           </div>
         </div>
@@ -275,7 +289,7 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="liquid-glass w-full py-4 rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-3 cursor-pointer transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] text-white shadow-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40"
+            className={`liquid-glass w-full ${submitPad} rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-3 cursor-pointer transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] text-white shadow-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40`}
           >
             <Sliders className="w-5 h-5 text-amber-400" />
             <span>
