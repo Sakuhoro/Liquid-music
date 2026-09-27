@@ -81,7 +81,7 @@ export const AccountModal: React.FC = () => {
         role="dialog"
         aria-modal="true"
         aria-label="Личный кабинет"
-        className="relative w-full max-w-lg rounded-3xl overflow-hidden border hall-settle"
+        className="relative w-full max-w-3xl rounded-3xl overflow-hidden border hall-settle"
         style={{
           background: 'var(--hall-surface)',
           borderColor: 'var(--hall-border)',
@@ -110,11 +110,11 @@ export const AccountModal: React.FC = () => {
               <User className="w-6 h-6" />
             </div>
             <div className="min-w-0">
-              <div className="inline-flex items-center gap-1.5 text-[11px] font-mono" style={{ color: 'var(--tier-gold)' }}>
+              <div className="inline-flex items-center gap-1.5 hall-text-2xs font-mono" style={{ color: 'var(--tier-gold)' }}>
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Авторизованный слушатель</span>
               </div>
-              <h2 className="font-serif text-2xl font-normal leading-tight truncate">
+              <h2 className="font-serif hall-text-3xl font-normal leading-tight truncate">
                 {currentUser.name}
               </h2>
             </div>
@@ -128,18 +128,18 @@ export const AccountModal: React.FC = () => {
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-[11px] font-mono uppercase tracking-wider" style={{ color: 'var(--hall-text-faint)' }}>
+                  <div className="hall-text-2xs font-mono uppercase tracking-wider" style={{ color: 'var(--hall-text-faint)' }}>
                     Постоянный слушатель
                   </div>
-                  <div className="font-serif text-lg mt-0.5" style={{ color: `var(--tier-${loyalty.tier.toLowerCase()})` }}>
+                  <div className="font-serif hall-text-xl mt-0.5" style={{ color: `var(--tier-${loyalty.tier.toLowerCase()})` }}>
                     {TIER_LABEL[loyalty.tier] ?? loyalty.tier}
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="font-serif text-2xl font-bold" style={{ color: 'var(--hall-varnish)' }}>
+                  <div className="font-serif hall-text-3xl font-bold" style={{ color: 'var(--hall-varnish)' }}>
                     {loyalty.discountPct}%
                   </div>
-                  <div className="text-[10px] font-mono" style={{ color: 'var(--hall-text-faint)' }}>
+                  <div className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
                     на следующий заказ
                   </div>
                 </div>
@@ -164,7 +164,7 @@ export const AccountModal: React.FC = () => {
                 />
               </div>
 
-              <div className="mt-2 text-[11px] font-mono" style={{ color: 'var(--hall-text-muted)' }}>
+              <div className="mt-2 hall-text-2xs font-mono" style={{ color: 'var(--hall-text-muted)' }}>
                 {nextThreshold ? (
                   <>
                     <span style={{ color: 'var(--hall-text)' }}>{formatRub(spend)} ₽</span>
@@ -184,7 +184,7 @@ export const AccountModal: React.FC = () => {
 
         {/* Details */}
         <div
-          className="mx-6 sm:mx-8 p-4 rounded-2xl space-y-3 text-xs font-mono"
+          className="mx-6 sm:mx-8 p-4 rounded-2xl space-y-3 hall-text-base font-mono"
           style={{ background: 'var(--hall-surface-raised)', border: '1px solid var(--hall-border)' }}
         >
           {[
@@ -207,10 +207,10 @@ export const AccountModal: React.FC = () => {
         {/* Order history */}
         <div className="p-6 sm:p-8">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-serif text-lg flex items-center gap-2">
+            <h3 className="font-serif hall-text-xl flex items-center gap-2">
               <Disc3 className="w-4 h-4" style={{ color: 'var(--hall-varnish)' }} />
               <span>История заказов</span>
-              <span className="text-xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
+              <span className="hall-text-base font-mono" style={{ color: 'var(--hall-text-faint)' }}>
                 ({ordersHistory.length})
               </span>
             </h3>
@@ -221,10 +221,10 @@ export const AccountModal: React.FC = () => {
             {ordersHistory.length === 0 ? (
               <div className="py-8 text-center">
                 <Disc3 className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--hall-text-faint)' }} />
-                <p className="text-xs" style={{ color: 'var(--hall-text-muted)' }}>
+                <p className="hall-text-base" style={{ color: 'var(--hall-text-muted)' }}>
                   {isLoading ? 'Загружаем архив…' : 'Записей пока нет.'}
                 </p>
-                <p className="text-[11px] mt-1" style={{ color: 'var(--hall-text-faint)' }}>
+                <p className="hall-text-2xs mt-1" style={{ color: 'var(--hall-text-faint)' }}>
                   Первый заказ появится здесь сразу после оформления.
                 </p>
               </div>
@@ -247,10 +247,10 @@ export const AccountModal: React.FC = () => {
                       className="hall-focusable w-full p-3 flex items-center justify-between gap-3 text-left cursor-pointer transition-colors"
                     >
                       <div className="min-w-0">
-                        <div className="font-mono font-bold text-sm" style={{ color: 'var(--hall-varnish)' }}>
+                        <div className="font-mono font-bold hall-text-base" style={{ color: 'var(--hall-varnish)' }}>
                           {order.orderId}
                         </div>
-                        <div className="text-[11px] font-mono mt-0.5" style={{ color: 'var(--hall-text-faint)' }}>
+                        <div className="hall-text-2xs font-mono mt-0.5" style={{ color: 'var(--hall-text-faint)' }}>
                           {order.createdAt} ·{' '}
                           <span style={{ color: STATUS_TONE[order.status] }}>
                             {STATUS_LABEL[order.status] ?? order.status}
@@ -258,7 +258,7 @@ export const AccountModal: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-mono font-bold text-sm">
+                        <span className="font-mono font-bold hall-text-base">
                           {formatRub(order.subtotal)} ₽
                         </span>
                         <ChevronDown
@@ -285,12 +285,12 @@ export const AccountModal: React.FC = () => {
                               style={{ border: '1px solid var(--hall-border)' }}
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs font-medium truncate">{item.product.name}</div>
-                              <div className="text-[10px] font-mono" style={{ color: 'var(--hall-text-faint)' }}>
+                              <div className="hall-text-base font-medium truncate">{item.product.name}</div>
+                              <div className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
                                 {item.volume} · {item.nicotine} · {item.quantity} шт
                               </div>
                             </div>
-                            <div className="text-[11px] font-mono shrink-0">
+                            <div className="hall-text-2xs font-mono shrink-0">
                               {formatRub(item.totalUnitPrice * item.quantity)} ₽
                             </div>
                           </div>
@@ -298,7 +298,7 @@ export const AccountModal: React.FC = () => {
 
                         {order.discountAmount ? (
                           <div
-                            className="flex items-center justify-between text-[11px] font-mono pt-2"
+                            className="flex items-center justify-between hall-text-2xs font-mono pt-2"
                             style={{ borderTop: '1px solid var(--hall-border)', color: 'var(--tier-gold)' }}
                           >
                             <span className="flex items-center gap-1.5">
@@ -327,7 +327,7 @@ export const AccountModal: React.FC = () => {
               logoutWithApi();
               logout();
             }}
-            className="hall-focusable px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="hall-focusable px-4 py-2 rounded-xl hall-text-base font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
             style={{ color: 'oklch(0.7 0.19 22)' }}
           >
             <LogOut className="w-3.5 h-3.5" />
@@ -336,7 +336,7 @@ export const AccountModal: React.FC = () => {
 
           <button
             onClick={() => setIsAccountModalOpen(false)}
-            className="hall-focusable px-5 py-2 rounded-xl text-xs font-mono transition-colors cursor-pointer"
+            className="hall-focusable px-5 py-2 rounded-xl hall-text-base font-mono transition-colors cursor-pointer"
             style={{ border: '1px solid var(--hall-border-strong)' }}
           >
             Закрыть

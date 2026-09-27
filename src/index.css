@@ -252,6 +252,11 @@
   --hall-blur: 20px;
   --hall-shadow: 0 24px 64px -12px oklch(0 0 0 / 55%);
 
+  /* Type scale for the hall surfaces. One knob drives the cart and the
+     cabinet, so both can be dialled up or down without hunting through
+     individual utility classes. */
+  --hall-type-scale: 1.5;
+
   /* Loyalty tiers, so a tier reads the same everywhere it appears. */
   --tier-base: oklch(0.72 0.02 250);
   --tier-silver: oklch(0.78 0.03 240);
@@ -273,6 +278,50 @@
   --tier-base: oklch(0.52 0.02 250);
   --tier-silver: oklch(0.56 0.03 240);
   --tier-gold: oklch(0.62 0.135 62);
+}
+
+/* Type scale for the hall surfaces. Each step is the Tailwind size of the
+   same name multiplied by --hall-type-scale, with the line-height Tailwind
+   pairs with it, so swapping a class for its hall-* twin is a like-for-like
+   replacement. */
+.hall-text-2xs {
+  font-size: calc(0.6875rem * var(--hall-type-scale));
+  line-height: calc(1.125rem * var(--hall-type-scale));
+}
+
+.hall-text-xs {
+  font-size: calc(0.75rem * var(--hall-type-scale));
+  line-height: calc(1rem * var(--hall-type-scale));
+}
+
+.hall-text-sm {
+  font-size: calc(0.875rem * var(--hall-type-scale));
+  line-height: calc(1.25rem * var(--hall-type-scale));
+}
+
+.hall-text-base {
+  font-size: calc(1rem * var(--hall-type-scale));
+  line-height: calc(1.5rem * var(--hall-type-scale));
+}
+
+.hall-text-lg {
+  font-size: calc(1.125rem * var(--hall-type-scale));
+  line-height: calc(1.75rem * var(--hall-type-scale));
+}
+
+.hall-text-xl {
+  font-size: calc(1.25rem * var(--hall-type-scale));
+  line-height: calc(1.75rem * var(--hall-type-scale));
+}
+
+.hall-text-2xl {
+  font-size: calc(1.5rem * var(--hall-type-scale));
+  line-height: calc(2rem * var(--hall-type-scale));
+}
+
+.hall-text-3xl {
+  font-size: calc(1.875rem * var(--hall-type-scale));
+  line-height: calc(2.25rem * var(--hall-type-scale));
 }
 
 /* The vinyl disc that sits behind a cabinet header. Positioned by the

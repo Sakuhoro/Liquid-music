@@ -126,7 +126,7 @@ export const CartDrawer: React.FC = () => {
           color: 'var(--hall-text)',
           boxShadow: 'var(--hall-shadow)',
         }}
-        className="w-full max-w-md h-full flex flex-col border-l backdrop-blur-2xl hall-drawer-in"
+        className="w-full max-w-2xl h-full flex flex-col border-l backdrop-blur-2xl hall-drawer-in"
       >
         {/* Header: a record turning behind the title */}
         <div className="relative p-6 border-b overflow-hidden" style={{ borderColor: 'var(--hall-border)' }}>
@@ -144,10 +144,10 @@ export const CartDrawer: React.FC = () => {
                 <Disc3 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-serif text-xl font-normal leading-tight tracking-tight">
+                <h3 className="font-serif hall-text-xl font-normal leading-tight tracking-tight">
                   Концертный зал
                 </h3>
-                <p className="text-[11px] font-mono" style={{ color: 'var(--hall-text-faint)' }}>
+                <p className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
                   {itemCount > 0 ? `${itemCount} на весах` : 'Тишина перед началом'}
                 </p>
               </div>
@@ -169,10 +169,10 @@ export const CartDrawer: React.FC = () => {
           {cart.length === 0 ? (
             <div className="py-24 text-center space-y-3">
               <Disc3 className="w-12 h-12 mx-auto" style={{ color: 'var(--hall-text-faint)' }} />
-              <p className="text-sm font-medium" style={{ color: 'var(--hall-text-muted)' }}>
+              <p className="hall-text-base font-medium" style={{ color: 'var(--hall-text-muted)' }}>
                 Зал пуст
               </p>
-              <p className="text-xs max-w-[16rem] mx-auto" style={{ color: 'var(--hall-text-faint)' }}>
+              <p className="hall-text-sm max-w-[16rem] mx-auto" style={{ color: 'var(--hall-text-faint)' }}>
                 Соберите свою партитуру из вкусов наших опусов.
               </p>
             </div>
@@ -198,7 +198,7 @@ export const CartDrawer: React.FC = () => {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-serif text-base font-semibold leading-snug truncate">
+                    <h4 className="font-serif hall-text-base font-semibold leading-snug truncate">
                       {item.product.name}
                     </h4>
                     <button
@@ -211,7 +211,7 @@ export const CartDrawer: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2 mt-1.5 text-[11px] font-mono" style={{ color: 'var(--hall-varnish)' }}>
+                  <div className="flex items-center gap-2 mt-1.5 hall-text-2xs font-mono" style={{ color: 'var(--hall-varnish)' }}>
                     <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
                       {item.volume} · {item.volumePrice}₽
                     </span>
@@ -233,7 +233,7 @@ export const CartDrawer: React.FC = () => {
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="text-xs font-mono font-bold w-5 text-center">
+                      <span className="hall-text-sm font-mono font-bold w-5 text-center">
                         {item.quantity}
                       </span>
                       <button
@@ -248,13 +248,13 @@ export const CartDrawer: React.FC = () => {
 
                     <div className="text-right">
                       <span
-                        className="font-serif text-base font-bold"
+                        className="font-serif hall-text-base font-bold"
                         style={{ color: 'var(--hall-varnish)' }}
                       >
                         {formatRub(item.totalUnitPrice * item.quantity)} ₽
                       </span>
                       {item.quantity > 1 && (
-                        <div className="text-[10px] font-mono" style={{ color: 'var(--hall-text-faint)' }}>
+                        <div className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
                           {formatRub(item.totalUnitPrice)} ₽ / шт
                         </div>
                       )}
@@ -269,7 +269,7 @@ export const CartDrawer: React.FC = () => {
         {/* Footer: the total is the one place the discount is spelled out */}
         {cart.length > 0 && (
           <div className="p-6 space-y-4" style={{ borderTop: '1px solid var(--hall-border)' }}>
-            <div className="flex items-center justify-between text-xs font-mono">
+            <div className="flex items-center justify-between hall-text-sm font-mono">
               <span style={{ color: 'var(--hall-text-muted)' }}>Исполнитель</span>
               {currentUser ? (
                 <span className="flex items-center gap-1.5" style={{ color: 'var(--tier-gold)' }}>
@@ -283,7 +283,7 @@ export const CartDrawer: React.FC = () => {
               )}
             </div>
 
-            <div className="space-y-1.5 text-sm font-mono">
+            <div className="space-y-1.5 hall-text-base font-mono">
               <div className="flex items-baseline justify-between" style={{ color: 'var(--hall-text-muted)' }}>
                 <span>Стоимость</span>
                 <span>{formatRub(subtotal)} ₽</span>
@@ -306,10 +306,10 @@ export const CartDrawer: React.FC = () => {
                 className="flex items-baseline justify-between pt-2 mt-1"
                 style={{ borderTop: '1px solid var(--hall-border)' }}
               >
-                <span className="text-xs uppercase tracking-wider" style={{ color: 'var(--hall-text-muted)' }}>
+                <span className="hall-text-sm uppercase tracking-wider" style={{ color: 'var(--hall-text-muted)' }}>
                   К оплате
                 </span>
-                <span className="font-serif text-3xl font-bold" style={{ color: 'var(--hall-varnish)' }}>
+                <span className="font-serif hall-text-3xl font-bold" style={{ color: 'var(--hall-varnish)' }}>
                   {formatRub(animatedTotal)} ₽
                 </span>
               </div>
@@ -317,7 +317,7 @@ export const CartDrawer: React.FC = () => {
 
             {error && (
               <div
-                className="flex items-start gap-2 text-xs font-mono p-3 rounded-xl hall-list-in"
+                className="flex items-start gap-2 hall-text-sm font-mono p-3 rounded-xl hall-list-in"
                 style={{ background: 'oklch(0.577 0.245 27.325 / 12%)', color: 'oklch(0.7 0.19 22)' }}
                 role="alert"
               >
@@ -330,7 +330,7 @@ export const CartDrawer: React.FC = () => {
               id="place-order-checkout-btn"
               onClick={handleCheckoutClick}
               disabled={isPlacingOrder}
-              className="hall-focusable hall-sheen w-full py-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer transition-transform duration-200 hover:scale-[1.015] active:scale-[0.985] disabled:cursor-wait disabled:hover:scale-100 disabled:opacity-90"
+              className="hall-focusable hall-sheen w-full py-4 rounded-2xl font-semibold hall-text-base flex items-center justify-center gap-2 cursor-pointer transition-transform duration-200 hover:scale-[1.015] active:scale-[0.985] disabled:cursor-wait disabled:hover:scale-100 disabled:opacity-90"
               style={{
                 background: 'var(--hall-varnish)',
                 color: 'oklch(0.19 0.032 250)',
