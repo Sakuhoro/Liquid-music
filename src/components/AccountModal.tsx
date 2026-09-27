@@ -78,19 +78,27 @@ export const AccountModal: React.FC = () => {
   const remaining = nextThreshold ? Math.max(0, nextThreshold - spend) : 0;
 
   return (
+    // Centred in a wrapper at least a viewport tall, for the same reason the
+    // order confirmation is: a flex parent that centres an overflowing child
+    // pushes its top above the fold, where overflow cannot scroll back to it.
+    // The cabinet is tall on a phone, so without this the name and the whole
+    // loyalty block sat out of reach.
     <div
       id="account-modal-backdrop"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) setIsAccountModalOpen(false);
-      }}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md overflow-y-auto overscroll-contain"
     >
+      <div
+        className="min-h-full flex items-center justify-center p-4 sm:p-6"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setIsAccountModalOpen(false);
+        }}
+      >
       <div
         id="account-modal-card"
         role="dialog"
         aria-modal="true"
         aria-label="Личный кабинет"
-        className="relative w-full max-w-3xl rounded-3xl overflow-hidden border hall-settle"
+        className="hall-account-card relative w-full max-w-3xl rounded-3xl overflow-hidden border hall-settle my-auto"
         style={{
           background: 'var(--hall-surface)',
           borderColor: 'var(--hall-border)',
@@ -99,29 +107,31 @@ export const AccountModal: React.FC = () => {
         }}
       >
         {/* Header */}
-        <div className="relative p-6 sm:p-8 overflow-hidden">
+        <div className="relative p-4 sm:p-8 overflow-hidden">
           <button
             onClick={() => setIsAccountModalOpen(false)}
             aria-label="Закрыть кабинет"
-            className="absolute top-5 right-5 hall-focusable w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
+            className="absolute top-4 right-4 sm:top-5 sm:right-5 hall-focusable w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
             style={{ background: 'var(--hall-border)' }}
           >
             <X className="w-4 h-4" />
           </button>
 
-          <div className="relative flex items-center gap-3.5">
+          <div className="relative flex items-center gap-3 sm:gap-3.5">
             <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0"
               style={{ background: 'var(--hall-varnish-soft)', border: '1px solid var(--hall-border-strong)', color: 'var(--hall-varnish)' }}
             >
-              <User className="w-6 h-6" />
+              <User className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div className="min-w-0">
               <div className="inline-flex items-center gap-1.5 hall-text-2xs font-mono" style={{ color: 'var(--tier-gold)' }}>
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Авторизованный слушатель</span>
               </div>
-              <h2 className="font-serif hall-text-3xl font-normal leading-tight truncate">
+              {/* Wraps rather than clips. At the old 45px this cut a
+                  27-character name down to its first few words. */}
+              <h2 className="font-serif hall-text-3xl font-normal leading-tight break-words">
                 {currentUser.name}
               </h2>
             </div>
@@ -130,7 +140,7 @@ export const AccountModal: React.FC = () => {
           {/* Loyalty programme */}
           {loyalty && (
             <div
-              className="relative mt-6 p-4 rounded-2xl hall-list-in"
+              className="relative mt-4 sm:mt-6 p-3 sm:p-4 rounded-2xl hall-list-in"
               style={{ background: 'var(--hall-surface-raised)', border: '1px solid var(--hall-border)' }}
             >
               <div className="flex items-start justify-between gap-3">
@@ -158,7 +168,7 @@ export const AccountModal: React.FC = () => {
               </div>
 
               <div
-                className="mt-3 h-1.5 rounded-full overflow-hidden"
+                className="mt-2 sm:mt-3 h-1 sm:h-1.5 rounded-full overflow-hidden"
                 style={{ background: 'var(--hall-border)' }}
                 role="progressbar"
                 aria-valuenow={Math.round(progress)}
@@ -225,7 +235,7 @@ export const AccountModal: React.FC = () => {
 
         {/* Details */}
         <div
-          className="mx-6 sm:mx-8 p-4 rounded-2xl space-y-3 hall-text-base font-mono"
+          className="mx-4 sm:mx-8 p-3 sm:p-4 rounded-2xl space-y-2.5 sm:space-y-3 hall-text-base font-mono"
           style={{ background: 'var(--hall-surface-raised)', border: '1px solid var(--hall-border)' }}
         >
           {[
@@ -233,12 +243,14 @@ export const AccountModal: React.FC = () => {
             { Icon: Phone, label: 'Телефон', value: currentUser.phone, tone: 'var(--tier-silver)' },
             { Icon: Calendar, label: 'В студии с', value: currentUser.registeredAt, tone: 'var(--hall-varnish)' },
           ].map(({ Icon, label, value, tone }) => (
-            <div key={label} className="flex items-center justify-between gap-3">
+            <div key={label} className="flex items-center justify-between gap-2 sm:gap-3">
               <span className="flex items-center gap-2 shrink-0" style={{ color: 'var(--hall-text-muted)' }}>
                 <Icon className="w-3.5 h-3.5" style={{ color: tone }} />
                 {label}
               </span>
-              <span className="truncate" style={{ color: label === 'Telegram' ? 'var(--hall-varnish)' : undefined }}>
+              {/* Wraps instead of truncating, so a long handle is never cut
+                  off without the member being able to see what was cut. */}
+              <span className="min-w-0 text-right break-words" style={{ color: label === 'Telegram' ? 'var(--hall-varnish)' : undefined }}>
                 {value}
               </span>
             </div>
@@ -246,7 +258,7 @@ export const AccountModal: React.FC = () => {
         </div>
 
         {/* Order history */}
-        <div className="p-6 sm:p-8">
+        <div className="p-4 sm:p-8">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-serif hall-text-xl flex items-center gap-2">
               <Disc3 className="w-4 h-4" style={{ color: 'var(--hall-varnish)' }} />
@@ -258,7 +270,7 @@ export const AccountModal: React.FC = () => {
             {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: 'var(--hall-text-faint)' }} />}
           </div>
 
-          <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+          <div className="max-h-56 sm:max-h-64 overflow-y-auto space-y-2 pr-1">
             {ordersHistory.length === 0 ? (
               <div className="py-8 text-center">
                 <Disc3 className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--hall-text-faint)' }} />
@@ -326,7 +338,9 @@ export const AccountModal: React.FC = () => {
                               style={{ border: '1px solid var(--hall-border)' }}
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="hall-text-base font-medium truncate">{item.product.name}</div>
+                              {/* A flavour name is a two-word string that would
+                                  cut off mid-word at any useful phone width. */}
+                              <div className="hall-text-base font-medium break-words">{item.product.name}</div>
                               <div className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
                                 {item.volume} · {item.nicotine} · {item.quantity} шт
                               </div>
@@ -360,7 +374,7 @@ export const AccountModal: React.FC = () => {
 
         {/* Actions */}
         <div
-          className="px-6 sm:px-8 pb-6 sm:pb-8 pt-4 flex items-center justify-between"
+          className="px-4 sm:px-8 pb-4 sm:pb-8 pt-4 flex items-center justify-between"
           style={{ borderTop: '1px solid var(--hall-border)' }}
         >
           <button
@@ -377,12 +391,13 @@ export const AccountModal: React.FC = () => {
 
           <button
             onClick={() => setIsAccountModalOpen(false)}
-            className="hall-focusable px-5 py-2 rounded-xl hall-text-base font-mono transition-colors cursor-pointer"
+            className="hall-focusable px-4 sm:px-5 py-2 rounded-xl hall-text-base font-mono transition-colors cursor-pointer"
             style={{ border: '1px solid var(--hall-border-strong)' }}
           >
             Закрыть
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

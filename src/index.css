@@ -355,6 +355,19 @@
   }
 }
 
+/* The cabinet on a phone. It inherits the root scale of 1.5, which put the
+   member's name at 45px and the metadata at 16.5px, so the card was mostly
+   oversized type and read as far bigger than its information. 1.5 * 0.7 leaves
+   31.5px for the name and 11.6px for the smallest mono label, which is a
+   normal size for secondary metadata on a phone. Width is deliberately not
+   touched: the card is already viewport-bound below sm, and narrowing a
+   viewport-bound card only buys more wrapped lines. */
+@media (width < 40rem) {
+  .hall-account-card {
+    --hall-type-scale: 1.05;
+  }
+}
+
 /* The total line has to survive a single row on a phone. Scaling the row off
    the same knob the rest of the hall uses keeps the label and the figure in
    their existing proportion while taking 30% off both at once, which is what
