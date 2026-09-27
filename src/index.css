@@ -355,6 +355,16 @@
   }
 }
 
+/* The total line has to survive a single row on a phone. Scaling the row off
+   the same knob the rest of the hall uses keeps the label and the figure in
+   their existing proportion while taking 30% off both at once, which is what
+   stops the pair from wrapping. */
+@media (width < 40rem) {
+  .hall-total-row {
+    --hall-type-scale: 0.7;
+  }
+}
+
 /* Signature motion for this pass: a short settle with a touch of
    overshoot, used once per surface rather than on every element. */
 .hall-settle {
