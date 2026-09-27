@@ -1,5 +1,27 @@
 import React, { useRef, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { CollectionName } from '../types';
+
+// Shown for the hero and for any collection without its own cut.
+const HERO_VIDEO_LIGHT = '/videos/role-act-as-a-master-animato.mp4';
+const HERO_VIDEO_DARK = '/videos/night-head.mp4';
+
+// Per-collection cuts, keyed by the internal collection id rather than the
+// public title, so "Bones of what you Believe" is the 'Permanent 1' key. A
+// collection listed with the same file on both sides plays that cut in either
+// theme, which is the case for Bones.
+const COLLECTION_VIDEOS: Partial<Record<CollectionName, { light: string; dark: string }>> = {
+  Summer: { light: '/videos/summer-lite.mp4', dark: '/videos/summer-dark.mp4' },
+  Autumn: { light: '/videos/autumn-lite.mp4', dark: '/videos/autumn-dark.mp4' },
+  'Permanent 1': { light: '/videos/bones.mp4', dark: '/videos/bones.mp4' },
+};
+
+// The clips carry a generation watermark along the right-hand margin, so each
+// one is blown up and anchored left of centre to push that margin out of
+// frame. Zooming further crops more of the right side; the source resolution
+// leaves room for it before the image starts to soften.
+const VIDEO_ZOOM = 1.45;
+const VIDEO_ORIGIN = '22% 50%';
 
 export const BackgroundVideo: React.FC = () => {
   const theme = useAppStore((state) => state.theme);
@@ -8,20 +30,12 @@ export const BackgroundVideo: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const isDark = theme === 'dark';
 
-  // Local hero videos (no remote placeholders), zoomed to hide generation watermark on the right
-  const HERO_VIDEO_LIGHT = '/videos/role-act-as-a-master-animato.mp4';
-  const HERO_VIDEO_DARK = '/videos/night-head.mp4';
-
-  // Dedicated Summer collection videos (theme-driven variants)
-  const SUMMER_VIDEO_LIGHT = '/videos/summer-lite.mp4';
-  const SUMMER_VIDEO_DARK = '/videos/summer-dark.mp4';
-
-  // Only play Summer videos when the user selects the Summer collection from the gallery
-  const isSummerCollection = activeCollection === 'Summer';
-  const currentVideoSrc = isSummerCollection
+  const collectionCut =
+    activeCollection === 'All' ? undefined : COLLECTION_VIDEOS[activeCollection];
+  const currentVideoSrc = collectionCut
     ? isDark
-      ? SUMMER_VIDEO_DARK
-      : SUMMER_VIDEO_LIGHT
+      ? collectionCut.dark
+      : collectionCut.light
     : isDark
       ? HERO_VIDEO_DARK
       : HERO_VIDEO_LIGHT;
@@ -54,7 +68,7 @@ export const BackgroundVideo: React.FC = () => {
         muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-1000"
-        style={{ transform: 'scale(1.32)', transformOrigin: '22% 50%' }}
+        style={{ transform: `scale(${VIDEO_ZOOM})`, transformOrigin: VIDEO_ORIGIN }}
         src={currentVideoSrc}
       />
 
