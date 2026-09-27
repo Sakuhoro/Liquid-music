@@ -368,6 +368,17 @@
   }
 }
 
+/* The contacts block inside the cabinet, 10% off the card's 1.05. The knob is
+   absolute, not relative: setting 0.9 here would resolve against 1rem and land
+   at 14.4px, a 14% cut, so it is 1.05 * 0.9 = 0.945 for a true 10% off the
+   16.8px the block was already at. Both sides of every row come down
+   together, which is what buys the handle the room to stay on one line. */
+@media (width < 40rem) {
+  .hall-account-details {
+    --hall-type-scale: 0.945;
+  }
+}
+
 /* The total line has to survive a single row on a phone. Scaling the row off
    the same knob the rest of the hall uses keeps the label and the figure in
    their existing proportion while taking 30% off both at once, which is what

@@ -235,7 +235,7 @@ export const AccountModal: React.FC = () => {
 
         {/* Details */}
         <div
-          className="mx-4 sm:mx-8 p-3 sm:p-4 rounded-2xl space-y-2.5 sm:space-y-3 hall-text-base font-mono"
+          className="hall-account-details mx-4 sm:mx-8 p-3 sm:p-4 rounded-2xl space-y-2.5 sm:space-y-3 hall-text-base font-mono"
           style={{ background: 'var(--hall-surface-raised)', border: '1px solid var(--hall-border)' }}
         >
           {[
