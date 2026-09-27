@@ -112,8 +112,8 @@ export const OrderSuccessModal: React.FC = () => {
               className="block hall-text-2xs font-mono uppercase mb-3"
               style={{ color: 'var(--hall-text-faint)' }}
             >
-              Состав заказанной партитуры:
-            </span>
+                Ваши композиции в плейлисте
+              </span>
             <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
               {lastPlacedOrder.items.map((item, idx) => (
                 <div
