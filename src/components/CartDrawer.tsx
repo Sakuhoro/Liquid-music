@@ -124,9 +124,8 @@ export const CartDrawer: React.FC = () => {
         }}
         className="w-full max-w-2xl h-full flex flex-col border-l backdrop-blur-2xl hall-drawer-in"
       >
-        {/* Header: a record turning behind the title */}
+        {/* Header */}
         <div className="relative p-6 border-b overflow-hidden" style={{ borderColor: 'var(--hall-border)' }}>
-          <div className="hall-vinyl hall-vinyl-slow" aria-hidden="true" />
           <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
@@ -185,7 +184,7 @@ export const CartDrawer: React.FC = () => {
                 <img
                   src={item.product.image}
                   alt={item.product.name}
-                  className="w-16 h-16 rounded-xl object-cover shrink-0"
+                  className="w-24 h-24 sm:w-16 sm:h-16 rounded-xl object-cover shrink-0"
                   style={{ border: '1px solid var(--hall-border)' }}
                 />
 
@@ -261,7 +260,10 @@ export const CartDrawer: React.FC = () => {
 
         {/* Footer: the total is the one place the discount is spelled out */}
         {cart.length > 0 && (
-          <div className="p-6 space-y-4" style={{ borderTop: '1px solid var(--hall-border)' }}>
+          <div
+            className="hall-cart-footer p-3 sm:p-6 space-y-2.5 sm:space-y-4"
+            style={{ borderTop: '1px solid var(--hall-border)' }}
+          >
             <div className="space-y-1.5 hall-text-base font-mono">
               <div className="flex items-baseline justify-between" style={{ color: 'var(--hall-text-muted)' }}>
                 <span>Стоимость</span>
@@ -309,7 +311,7 @@ export const CartDrawer: React.FC = () => {
               id="place-order-checkout-btn"
               onClick={handleCheckoutClick}
               disabled={isPlacingOrder}
-              className="hall-focusable hall-sheen w-full py-4 rounded-2xl font-semibold hall-text-base flex items-center justify-center gap-2 cursor-pointer transition-transform duration-200 hover:scale-[1.015] active:scale-[0.985] disabled:cursor-wait disabled:hover:scale-100 disabled:opacity-90"
+              className="hall-focusable hall-sheen w-full py-2.5 sm:py-4 rounded-2xl font-semibold hall-text-base flex items-center justify-center gap-2 cursor-pointer transition-transform duration-200 hover:scale-[1.015] active:scale-[0.985] disabled:cursor-wait disabled:hover:scale-100 disabled:opacity-90"
               style={{
                 background: 'var(--hall-varnish)',
                 color: 'oklch(0.19 0.032 250)',
@@ -317,7 +319,7 @@ export const CartDrawer: React.FC = () => {
               }}
             >
               <span className={isPlacingOrder ? 'hall-pending' : undefined}>
-                {isPlacingOrder ? 'Записываем партитуру…' : 'Оформить заказ'}
+                {isPlacingOrder ? 'Записываем партитуру…' : 'Оформить плейлист'}
               </span>
               <ArrowRight className="w-4 h-4 opacity-80" />
             </button>

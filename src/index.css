@@ -333,35 +333,13 @@
   line-height: calc(2.25rem * var(--hall-type-scale));
 }
 
-/* The vinyl disc that sits behind a cabinet header. Positioned by the
-   parent, so it can drift without affecting layout. */
-.hall-vinyl {
-  position: absolute;
-  inset-block-start: -3.5rem;
-  inset-inline-end: -3rem;
-  width: 13rem;
-  height: 13rem;
-  border-radius: 9999px;
-  background:
-    radial-gradient(circle at 50% 50%, oklch(0.79 0.142 78 / 22%) 0 8%, transparent 9%),
-    repeating-radial-gradient(
-      circle at 50% 50%,
-      oklch(1 0 0 / 5%) 0 1px,
-      transparent 1px 5px
-    ),
-    radial-gradient(circle at 50% 50%, oklch(0.16 0.02 250) 0 100%);
-  opacity: 0.5;
-  pointer-events: none;
-  animation: hall-spin 26s linear infinite;
-}
-
-.hall-vinyl-slow {
-  animation-duration: 44s;
-}
-
-@keyframes hall-spin {
-  to {
-    transform: rotate(360deg);
+/* The cart footer on a phone. The root type scale is 1.5, so dropping the
+   local one to 1 divides every line in the footer by 1.5 from the single knob
+   the rest of the hall already uses, rather than from a pile of one-off
+   utility overrides. Padding and gaps come down alongside it. */
+@media (width < 40rem) {
+  .hall-cart-footer {
+    --hall-type-scale: 1;
   }
 }
 
@@ -483,7 +461,6 @@
     scroll-behavior: auto !important;
   }
 
-  .hall-vinyl,
   .hall-sheen::after {
     animation: none !important;
   }

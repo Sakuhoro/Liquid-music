@@ -62,7 +62,7 @@ export const AuthModal: React.FC = () => {
   return (
     <div
       id="auth-modal-backdrop"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-rise"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-rise"
     >
       <div className="relative w-full max-w-xl">
         {/* Close Button */}

@@ -98,10 +98,8 @@ export const AccountModal: React.FC = () => {
           boxShadow: 'var(--hall-shadow)',
         }}
       >
-        {/* Header with the turning record */}
+        {/* Header */}
         <div className="relative p-6 sm:p-8 overflow-hidden">
-          <div className="hall-vinyl" aria-hidden="true" />
-
           <button
             onClick={() => setIsAccountModalOpen(false)}
             aria-label="Закрыть кабинет"

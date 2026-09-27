@@ -151,31 +151,31 @@ export const ProductDetailModal: React.FC = () => {
             </div>
 
             {/* Option Controls Section */}
-            <div className="space-y-5 pt-3 border-t border-white/10">
+            <div className="space-y-2.5 sm:space-y-5 pt-3 border-t border-white/10">
 
               {/* Volume Segmented Control */}
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 <div className="flex justify-between items-center text-sm sm:text-base font-sans tracking-wider uppercase text-stone-300 antialiased">
                   <span className="font-extrabold text-white">Объём флакона (ml):</span>
-                  <span className="text-amber-400 font-extrabold font-sans text-base sm:text-lg tracking-tight">{volPrice} ₽</span>
+                  <span className="text-amber-400 font-extrabold font-sans text-sm sm:text-lg tracking-tight">{volPrice} ₽</span>
                 </div>
 
                 {/* Segmented Control Pills */}
-                <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/15 backdrop-blur-md">
+                <div className="grid grid-cols-3 gap-1 sm:gap-2 p-0.5 sm:p-1.5 rounded-2xl bg-white/5 border border-white/15 backdrop-blur-md">
                   {(['30ml', '60ml', '120ml'] as VolumeType[]).map((v) => {
                     const isSelected = selectedVolume === v;
                     return (
                       <button
                         key={v}
                         onClick={() => setSelectedVolume(v)}
-                        className={`relative py-3 px-2 rounded-xl text-center font-sans antialiased transition-all duration-300 cursor-pointer min-h-[48px] flex flex-col items-center justify-center ${
+                        className={`relative py-1.5 sm:py-3 px-1 sm:px-2 rounded-xl text-center font-sans antialiased transition-all duration-300 cursor-pointer min-h-[24px] sm:min-h-[48px] flex flex-col items-center justify-center ${
                           isSelected
                             ? 'bg-amber-400 text-slate-950 font-extrabold shadow-lg shadow-amber-400/30 scale-[1.02]'
                             : 'text-stone-200 hover:text-white hover:bg-white/10 font-bold'
                         }`}
                       >
-                        <div className="text-base sm:text-lg font-extrabold tracking-tight">{v}</div>
-                        <div className={`text-xs sm:text-sm font-semibold mt-0.5 ${isSelected ? 'text-slate-950/90' : 'text-stone-400'}`}>
+                        <div className="text-sm sm:text-lg font-extrabold tracking-tight">{v}</div>
+                        <div className={`text-[10px] sm:text-sm font-semibold mt-0.5 ${isSelected ? 'text-slate-950/90' : 'text-stone-400'}`}>
                           {VOLUME_PRICING[v]} ₽
                         </div>
                       </button>
@@ -185,30 +185,30 @@ export const ProductDetailModal: React.FC = () => {
               </div>
 
               {/* Nicotine Segmented Control */}
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 <div className="flex justify-between items-center text-sm sm:text-base font-sans tracking-wider uppercase text-stone-300 antialiased">
                   <span className="font-extrabold text-white">Крепость никотина:</span>
-                  <span className="text-amber-400 font-extrabold font-sans text-base sm:text-lg tracking-tight">
+                  <span className="text-amber-400 font-extrabold font-sans text-sm sm:text-lg tracking-tight">
                     {nicPrice > 0 ? `+${nicPrice} ₽` : '0 ₽'}
                   </span>
                 </div>
 
                 {/* Segmented Control Pills */}
-                <div className="grid grid-cols-4 gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/15 backdrop-blur-md">
+                <div className="grid grid-cols-4 gap-1 sm:gap-2 p-0.5 sm:p-1.5 rounded-2xl bg-white/5 border border-white/15 backdrop-blur-md">
                   {(['0mg', '1.5mg', '3mg', '6mg'] as NicotineType[]).map((n) => {
                     const isSelected = selectedNicotine === n;
                     return (
                       <button
                         key={n}
                         onClick={() => setSelectedNicotine(n)}
-                        className={`relative py-3 px-1.5 rounded-xl text-center font-sans antialiased transition-all duration-300 cursor-pointer min-h-[48px] flex flex-col items-center justify-center ${
+                        className={`relative py-1.5 sm:py-3 px-0.5 sm:px-1.5 rounded-xl text-center font-sans antialiased transition-all duration-300 cursor-pointer min-h-[24px] sm:min-h-[48px] flex flex-col items-center justify-center ${
                           isSelected
                             ? 'bg-amber-400 text-slate-950 font-extrabold shadow-lg shadow-amber-400/30 scale-[1.02]'
                             : 'text-stone-200 hover:text-white hover:bg-white/10 font-bold'
                         }`}
                       >
-                        <div className="text-base sm:text-lg font-extrabold tracking-tight">{n}</div>
-                        <div className={`text-xs sm:text-sm font-semibold mt-0.5 ${isSelected ? 'text-slate-950/90' : 'text-stone-400'}`}>
+                        <div className="text-sm sm:text-lg font-extrabold tracking-tight">{n}</div>
+                        <div className={`text-[10px] sm:text-sm font-semibold mt-0.5 ${isSelected ? 'text-slate-950/90' : 'text-stone-400'}`}>
                           {n === '0mg' ? '0₽' : `+${NICOTINE_PRICING[n]}₽`}
                         </div>
                       </button>
