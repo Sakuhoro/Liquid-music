@@ -12,6 +12,7 @@ import {
   Sparkles,
   ChevronDown,
   Loader2,
+  Check,
 } from 'lucide-react';
 
 const formatRub = (value: number) =>
@@ -22,6 +23,14 @@ const TIER_LABEL: Record<string, string> = {
   SILVER: 'Серебряный слушатель',
   GOLD: 'Золотой слушатель',
 };
+
+// Shown verbatim in the cabinet so the scheme needs no interpretation:
+// the threshold is a strict "more than", and the rate it unlocks applies
+// to the following order, not the one that crossed it.
+const LOYALTY_RULES = [
+  { threshold: 20000, pct: 5, tier: 'silver' },
+  { threshold: 30000, pct: 10, tier: 'gold' },
+];
 
 const STATUS_LABEL: Record<string, string> = {
   'Pending Verification': 'Ожидает подтверждения',
@@ -131,9 +140,14 @@ export const AccountModal: React.FC = () => {
                   <div className="hall-text-2xs font-mono uppercase tracking-wider" style={{ color: 'var(--hall-text-faint)' }}>
                     Постоянный слушатель
                   </div>
-                  <div className="font-serif hall-text-xl mt-0.5" style={{ color: `var(--tier-${loyalty.tier.toLowerCase()})` }}>
-                    {TIER_LABEL[loyalty.tier] ?? loyalty.tier}
-                  </div>
+                  {/* The tier name is only worth showing once there is a tier
+                      to have earned. At the starting level it read as a
+                      slogan rather than a status. */}
+                  {loyalty.tier !== 'BASE' && (
+                    <div className="font-serif hall-text-xl mt-0.5" style={{ color: `var(--tier-${loyalty.tier.toLowerCase()})` }}>
+                      {TIER_LABEL[loyalty.tier] ?? loyalty.tier}
+                    </div>
+                  )}
                 </div>
                 <div className="text-right shrink-0">
                   <div className="font-serif hall-text-3xl font-bold" style={{ color: 'var(--hall-varnish)' }}>
@@ -152,7 +166,7 @@ export const AccountModal: React.FC = () => {
                 aria-valuenow={Math.round(progress)}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-label="Прогресс до следующего уровня"
+                aria-label="Прогресс до следующей скидки"
               >
                 <div
                   className="h-full rounded-full transition-[width] duration-500"
@@ -174,9 +188,38 @@ export const AccountModal: React.FC = () => {
                 ) : (
                   <>
                     <span style={{ color: 'var(--hall-text)' }}>{formatRub(spend)} ₽</span>
-                    {' — максимальный уровень'}
+                    {' — максимальная скидка'}
                   </>
                 )}
+              </div>
+
+              {/* The two thresholds spelled out, so the scheme is readable
+                  without inferring it from the progress bar. A row lights up
+                  once the spend has passed it. */}
+              <div
+                className="mt-3 pt-3 grid grid-cols-2 gap-2"
+                style={{ borderTop: '1px solid var(--hall-border)' }}
+              >
+                {LOYALTY_RULES.map((rule) => {
+                  const unlocked = spend > rule.threshold;
+                  return (
+                    <div
+                      key={rule.threshold}
+                      className="hall-text-2xs font-mono flex items-center gap-1.5"
+                      style={{ color: unlocked ? 'var(--hall-text)' : 'var(--hall-text-faint)' }}
+                    >
+                      {unlocked ? (
+                        <Check className="w-4 h-4 shrink-0" style={{ color: `var(--tier-${rule.tier})` }} />
+                      ) : (
+                        <span
+                          className="w-4 h-4 rounded-full shrink-0"
+                          style={{ border: '1px solid var(--hall-border-strong)' }}
+                        />
+                      )}
+                      <span>{rule.pct}% после {formatRub(rule.threshold)} ₽</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

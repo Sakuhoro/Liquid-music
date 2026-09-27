@@ -33,7 +33,7 @@ export const OrderSuccessModal: React.FC = () => {
         id="order-success-modal-card"
         role="dialog"
         aria-modal="true"
-        aria-label="Заказ успешно оформлен"
+        aria-label="Плейлист успешно оформлен"
         className="hall-settle hall-receipt-card relative w-full rounded-3xl overflow-hidden border p-5 sm:p-6 backdrop-blur-2xl"
         style={{
           background: 'var(--hall-surface)',
@@ -76,11 +76,11 @@ export const OrderSuccessModal: React.FC = () => {
           </div>
 
           <h2 className="font-serif hall-text-3xl font-normal tracking-tight text-center max-w-3xl mx-auto leading-snug">
-            Ваш заказ успешно оформлен. Наш администратор{' '}
+            Ваш плейлист успешно оформлен. Дирижёр{' '}
             <span className="font-semibold underline underline-offset-8" style={{ color: 'var(--hall-varnish)' }}>
               @White_blooming
             </span>{' '}
-            свяжется с вами в Telegram для подтверждения и оплаты.
+            свяжется с вами в Telegram
           </h2>
         </div>
 
@@ -180,7 +180,7 @@ export const OrderSuccessModal: React.FC = () => {
             }}
           >
             <Send className="w-5 h-5" />
-            <span>Написать администратору в Telegram</span>
+            <span>Написать дирижеру в Telegram</span>
             <ExternalLink className="w-3.5 h-3.5 opacity-70" />
           </a>
 

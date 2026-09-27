@@ -145,11 +145,13 @@ export const CartDrawer: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-serif hall-text-xl font-normal leading-tight tracking-tight">
-                  Концертный зал
+                  Ваш плейлист
                 </h3>
-                <p className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
-                  {itemCount > 0 ? `${itemCount} на весах` : 'Тишина перед началом'}
-                </p>
+                {itemCount > 0 && (
+                  <p className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
+                    {itemCount} на весах
+                  </p>
+                )}
               </div>
             </div>
 
@@ -170,10 +172,10 @@ export const CartDrawer: React.FC = () => {
             <div className="py-24 text-center space-y-3">
               <Disc3 className="w-12 h-12 mx-auto" style={{ color: 'var(--hall-text-faint)' }} />
               <p className="hall-text-base font-medium" style={{ color: 'var(--hall-text-muted)' }}>
-                Зал пуст
+                Ваш плейлист пока пуст
               </p>
-              <p className="hall-text-sm max-w-[16rem] mx-auto" style={{ color: 'var(--hall-text-faint)' }}>
-                Соберите свою партитуру из вкусов наших опусов.
+              <p className="hall-text-sm max-w-[22rem] mx-auto" style={{ color: 'var(--hall-text-faint)' }}>
+                Добавьте в него новые композиции и соберите свою идеальную музыкальную подборку.
               </p>
             </div>
           ) : (
