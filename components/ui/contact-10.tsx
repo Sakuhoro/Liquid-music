@@ -165,6 +165,44 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
         </button>
       </div>
 
+      {/* Telegram Quick Authorization Button for Registration */}
+      {mode === 'register' && (
+        <div className="mb-6">
+          <button
+            type="button"
+            onClick={() => {
+              // Interactive Telegram authorization helper that prompts or receives user's Telegram data
+              const tgInput = prompt('Введите ваш Telegram ID или Username (например, @username):', telegramId || '@');
+              if (tgInput !== null) {
+                let cleanTg = tgInput.trim();
+                if (!cleanTg.startsWith('@') && cleanTg.length > 0) {
+                  cleanTg = '@' + cleanTg;
+                }
+                setTelegramId(cleanTg);
+                if (!fullName) {
+                  const suggestedName = prompt('Введите ваше ФИО для профиля:', 'Александр Смирнов');
+                  if (suggestedName) setFullName(suggestedName.trim());
+                }
+                if (!phone) {
+                  const suggestedPhone = prompt('Введите ваш телефон:', '+7 (999) 000-00-00');
+                  if (suggestedPhone) setPhone(suggestedPhone.trim());
+                }
+                setClientError(null);
+              }
+            }}
+            className="w-full py-3 px-4 rounded-2xl bg-[#24A1DE]/20 hover:bg-[#24A1DE]/30 border border-[#24A1DE]/50 text-sky-300 font-bold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-lg group"
+          >
+            <Send className="w-4 h-4 text-[#24A1DE] group-hover:scale-110 transition-transform" />
+            <span>Авторизоваться через Telegram</span>
+          </button>
+          <div className="flex items-center my-4 gap-3">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-[11px] font-mono uppercase tracking-wider text-stone-400">или заполните вручную</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+        </div>
+      )}
+
       {/* Active Error Alert */}
       {activeError && (
         <div className="mb-6 p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm flex items-start gap-3 animate-shake">
