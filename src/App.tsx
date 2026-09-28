@@ -29,6 +29,9 @@ export default function App() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const isAutoplayBlockedRef = useRef(false);
   const isBgMusicPlayingRef = useRef(isBgMusicPlaying);
+  const isTrackPreviewPlaying = useAppStore((state) => state.isTrackPreviewPlaying);
+  const BACKGROUND_MUSIC_VOLUME = 0.45;
+  const PREVIEW_DUCK_VOLUME = 0.04;
 
   useEffect(() => {
     isBgMusicPlayingRef.current = isBgMusicPlaying;
@@ -117,7 +120,7 @@ export default function App() {
       if (audioRef.current.src !== targetUrl) {
         audioRef.current.src = currentMusicSrc;
         audioRef.current.loop = true;
-        audioRef.current.volume = 0.45;
+        audioRef.current.volume = BACKGROUND_MUSIC_VOLUME;
       }
     } catch (_) {
       audioRef.current.src = currentMusicSrc;
@@ -131,6 +134,14 @@ export default function App() {
       });
     }
   }, [isBgMusicPlaying, currentMusicSrc]);
+
+  // Duck the ambient bed while a product card is previewing its own track. The
+  // level is lowered rather than the element paused so playback keeps its place
+  // and the autoplay-retry path above is not disturbed.
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = isTrackPreviewPlaying ? PREVIEW_DUCK_VOLUME : BACKGROUND_MUSIC_VOLUME;
+  }, [isTrackPreviewPlaying]);
 
   return (
     <main

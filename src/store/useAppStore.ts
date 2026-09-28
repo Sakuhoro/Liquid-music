@@ -102,6 +102,10 @@ interface AppState {
   setSoundCloudUrl: (url: string) => void;
   isSoundCloudOpen: boolean;
   setIsSoundCloudOpen: (open: boolean) => void;
+  // True while a product card plays its own SoundCloud track, so the ambient
+  // background music can duck out of the way instead of playing over it.
+  isTrackPreviewPlaying: boolean;
+  setIsTrackPreviewPlaying: (playing: boolean) => void;
 
   // Admin Auth Logic
   //
@@ -414,6 +418,8 @@ export const useAppStore = create<AppState>()(
       setSoundCloudUrl: (soundCloudUrl) => set({ soundCloudUrl }),
       isSoundCloudOpen: false,
       setIsSoundCloudOpen: (isSoundCloudOpen) => set({ isSoundCloudOpen }),
+      isTrackPreviewPlaying: false,
+      setIsTrackPreviewPlaying: (isTrackPreviewPlaying) => set({ isTrackPreviewPlaying }),
 
       // Admin Auth Logic
       isAdminLoggedIn: false,

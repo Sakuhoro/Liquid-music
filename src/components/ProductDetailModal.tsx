@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { VolumeType, NicotineType } from '../types';
 import { calculatePrice, VOLUME_PRICING, NICOTINE_PRICING } from '../data/products';
@@ -6,9 +6,12 @@ import { sanitizeRussianText } from '../utils/sanitizeText';
 import {
   X,
   Volume2,
+  Pause,
+  Play,
   Check,
 } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
+import { SoundCloudPreview, SoundCloudPreviewHandle, SoundCloudPreviewStatus } from './SoundCloudPreview';
 
 /**
  * Module 3: Premium Grade Apple/Stripe Design Refactoring
@@ -47,11 +50,35 @@ export const ProductDetailModal: React.FC = () => {
   const [selectedNicotine, setSelectedNicotine] = useState<NicotineType>('0mg');
   const [isAdded, setIsAdded] = useState(false);
 
+  const previewRef = useRef<SoundCloudPreviewHandle | null>(null);
+  const [previewStatus, setPreviewStatus] = useState<SoundCloudPreviewStatus>('idle');
+  const setIsTrackPreviewPlaying = useAppStore((state) => state.setIsTrackPreviewPlaying);
+
+  const trackUrl = inspectedProduct?.soundCloudUrl ?? null;
+  const hasTrack = Boolean(trackUrl);
+  const isTrackPlaying = hasTrack && previewStatus === 'playing';
+
+  const handlePreviewStatus = useCallback((status: SoundCloudPreviewStatus) => {
+    setPreviewStatus(status);
+  }, []);
+
   useEffect(() => {
     setSelectedVolume('30ml');
     setSelectedNicotine('0mg');
     setIsAdded(false);
   }, [inspectedProduct]);
+
+  // A new product means a new track: drop the previous play/pause state so the
+  // button never claims to be playing something the player has already stopped.
+  useEffect(() => {
+    setPreviewStatus('idle');
+  }, [inspectedProduct]);
+
+  // Keep the ambient music ducked for exactly as long as the preview is audible.
+  useEffect(() => {
+    setIsTrackPreviewPlaying(isTrackPlaying);
+    return () => setIsTrackPreviewPlaying(false);
+  }, [isTrackPlaying, setIsTrackPreviewPlaying]);
 
   if (!inspectedProduct) return null;
 
@@ -76,7 +103,28 @@ export const ProductDetailModal: React.FC = () => {
   };
 
   const handlePlayChord = () => {
-    soundEngine.playChime([523.25, 659.25, 783.99, 1046.50]);
+    const playGeneratedChord = () => {
+      soundEngine.playChime([523.25, 659.25, 783.99, 1046.50]);
+    };
+
+    if (!hasTrack) {
+      // No track on the record: the button keeps its original chord behaviour.
+      playGeneratedChord();
+      return;
+    }
+
+    // The widget API could not load (blocked script, offline). Falling back to
+    // the chord keeps the button useful instead of leaving it silently dead.
+    if (previewStatus === 'error') {
+      playGeneratedChord();
+      return;
+    }
+
+    if (isTrackPlaying) {
+      previewRef.current?.pause();
+    } else {
+      previewRef.current?.play();
+    }
   };
 
   return (
@@ -120,15 +168,40 @@ export const ProductDetailModal: React.FC = () => {
               {/* Album Sheen Overlay */}
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-white/10 opacity-70" />
 
-              {/* Harmonic Chords Button Badge */}
+              {/* Harmonic Chords Button Badge — plays the product's SoundCloud
+                  track, or the generated chord when the product has no link. */}
               <button
                 onClick={handlePlayChord}
-                className="absolute bottom-3 right-3 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-black/70 hover:bg-amber-400 hover:text-slate-950 text-white text-[11px] sm:text-xs font-sans font-semibold flex items-center gap-1.5 backdrop-blur-md border border-white/20 transition-all duration-300 shadow-lg cursor-pointer group/btn min-h-[44px]"
+                aria-pressed={isTrackPlaying}
+                aria-label={isTrackPlaying ? 'Поставить музыку на паузу' : 'Включить музыку'}
+                className={`absolute bottom-3 right-3 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[11px] sm:text-xs font-sans font-semibold flex items-center gap-1.5 backdrop-blur-md border transition-all duration-300 shadow-lg cursor-pointer group/btn min-h-[44px] ${
+                  isTrackPlaying
+                    ? 'bg-amber-400 text-slate-950 border-amber-300'
+                    : 'bg-black/70 hover:bg-amber-400 hover:text-slate-950 text-white border-white/20'
+                }`}
               >
-                <Volume2 className="w-4 h-4 text-amber-400 group-hover/btn:text-slate-950 transition-colors" />
-                <span>Аккорды</span>
+                {isTrackPlaying ? (
+                  <Pause className="w-4 h-4 text-slate-950" />
+                ) : hasTrack ? (
+                  <Play
+                    className={`w-4 h-4 text-amber-400 group-hover/btn:text-slate-950 transition-colors ${
+                      previewStatus === 'loading' ? 'animate-pulse' : ''
+                    }`}
+                  />
+                ) : (
+                  <Volume2 className="w-4 h-4 text-amber-400 group-hover/btn:text-slate-950 transition-colors" />
+                )}
+                <span>{isTrackPlaying ? 'Пауза' : 'Аккорды'}</span>
               </button>
             </div>
+
+            {/* Invisible SoundCloud player backing the button above. Unmounting
+                this stops the track, which happens whenever the modal closes. */}
+            <SoundCloudPreview
+              ref={previewRef}
+              url={trackUrl}
+              onStatusChange={handlePreviewStatus}
+            />
           </div>
 
           {/* RIGHT COLUMN: Premium Typography & Minimalist Controls */}
