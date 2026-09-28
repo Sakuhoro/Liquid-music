@@ -70,6 +70,21 @@ export interface AuthUser {
   role?: 'ADMIN' | 'USER';
 }
 
+/** The object Telegram's login widget hands the callback. It is forwarded to
+ *  the server byte for byte, because the server rebuilds its signature over
+ *  exactly these fields, so an index signature is deliberate: dropping or
+ *  adding a key would invalidate the proof. */
+export interface TelegramWidgetUser {
+  [key: string]: unknown;
+  id: number | string;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
+}
+
 export interface LoyaltyState {
   spend: number; // total actually paid across all orders
   tier: 'BASE' | 'SILVER' | 'GOLD';

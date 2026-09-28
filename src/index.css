@@ -40,8 +40,18 @@
   }
 }
 
+/* Playfair Display, and only Playfair Display. Instrument Serif was here
+   before and it is Latin-only, so every Russian heading on this site split
+   across two faces: the Latin half rendered in Instrument Serif and the
+   Cyrillic half fell through to Georgia, which is why "Liquid Music" and
+   "Коллекции" in the same line looked like different typefaces. Playfair
+   ships a Cyrillic subset and the same high-contrast editorial character,
+   so one family now covers both scripts. Instrument Serif is not kept as a
+   fallback on purpose: it would bring the same split back whenever the web
+   font failed to load. Georgia is the floor because it covers both scripts
+   too, so there is no path where the two halves of a line diverge. */
 .font-serif {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: 'Playfair Display', Georgia, serif;
 }
 
 .font-sans {

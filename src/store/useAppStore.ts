@@ -12,6 +12,7 @@ import {
   CollectionVideosConfig,
   Recipe,
   FlavorPrice,
+  TelegramWidgetUser,
 } from '../types';
 import {
   INITIAL_PRODUCTS,
@@ -171,6 +172,15 @@ interface AppState {
     password: string;
     rememberMe: boolean;
   }) => Promise<{ success: boolean; error?: string }>;
+  // The signed object comes straight from the Telegram widget and is forwarded
+  // untouched, because the server recomputes its signature over exactly these
+  // fields. The phone rides alongside it, not inside it.
+  loginWithTelegram: (params: {
+    telegram: TelegramWidgetUser;
+    phone?: string;
+    rememberMe: boolean;
+  }) => Promise<{ success: boolean; error?: string; needsPhone?: boolean }>;
+  fetchTelegramConfig: () => Promise<{ enabled: boolean; username: string | null }>;
   hydrateSession: () => Promise<void>;
   logoutWithApi: () => Promise<void>;
   logout: () => void;
@@ -692,6 +702,48 @@ export const useAppStore = create<AppState>()(
           return { success: true };
         } catch (err) {
           return { success: false, error: 'Ошибка соединения с сервером.' };
+        }
+      },
+
+      loginWithTelegram: async ({ telegram, phone, rememberMe }) => {
+        try {
+          const res = await fetch('/api/auth/telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegram, phone, rememberMe }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            return {
+              success: false,
+              error: data.error || 'Ошибка входа через Telegram.',
+              needsPhone: Boolean(data.needsPhone),
+            };
+          }
+          const user: AuthUser = data.user;
+          const isAdmin = user.role === 'ADMIN';
+          set({
+            currentUser: user,
+            isAdminLoggedIn: isAdmin,
+            isAuthModalOpen: false,
+            loyalty: data.loyalty || null,
+          });
+          get().fetchOrders();
+          if (isAdmin) get().fetchAdminOrders();
+          return { success: true };
+        } catch (err) {
+          return { success: false, error: 'Ошибка соединения с сервером.' };
+        }
+      },
+
+      fetchTelegramConfig: async () => {
+        try {
+          const res = await fetch('/api/auth/telegram/config');
+          if (!res.ok) return { enabled: false, username: null };
+          const data = await res.json();
+          return { enabled: Boolean(data.enabled), username: data.username || null };
+        } catch {
+          return { enabled: false, username: null };
         }
       },
 

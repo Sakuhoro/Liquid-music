@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { Contact10 } from '../../components/ui/contact-10';
+import { Contact10, type TelegramWidgetUser } from '../../components/ui/contact-10';
 import { X } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
@@ -9,6 +9,8 @@ export const AuthModal: React.FC = () => {
   const authModalContext = useAppStore((state) => state.authModalContext);
   const loginWithApi = useAppStore((state) => state.loginWithApi);
   const registerWithApi = useAppStore((state) => state.registerWithApi);
+  const loginWithTelegram = useAppStore((state) => state.loginWithTelegram);
+  const fetchTelegramConfig = useAppStore((state) => state.fetchTelegramConfig);
   const placeOrder = useAppStore((state) => state.placeOrder);
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -59,6 +61,32 @@ export const AuthModal: React.FC = () => {
     }
   };
 
+  // Kept stable so the widget's one-time config fetch does not re-run on every
+  // render of the modal.
+  const telegramConfig = React.useCallback(() => fetchTelegramConfig(), [fetchTelegramConfig]);
+
+  const handleTelegram = async (data: {
+    telegram: TelegramWidgetUser;
+    phone?: string;
+    rememberMe: boolean;
+  }) => {
+    setError(null);
+    setLoading(true);
+    const result = await loginWithTelegram(data);
+    setLoading(false);
+
+    if (!result.success) {
+      setError(result.error || 'Ошибка входа через Telegram.');
+      return;
+    }
+
+    if (authModalContext === 'checkout') {
+      setTimeout(() => {
+        placeOrder();
+      }, 250);
+    }
+  };
+
   return (
     <div
       id="auth-modal-backdrop"
@@ -82,6 +110,8 @@ export const AuthModal: React.FC = () => {
           }}
           onSubmitLogin={handleLogin}
           onSubmitRegister={handleRegister}
+          onSubmitTelegram={handleTelegram}
+          onFetchTelegramConfig={telegramConfig}
           error={error}
           loading={loading}
         />

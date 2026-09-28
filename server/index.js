@@ -341,6 +341,176 @@ app.post('/api/auth/login', (req, res) => {
   }
 })
 
+// --- Telegram sign-in ------------------------------------------------------
+// The widget hands the browser a payload signed by the bot, and the signature
+// is keyed on the bot token. That token is the only thing that makes a claimed
+// identity trustworthy here, so with no token configured the endpoint refuses
+// everything rather than believing whatever the browser sends. The bot's
+// credentials live in the environment, never in the bundle.
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || ''
+const TELEGRAM_BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || ''
+
+// Telegram's own scheme: the key is the SHA-256 of the bot token, the message
+// is every remaining field joined by newlines in key order, and the hex digest
+// has to equal the hash the widget supplied. Timing-safe, so a wrong signature
+// cannot be recovered a byte at a time.
+function verifyTelegramPayload(payload) {
+  if (!TELEGRAM_BOT_TOKEN) {
+    return { ok: false, error: 'Вход через Telegram пока не настроен на сервере.' }
+  }
+  if (!payload || typeof payload !== 'object') {
+    return { ok: false, error: 'Пустой ответ Telegram.' }
+  }
+
+  // Only `hash` is excluded from the signed message. auth_date is part of it,
+  // so it is read for the age check and then left in place rather than being
+  // destructured away.
+  const { hash, ...signed } = payload
+  if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/i.test(hash)) {
+    return { ok: false, error: 'Некорректная подпись Telegram.' }
+  }
+
+  // A signature stays valid forever, so age is checked separately: a captured
+  // payload must not be replayable tomorrow.
+  const ageSeconds = Date.now() / 1000 - Number(signed.auth_date)
+  if (!Number.isFinite(ageSeconds) || ageSeconds < -300 || ageSeconds > 86400) {
+    return { ok: false, error: 'Данные Telegram устарели, попробуйте ещё раз.' }
+  }
+
+  const dataCheckString = Object.keys(signed)
+    .sort()
+    .map((key) => `${key}=${signed[key]}`)
+    .join('\n')
+
+  const key = crypto.createHash('sha256').update(TELEGRAM_BOT_TOKEN).digest()
+  const expected = crypto.createHmac('sha256', key).update(dataCheckString).digest('hex')
+
+  const given = Buffer.from(hash.toLowerCase(), 'utf8')
+  const computed = Buffer.from(expected, 'utf8')
+  if (given.length !== computed.length || !crypto.timingSafeEqual(given, computed)) {
+    return { ok: false, error: 'Не удалось подтвердить вход через Telegram.' }
+  }
+
+  return { ok: true, data: signed }
+}
+
+// Lets the client build the widget without the token ever leaving the server,
+// and lets it hide the button outright while no bot is configured.
+app.get('/api/auth/telegram/config', (req, res) => {
+  res.json({
+    enabled: Boolean(TELEGRAM_BOT_TOKEN && TELEGRAM_BOT_USERNAME),
+    username: TELEGRAM_BOT_USERNAME || null,
+  })
+})
+
+app.post('/api/auth/telegram', (req, res) => {
+  try {
+    const { telegram, phone, rememberMe } = req.body || {}
+
+    // The phone is deliberately outside the signed object: adding a field to
+    // the message would invalidate the signature, so it is verified as a
+    // separate, unsigned input.
+    const check = verifyTelegramPayload(telegram)
+    if (!check.ok) {
+      return res.status(401).json({ error: check.error })
+    }
+
+    const t = check.data
+    if (!t.id) {
+      return res.status(401).json({ error: 'Telegram не передал идентификатор.' })
+    }
+
+    // A username is the handle the site already identifies members by. Without
+    // one the numeric id stands in, still unique, and the widget remains the
+    // only way back into that account.
+    const handle = t.username ? '@' + String(t.username).replace(/^@/, '') : 'tg' + String(t.id)
+    const fullName = [t.first_name, t.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim()
+
+    const returning = findUserByTelegram(handle)
+    if (returning) {
+      const session = createSession(returning.id, Boolean(rememberMe))
+      res.cookie('lm_session', session.token, {
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000,
+      })
+      return res.json({
+        success: true,
+        created: false,
+        user: {
+          id: returning.id,
+          name: returning.fullName,
+          phone: returning.phone,
+          telegram: returning.telegramId.startsWith('@') ? returning.telegramId : `@${returning.telegramId}`,
+          registeredAt: returning.createdAt.split('T')[0],
+          role: returning.role,
+        },
+      })
+    }
+
+    // New member. Telegram never shares a phone number, and the column is
+    // NOT NULL, so it is the one field still asked for by hand.
+    const digits = String(phone || '').replace(/\D/g, '')
+    if (digits.length < 10) {
+      return res.status(400).json({
+        error: 'Укажите номер телефона — он нужен, чтобы связаться по заказу.',
+        needsPhone: true,
+      })
+    }
+
+    // The same number on a different handle is not this person, and silently
+    // taking the account over would hand them someone else's order history.
+    const byPhone = findUserByTelegramOrPhone('@none', phone)
+    if (byPhone) {
+      return res.status(400).json({
+        error: 'Этот номер уже привязан к другому аккаунту. Войдите по нему или напишите нам.',
+      })
+    }
+
+    if (!fullName) {
+      return res.status(400).json({ error: 'Telegram не передал имя. Укажите его при заказе.' })
+    }
+
+    // passwordHash is NOT NULL, so one is stored, but it is a random secret
+    // rather than anything the member chose: bcrypt over 32 random bytes
+    // cannot be guessed, which makes the password form a dead end for this
+    // account on purpose. Telegram stays the single way in.
+    const passwordHash = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10)
+    const newUser = createUser({
+      fullName,
+      phone: phone.trim(),
+      telegramId: handle,
+      passwordHash,
+      role: 'USER',
+    })
+
+    const session = createSession(newUser.id, Boolean(rememberMe))
+    res.cookie('lm_session', session.token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000,
+    })
+
+    return res.status(201).json({
+      success: true,
+      created: true,
+      user: {
+        id: newUser.id,
+        name: newUser.fullName,
+        phone: newUser.phone,
+        telegram: `@${newUser.telegramId}`,
+        registeredAt: newUser.createdAt.split('T')[0],
+        role: newUser.role,
+      },
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.get('/api/auth/me', (req, res) => {
   try {
     const token = req.cookies?.lm_session || req.headers.authorization?.replace('Bearer ', '')
