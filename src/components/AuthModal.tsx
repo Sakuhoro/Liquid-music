@@ -61,9 +61,8 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  // Kept stable so the widget's one-time config fetch does not re-run on every
-  // render of the modal.
-  const telegramConfig = React.useCallback(() => fetchTelegramConfig(), [fetchTelegramConfig]);
+  // fetchTelegramConfig is a zustand action, so its reference survives renders
+  // and the form fetches the bot username once.
 
   const handleTelegram = async (data: {
     telegram: TelegramWidgetUser;
@@ -111,7 +110,7 @@ export const AuthModal: React.FC = () => {
           onSubmitLogin={handleLogin}
           onSubmitRegister={handleRegister}
           onSubmitTelegram={handleTelegram}
-          onFetchTelegramConfig={telegramConfig}
+          onFetchTelegramConfig={fetchTelegramConfig}
           error={error}
           loading={loading}
         />
