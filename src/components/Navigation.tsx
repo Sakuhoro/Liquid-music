@@ -7,7 +7,6 @@ import {
   User,
   Sliders,
   Music,
-  Radio,
   Volume2,
   VolumeX,
   ShieldCheck,
@@ -27,7 +26,6 @@ export const Navigation: React.FC = () => {
   const openAuthModal = useAppStore((state) => state.openAuthModal);
   const isBgMusicPlaying = useAppStore((state) => state.isBgMusicPlaying);
   const toggleBgMusic = useAppStore((state) => state.toggleBgMusic);
-  const setIsSoundCloudOpen = useAppStore((state) => state.setIsSoundCloudOpen);
 
   const isDark = theme === 'dark';
 
@@ -167,16 +165,6 @@ export const Navigation: React.FC = () => {
           ) : (
             <VolumeX className="w-3.5 h-3.5 opacity-60" />
           )}
-        </button>
-
-        {/* SoundCloud Player Integration Button */}
-        <button
-          id="soundcloud-player-btn"
-          onClick={() => setIsSoundCloudOpen(true)}
-          title="Open SoundCloud Musical Player"
-          className="liquid-glass w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
-        >
-          <Radio className="w-3.5 h-3.5 text-orange-400" />
         </button>
 
         {/* Theme Toggle (Light / Dark) */}

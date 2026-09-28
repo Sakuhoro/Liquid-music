@@ -92,9 +92,6 @@ export const StudioAdminModal: React.FC = () => {
   const setDarkMusicUrl = useAppStore((state) => state.setDarkMusicUrl);
   const setLightMusicUrl = useAppStore((state) => state.setLightMusicUrl);
 
-  const soundCloudUrl = useAppStore((state) => state.soundCloudUrl);
-  const setSoundCloudUrl = useAppStore((state) => state.setSoundCloudUrl);
-
   const recipes = useAppStore((state) => state.recipes);
   const saveRecipe = useAppStore((state) => state.saveRecipe);
 
@@ -193,7 +190,6 @@ export const StudioAdminModal: React.FC = () => {
   const [tempVideos, setTempVideos] = useState(collectionVideos);
   const [tempDarkMusic, setTempDarkMusic] = useState(darkMusicUrl);
   const [tempLightMusic, setTempLightMusic] = useState(lightMusicUrl);
-  const [tempSoundCloud, setTempSoundCloud] = useState(soundCloudUrl);
   const [audioSaveNotice, setAudioSaveNotice] = useState(false);
   const [videoSaveNotice, setVideoSaveNotice] = useState(false);
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
@@ -307,7 +303,6 @@ export const StudioAdminModal: React.FC = () => {
     e.preventDefault();
     setDarkMusicUrl(tempDarkMusic);
     setLightMusicUrl(tempLightMusic);
-    setSoundCloudUrl(tempSoundCloud);
     setAudioSaveNotice(true);
     setTimeout(() => setAudioSaveNotice(false), 2000);
   };

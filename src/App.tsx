@@ -11,7 +11,6 @@ import { PlaylistToast } from './components/PlaylistToast';
 import { OrderSuccessModal } from './components/OrderSuccessModal';
 import { StudioAdminModal } from './components/StudioAdminModal';
 import { AccountModal } from './components/AccountModal';
-import { SoundCloudPlayerModal } from './components/SoundCloudPlayerModal';
 
 export default function App() {
   const theme = useAppStore((state) => state.theme);
@@ -169,7 +168,6 @@ export default function App() {
       <OrderSuccessModal />
       <StudioAdminModal />
       <AccountModal />
-      <SoundCloudPlayerModal />
       <PlaylistToast />
     </main>
   );

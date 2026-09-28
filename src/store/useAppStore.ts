@@ -97,12 +97,7 @@ interface AppState {
   toggleBgMusic: () => void;
   setIsBgMusicPlaying: (playing: boolean) => void;
 
-  // SoundCloud Player Integration
-  soundCloudUrl: string;
-  setSoundCloudUrl: (url: string) => void;
-  isSoundCloudOpen: boolean;
-  setIsSoundCloudOpen: (open: boolean) => void;
-  // True while a product card plays its own SoundCloud track, so the ambient
+  // True while a product card plays its own track, so the ambient
   // background music can duck out of the way instead of playing over it.
   isTrackPreviewPlaying: boolean;
   setIsTrackPreviewPlaying: (playing: boolean) => void;
@@ -413,11 +408,6 @@ export const useAppStore = create<AppState>()(
         set((state) => ({ isBgMusicPlaying: !state.isBgMusicPlaying })),
       setIsBgMusicPlaying: (isBgMusicPlaying) => set({ isBgMusicPlaying }),
 
-      // SoundCloud URL & Player Modal
-      soundCloudUrl: 'https://soundcloud.com/chilledcow/sets/lofi-hip-hop-beats',
-      setSoundCloudUrl: (soundCloudUrl) => set({ soundCloudUrl }),
-      isSoundCloudOpen: false,
-      setIsSoundCloudOpen: (isSoundCloudOpen) => set({ isSoundCloudOpen }),
       isTrackPreviewPlaying: false,
       setIsTrackPreviewPlaying: (isTrackPreviewPlaying) => set({ isTrackPreviewPlaying }),
 
@@ -942,7 +932,6 @@ export const useAppStore = create<AppState>()(
         collectionVideos: state.collectionVideos,
         darkMusicUrl: state.darkMusicUrl,
         lightMusicUrl: state.lightMusicUrl,
-        soundCloudUrl: state.soundCloudUrl,
         products: state.products,
         recipes: state.recipes,
         flavorPrices: state.flavorPrices,
