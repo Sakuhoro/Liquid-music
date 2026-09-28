@@ -75,6 +75,14 @@ export const AuthModal: React.FC = () => {
     setLoading(false);
 
     if (!result.success) {
+      // The server asks for a number only when it is about to create the
+      // account, and the field for it lives on the registration tab. Moving
+      // there keeps the confirmed Telegram identity, which stays in the form,
+      // so only the number is left to type.
+      if (result.needsPhone) {
+        setMode('register');
+        return;
+      }
       setError(result.error || 'Ошибка входа через Telegram.');
       return;
     }

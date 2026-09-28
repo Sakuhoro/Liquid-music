@@ -277,10 +277,13 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
 
       {/* Input Form */}
       <form onSubmit={handleSubmit} className={`${formGap} font-sans`}>
-        {/* Telegram first, because for a new member it replaces three of the
-            four fields below. Rendered in register only: signing in is by
-            handle and password, and this path creates the account. */}
-        {mode === 'register' && tgEnabled && !viaTelegram && (
+        {/* Telegram first, because on this path it replaces the fields below.
+            On both tabs, not just registration: a member who already has an
+            account signs in through it too, and the server lets them straight
+            back in without a phone. It was register-only, so anyone returning
+            to the site landed on the sign-in tab with no Telegram option at
+            all and had to guess that "Регистрация" doubles as a way in. */}
+        {tgEnabled && !viaTelegram && (
           <div className="space-y-3">
             <div className="flex items-center justify-center gap-2 font-mono uppercase tracking-wider text-xs text-stone-400">
               <span className="h-px flex-1 bg-white/10" />
@@ -296,7 +299,11 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
         {/* What Telegram vouched for. Read-only on purpose: the server derives
             the handle and the name from the signature, so editing them here
             would only be discarded. */}
-        {mode === 'register' && viaTelegram && (
+        {/* Shown on both tabs, not just registration: the widget is offered on
+            both, so without this a member who signed in from the sign-in tab
+            got no visible sign that Telegram had answered, and the only clue
+            was the form quietly changing shape after the submit. */}
+        {viaTelegram && (
           <div className="p-3.5 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 flex items-center gap-3">
             <BadgeCheck className="w-6 h-6 text-cyan-300 shrink-0" />
             <div className="min-w-0 flex-1">
