@@ -48,9 +48,9 @@ export interface ProductItem {
   accentColor: string;
   // Artwork scale inside the 80% vinyl label circle. Editable in the admin cabinet.
   artScale?: number;
-  // SoundCloud track permalink played by the "Аккорды" button. When absent the
-  // button falls back to the generated chord.
-  soundCloudUrl?: string | null;
+  // Local audio file played by the "Аккорды" button, e.g. '/audio/spring/renee.mp3'.
+  // When absent the button falls back to the generated chord.
+  audioFile?: string | null;
   isFeatured?: boolean;
 }
 

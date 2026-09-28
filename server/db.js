@@ -36,7 +36,7 @@ db.exec(`
     accentColor TEXT,
     isFeatured INTEGER DEFAULT 0,
     artScale REAL DEFAULT 1.0,
-    soundCloudUrl TEXT,
+    audioFile TEXT,
     createdAt TEXT
   );
 
@@ -178,42 +178,36 @@ if (!productColumns.some((col) => col.name === 'artScale')) {
   console.log('[liquid-music] migrated products: added artScale column');
 }
 
-// SoundCloud preview link shown by the "Аккорды" button on a product card.
-if (!productColumns.some((col) => col.name === 'soundCloudUrl')) {
-  db.exec('ALTER TABLE products ADD COLUMN soundCloudUrl TEXT');
-  console.log('[liquid-music] migrated products: added soundCloudUrl column');
+// Local audio track played by the "Аккорды" button on a product card.
+if (!productColumns.some((col) => col.name === 'audioFile')) {
+  db.exec('ALTER TABLE products ADD COLUMN audioFile TEXT');
+  console.log('[liquid-music] migrated products: added audioFile column');
 }
 
-// Accepts a bare track permalink, an api.soundcloud.com/tracks/{id} link, or a
-// full widget/oEmbed URL and returns the canonical https://soundcloud.com/... form.
-const normalizeSoundCloudUrl = (value) => {
+// The SoundCloud links this button used to resolve are gone, so the column that
+// feature left behind is dropped and the catalogue carries local files only.
+if (productColumns.some((col) => col.name === 'soundCloudUrl')) {
+  db.exec('ALTER TABLE products DROP COLUMN soundCloudUrl');
+  console.log('[liquid-music] migrated products: dropped soundCloudUrl column');
+}
+
+// The value is written by the admin cabinet and read back as an audio src, so it
+// is deliberately restricted to the public audio directory: anything that could
+// escape it (parent traversal, a protocol, an absolute filesystem path) is
+// rejected outright rather than cleaned into something that still points
+// somewhere unintended.
+const normalizeAudioFile = (value) => {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   if (!trimmed) return null;
 
-  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  const candidate = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  if (!candidate.startsWith('/audio/')) return null;
+  if (candidate.includes('..') || candidate.includes('//')) return null;
+  if (candidate.includes('\\') || /[?#]/.test(candidate)) return null;
+  if (!/\.(mp3|m4a|aac|ogg|wav|flac)$/i.test(candidate)) return null;
 
-  let url;
-  try {
-    url = new URL(candidate);
-  } catch (_) {
-    return null;
-  }
-
-  const host = url.hostname.toLowerCase().replace(/^www\./, '');
-  const isSoundCloudHost = host === 'soundcloud.com' || host.endsWith('.soundcloud.com');
-  if (!isSoundCloudHost) return null;
-
-  // api.soundcloud.com/tracks/{id} -> soundcloud.com/{user}/{slug} is not
-  // resolvable offline, so keep the API form and let the widget handle it.
-  if (host === 'api.soundcloud.com' && url.pathname.startsWith('/tracks/')) {
-    const id = url.pathname.split('/').filter(Boolean)[1];
-    return id ? `https://api.soundcloud.com/tracks/${id}` : null;
-  }
-
-  const path = url.pathname.replace(/^\/+|\/+$/g, '');
-  if (!path) return null;
-  return `https://soundcloud.com/${path}`;
+  return candidate;
 };
 
 // The hand-tuned values that used to live in the hardcoded IMAGE_SCALE_OVERRIDES
@@ -405,7 +399,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'renee',
-    soundCloudUrl: 'https://soundcloud.com/sales/sales-renee',
+    audioFile: '/audio/spring/renee.mp3',
     name: 'Renee',
     subtitle: 'Refreshing Symphony of Italian Lemon, Bergamot & Green Tea',
     description: '',
@@ -425,7 +419,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'on-a-green',
-    soundCloudUrl: 'https://soundcloud.com/7jecwj5lrfhr/sadness-on-a-green',
+    audioFile: '/audio/spring/on-a-green.mp3',
     name: 'On a Green',
     subtitle: 'Soothing Blend of Lemon Tea & Wild Sweet Teas',
     description: '',
@@ -445,7 +439,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'mother-nature',
-    soundCloudUrl: 'https://soundcloud.com/hurts/mother-nature',
+    audioFile: '/audio/spring/mother-nature.mp3',
     name: 'Mother Nature',
     subtitle: 'Creamy Yogurt Fusion with Ripe Peaches & Wild Blueberries',
     description: 'Lush Greek yogurt base intertwined with succulent peaches, juicy blueberries, bilberries, and delicate cream.',
@@ -465,7 +459,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'red-like-roses',
-    soundCloudUrl: 'https://soundcloud.com/jim-bob-383149079/red-like-roses-part-ii-full',
+    audioFile: '/audio/spring/red-like-roses.mp3',
     name: 'Red like Roses',
     subtitle: 'Botanical Floral Elegance of Elderflower, Rose & Fuji Apple',
     description: 'A sophisticated floral-fruit composition combining elderflower, rose essence, Fuji apple, cold pressed lime, and golden syrup.',
@@ -485,7 +479,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'serpent',
-    soundCloudUrl: 'https://soundcloud.com/sirenia-official/serpent',
+    audioFile: '/audio/spring/serpent.mp3',
     name: 'Serpent',
     subtitle: 'Crisp Green Apple Candy, Citrus Zest & Arctic Chill',
     description: 'A sharp, exhilarating green apple and candy symphony layered with sour apple, lemon lime, and an icy WS-23 finish.',
@@ -505,7 +499,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'spring-true-colors',
-    soundCloudUrl: 'https://soundcloud.com/rush-garcia-297954716/clrs-a-rwby-orchestration',
+    audioFile: '/audio/spring/spring-true-colors.mp3',
     name: 'Spring True Colors',
     subtitle: 'Vibrant Mint Candy, Citrus Lime & Lemonade Refreshment',
     description: '',
@@ -525,7 +519,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'strong-hand',
-    soundCloudUrl: 'https://soundcloud.com/chvrches/strong-hand',
+    audioFile: '/audio/spring/strong-hand.mp3',
     name: 'Strong Hand',
     subtitle: 'Bold Cranberry Lemonade Elixir & Dark Wild Cherries',
     description: 'A robust and tangy elixir combining sharp cranberries, sweet lemonade compote, and juicy black cherries.',
@@ -545,7 +539,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'orphelin',
-    soundCloudUrl: 'https://soundcloud.com/lorientestard/the-reacher-orphelin',
+    audioFile: '/audio/spring/orphelin.mp3',
     name: 'Orphelin',
     subtitle: 'Sweet Pink Lemonade Symphony with Ripe Strawberry & Cactus Chill',
     description: 'A vibrant lemonade compote blended with juicy lemon, succulent strawberry, desert cactus nectar, and frosted WS-23.',
@@ -565,7 +559,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'oscura',
-    soundCloudUrl: 'https://soundcloud.com/lorien26/clair-obscur-expedition-33-clair-obscur',
+    audioFile: '/audio/spring/oscura.mp3',
     name: 'Oscura',
     subtitle: 'Botanical Harmony of Lavender, Botanical Gin, Ginger & Hibiscus',
     description: 'An intriguing floral-spiced composition of French lavender, aromatic gin, fresh ginger root, and hibiscus blossoms in sweet lemonade.',
@@ -585,7 +579,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'boop',
-    soundCloudUrl: 'https://soundcloud.com/timothy-madison-346969026/boop',
+    audioFile: '/audio/spring/boop.mp3',
     name: 'Boop',
     subtitle: 'Effervescent Tarragon Soda, Anise, Sicilian Lemon & Marshmallow',
     description: '',
@@ -605,7 +599,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'gira-gira',
-    soundCloudUrl: 'https://soundcloud.com/ilya-homenko/ado-gira-gira',
+    audioFile: '/audio/spring/gira-gira.mp3',
     name: 'Gira Gira',
     subtitle: 'Sparkling Barberry Candy Soda, Red Currant & Chilled Ozone',
     description: 'An iconic Russian barberry candy soda experience with sweet red currant, clear lemonade, sparkling soda water, and ice.',
@@ -625,7 +619,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'holssi',
-    soundCloudUrl: 'https://soundcloud.com/yongsik-kim-129815277/iu-dlwlrma',
+    audioFile: '/audio/spring/holssi.mp3',
     name: 'Holssi',
     subtitle: 'Sub-Zero Spearmint, Menthol Chill & Fluffy Marshmallow',
     description: 'An arctic menthol breeze harmonized with spearmint leaves, cooling agents, sweetener, and soft marshmallow.',
@@ -645,7 +639,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'daydreaming',
-    soundCloudUrl: 'https://soundcloud.com/aurorastrings-sc/quiet-corner-daydreaming',
+    audioFile: '/audio/spring/daydreaming.mp3',
     name: 'Daydreaming',
     subtitle: 'Lush Forest Fruit Medley, Alpine Strawberry & Bavarian Cream',
     description: '',
@@ -665,7 +659,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'blueming',
-    soundCloudUrl: 'https://soundcloud.com/noiselessflowers/blueming',
+    audioFile: '/audio/spring/blueming.mp3',
     name: 'Blueming',
     subtitle: 'Playful Strawberry Bubble Gum, Banana & Marshmallow',
     description: 'A pop art symphony of juicy bubble gum, ripe banana, strawberry compote filling, marshmallow, and a hint of ice.',
@@ -685,7 +679,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'tragica',
-    soundCloudUrl: 'https://soundcloud.com/sirenia-official/tragica-tragedienne-spanish',
+    audioFile: '/audio/spring/tragica.mp3',
     name: 'Tragica',
     subtitle: 'Rich Strawberry Jam on Warm French Toast & Biscuit Crust',
     description: 'A dramatic gourmet dessert blending toasted French toast, melted butter base, golden biscuit, and thick strawberry jam.',
@@ -705,7 +699,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'rising',
-    soundCloudUrl: 'https://soundcloud.com/user-181897094/rwby-volume-6-soundtrack-3',
+    audioFile: '/audio/spring/rising.mp3',
     name: 'Rising',
     subtitle: 'Sweet Tangy Rhubarb, Strawberry Jam & Warm Bakery Crust',
     description: 'A soaring bakery composition of tangy rhubarb, sweet strawberry jam, golden apple pie, warm biscuit, vanilla cream, and brown sugar.',
@@ -725,7 +719,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'usseewa',
-    soundCloudUrl: 'https://soundcloud.com/yuuki_370/ado-usseewa',
+    audioFile: '/audio/spring/usseewa.mp3',
     name: 'Usseewa',
     subtitle: 'Decadent Belgian Waffle, Milky Caramel Fudge & Banana Custard',
     description: 'An explosive gourmet dessert symphony featuring crisp Belgian waffles, rich milky caramel fudge, creamy banana custard, whipped cream, and vanilla swirl.',
@@ -745,7 +739,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'birth-of-a-wish',
-    soundCloudUrl: 'https://soundcloud.com/user-445793303/nier-automata-ost-birth-of-a',
+    audioFile: '/audio/spring/birth-of-a-wish.mp3',
     name: 'Birth of a Wish',
     subtitle: 'Ethereal Green & Fuji Apple, Pear Nectar & Floral Hibiscus',
     description: 'A delicate and dreamlike blend of crisp green apple, juicy Fuji apple, sweet pear, vanilla classic, soft cream, and hibiscus floral notes.',
@@ -765,7 +759,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'thurs',
-    soundCloudUrl: 'https://soundcloud.com/sales/thurs-6-25',
+    audioFile: '/audio/spring/thurs.mp3',
     name: 'Thurs',
     subtitle: 'Zesty Juicy Lemon, Cold Pressed Lime, Sour Wizard & WS-23 Chill',
     description: 'A sharp and refreshing citrus storm combining juicy lemon, cold pressed lime, sour wizard punch, sweet marshmallow, and frosted WS-23.',
@@ -785,7 +779,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'which-breath',
-    soundCloudUrl: 'https://soundcloud.com/devoncl/in-which-i-breath-life-from-death',
+    audioFile: '/audio/spring/which-breath.mp3',
     name: 'Which Breath',
     subtitle: 'Botanical Juniper Gin, Herbal Basil & Crisp Pear Chill',
     description: '',
@@ -805,7 +799,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'full-of-love',
-    soundCloudUrl: 'https://soundcloud.com/bjork/all-is-full-of-love-video-edit',
+    audioFile: '/audio/spring/full-of-love.mp3',
     name: 'Full of love',
     subtitle: 'Lush Forest Berry Medley, Concord Grape, Cherry & Mint Eucalyptus',
     description: 'A passionate fruit explosion featuring rich wild cherries, forest fruit mix, Concord grape, anise, raspberry, and soothing mint eucalyptus.',
@@ -825,7 +819,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'berghain',
-    soundCloudUrl: 'https://soundcloud.com/rosaliaofficial/berghain',
+    audioFile: '/audio/spring/berghain.mp3',
     name: 'Berghain',
     subtitle: 'Aged Bourbon, Jamaica Rhum, Morning Mimosa & Blood Orange',
     description: 'A deep nightlife elixir blending barrel-aged bourbon, dark Jamaica rhum, morning mimosa nectar, blood orange, and arctic winter mint.',
@@ -845,7 +839,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'kotone',
-    soundCloudUrl: 'https://soundcloud.com/kotone-music/punishment',
+    audioFile: '/audio/spring/kotone.mp3',
     name: 'Kotone',
     subtitle: 'Warm Apricot Croissant, Devon Cream & Rich Vanilla Custard Cheesecake',
     description: 'A decadent French bakery dessert featuring buttery warm croissants, juicy apricot glaze, Devon cream, Bavarian cream, and cheesecake.',
@@ -865,7 +859,7 @@ export const INITIAL_PRODUCTS_SEED = [
   },
   {
     id: 'clearest-blue',
-    soundCloudUrl: 'https://soundcloud.com/chvrches/clearest-blue',
+    audioFile: '/audio/spring/clearest-blue.mp3',
     name: 'Clearest Blue',
     subtitle: 'Vibrant Lychee, Shisha Raspberry, Cactus Nectar & Vanilla Marshmallow',
     description: 'An uplifting blue melody blending sweet lychee, wild raspberries, dragonfruit nectar, desert cactus, and pillowy vanilla marshmallow.',
@@ -894,7 +888,7 @@ function seedDatabase() {
       INSERT INTO products (
         id, name, subtitle, description, image, basePrice, category,
         musicalKey, bpm, opusNumber, aromaticChords, accentColor, isFeatured,
-        soundCloudUrl, createdAt
+        audioFile, createdAt
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
@@ -914,7 +908,7 @@ function seedDatabase() {
           JSON.stringify(p.aromaticChords || {}),
           p.accentColor || '#38bdf8',
           p.isFeatured ? 1 : 0,
-          normalizeSoundCloudUrl(p.soundCloudUrl),
+          normalizeAudioFile(p.audioFile),
           new Date().toISOString()
         );
       }
@@ -1509,7 +1503,7 @@ export function addProduct(prod) {
     INSERT INTO products (
       id, name, subtitle, description, image, basePrice, category,
       musicalKey, bpm, opusNumber, aromaticChords, accentColor, isFeatured, artScale,
-      soundCloudUrl, createdAt
+      audioFile, createdAt
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
@@ -1529,7 +1523,7 @@ export function addProduct(prod) {
       prod.accentColor || '#38bdf8',
       prod.isFeatured ? 1 : 0,
       normalizeArtScale(prod.artScale),
-      normalizeSoundCloudUrl(prod.soundCloudUrl),
+      normalizeAudioFile(prod.audioFile),
       new Date().toISOString()
     );
   });
@@ -1554,7 +1548,7 @@ export function updateProduct(prod) {
       accentColor = ?,
       isFeatured = ?,
       artScale = ?,
-      soundCloudUrl = ?
+      audioFile = ?
     WHERE id = ?
   `);
 
@@ -1573,7 +1567,7 @@ export function updateProduct(prod) {
       prod.accentColor || '#38bdf8',
       prod.isFeatured ? 1 : 0,
       normalizeArtScale(prod.artScale),
-      normalizeSoundCloudUrl(prod.soundCloudUrl),
+      normalizeAudioFile(prod.audioFile),
       prod.id
     );
   });

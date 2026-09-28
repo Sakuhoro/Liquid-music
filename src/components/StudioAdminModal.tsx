@@ -1917,26 +1917,25 @@ export const StudioAdminModal: React.FC = () => {
 
                     <div>
                       <label className="block font-bold opacity-80 mb-1">
-                        Трек SoundCloud
+                        Аудиофайл
                         <span className="ml-2 font-normal opacity-60">
                           играет по кнопке «Аккорды» на карточке
                         </span>
                       </label>
                       <input
-                        type="url"
-                        inputMode="url"
-                        placeholder="https://soundcloud.com/artist/track"
-                        value={editingProduct.soundCloudUrl ?? ''}
+                        type="text"
+                        placeholder="/audio/spring/renee.mp3"
+                        value={editingProduct.audioFile ?? ''}
                         onChange={(e) =>
                           setEditingProduct({
                             ...editingProduct,
-                            soundCloudUrl: e.target.value,
+                            audioFile: e.target.value,
                           })
                         }
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-white/5 focus:outline-none focus:border-amber-500 text-xs font-medium text-white placeholder:opacity-40"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-white/5 focus:outline-none focus:border-amber-500 font-mono text-xs font-bold text-amber-400 placeholder:opacity-40 placeholder:font-sans placeholder:font-medium placeholder:text-white"
                       />
                       <p className="mt-1 text-[10px] font-medium opacity-50 leading-relaxed">
-                        Ссылка сохраняется в каноническом виде без трекинговых параметров. Если поле пустое, кнопка
+                        Путь должен начинаться с /audio/ и вести к файлу в public/audio. Если поле пустое, кнопка
                         «Аккорды» проигрывает сгенерированный аккорд, как и раньше.
                       </p>
                     </div>

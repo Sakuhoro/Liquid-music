@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { VolumeType, NicotineType } from '../types';
 import { calculatePrice, VOLUME_PRICING, NICOTINE_PRICING } from '../data/products';
@@ -11,7 +11,7 @@ import {
   Check,
 } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
-import { SoundCloudPreview, SoundCloudPreviewHandle, SoundCloudPreviewStatus } from './SoundCloudPreview';
+import { useTrackPreview } from '../hooks/useTrackPreview';
 
 /**
  * Module 3: Premium Grade Apple/Stripe Design Refactoring
@@ -50,17 +50,9 @@ export const ProductDetailModal: React.FC = () => {
   const [selectedNicotine, setSelectedNicotine] = useState<NicotineType>('0mg');
   const [isAdded, setIsAdded] = useState(false);
 
-  const previewRef = useRef<SoundCloudPreviewHandle | null>(null);
-  const [previewStatus, setPreviewStatus] = useState<SoundCloudPreviewStatus>('idle');
+  const audioFile = inspectedProduct?.audioFile ?? null;
+  const { audioRef, status, isPlaying, hasTrack, toggle, handlers } = useTrackPreview(audioFile);
   const setIsTrackPreviewPlaying = useAppStore((state) => state.setIsTrackPreviewPlaying);
-
-  const trackUrl = inspectedProduct?.soundCloudUrl ?? null;
-  const hasTrack = Boolean(trackUrl);
-  const isTrackPlaying = hasTrack && previewStatus === 'playing';
-
-  const handlePreviewStatus = useCallback((status: SoundCloudPreviewStatus) => {
-    setPreviewStatus(status);
-  }, []);
 
   useEffect(() => {
     setSelectedVolume('30ml');
@@ -68,17 +60,11 @@ export const ProductDetailModal: React.FC = () => {
     setIsAdded(false);
   }, [inspectedProduct]);
 
-  // A new product means a new track: drop the previous play/pause state so the
-  // button never claims to be playing something the player has already stopped.
-  useEffect(() => {
-    setPreviewStatus('idle');
-  }, [inspectedProduct]);
-
   // Keep the ambient music ducked for exactly as long as the preview is audible.
   useEffect(() => {
-    setIsTrackPreviewPlaying(isTrackPlaying);
+    setIsTrackPreviewPlaying(isPlaying);
     return () => setIsTrackPreviewPlaying(false);
-  }, [isTrackPlaying, setIsTrackPreviewPlaying]);
+  }, [isPlaying, setIsTrackPreviewPlaying]);
 
   if (!inspectedProduct) return null;
 
@@ -107,24 +93,20 @@ export const ProductDetailModal: React.FC = () => {
       soundEngine.playChime([523.25, 659.25, 783.99, 1046.50]);
     };
 
+    // No file for this flavour: the button keeps its original chord behaviour.
     if (!hasTrack) {
-      // No track on the record: the button keeps its original chord behaviour.
       playGeneratedChord();
       return;
     }
 
-    // The widget API could not load (blocked script, offline). Falling back to
-    // the chord keeps the button useful instead of leaving it silently dead.
-    if (previewStatus === 'error') {
+    // The file is missing or the browser refused to play it, so fall back to
+    // the chord instead of leaving the button silently dead.
+    if (status === 'error') {
       playGeneratedChord();
       return;
     }
 
-    if (isTrackPlaying) {
-      previewRef.current?.pause();
-    } else {
-      previewRef.current?.play();
-    }
+    toggle();
   };
 
   return (
@@ -168,40 +150,39 @@ export const ProductDetailModal: React.FC = () => {
               {/* Album Sheen Overlay */}
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-white/10 opacity-70" />
 
-              {/* Harmonic Chords Button Badge — plays the product's SoundCloud
-                  track, or the generated chord when the product has no link. */}
+              {/* Harmonic Chords Button Badge — plays the flavour's own track,
+                  or the generated chord when the flavour has no audio file. */}
               <button
                 onClick={handlePlayChord}
-                aria-pressed={isTrackPlaying}
-                aria-label={isTrackPlaying ? 'Поставить музыку на паузу' : 'Включить музыку'}
+                aria-pressed={isPlaying}
+                aria-label={isPlaying ? 'Поставить музыку на паузу' : 'Включить музыку'}
                 className={`absolute bottom-3 right-3 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[11px] sm:text-xs font-sans font-semibold flex items-center gap-1.5 backdrop-blur-md border transition-all duration-300 shadow-lg cursor-pointer group/btn min-h-[44px] ${
-                  isTrackPlaying
+                  isPlaying
                     ? 'bg-amber-400 text-slate-950 border-amber-300'
                     : 'bg-black/70 hover:bg-amber-400 hover:text-slate-950 text-white border-white/20'
                 }`}
               >
-                {isTrackPlaying ? (
+                {isPlaying ? (
                   <Pause className="w-4 h-4 text-slate-950" />
                 ) : hasTrack ? (
                   <Play
                     className={`w-4 h-4 text-amber-400 group-hover/btn:text-slate-950 transition-colors ${
-                      previewStatus === 'loading' ? 'animate-pulse' : ''
+                      status === 'loading' ? 'animate-pulse' : ''
                     }`}
                   />
                 ) : (
                   <Volume2 className="w-4 h-4 text-amber-400 group-hover/btn:text-slate-950 transition-colors" />
                 )}
-                <span>{isTrackPlaying ? 'Пауза' : 'Аккорды'}</span>
+                <span>{isPlaying ? 'Пауза' : 'Аккорды'}</span>
               </button>
             </div>
 
-            {/* Invisible SoundCloud player backing the button above. Unmounting
-                this stops the track, which happens whenever the modal closes. */}
-            <SoundCloudPreview
-              ref={previewRef}
-              url={trackUrl}
-              onStatusChange={handlePreviewStatus}
-            />
+            {/* Backing audio for the button above. preload="none" keeps the 24
+                catalogue files from downloading until a flavour is actually
+                opened; unmounting this element stops the track. */}
+            {hasTrack && (
+              <audio ref={audioRef} src={audioFile ?? undefined} preload="none" {...handlers} />
+            )}
           </div>
 
           {/* RIGHT COLUMN: Premium Typography & Minimalist Controls */}
