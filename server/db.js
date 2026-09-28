@@ -36,6 +36,7 @@ db.exec(`
     accentColor TEXT,
     isFeatured INTEGER DEFAULT 0,
     artScale REAL DEFAULT 1.0,
+    soundCloudUrl TEXT,
     createdAt TEXT
   );
 
@@ -175,6 +176,11 @@ const productColumns = db.prepare('PRAGMA table_info(products)').all();
 if (!productColumns.some((col) => col.name === 'artScale')) {
   db.exec('ALTER TABLE products ADD COLUMN artScale REAL DEFAULT 1.0');
   console.log('[liquid-music] migrated products: added artScale column');
+}
+
+if (!productColumns.some((col) => col.name === 'soundCloudUrl')) {
+  db.exec('ALTER TABLE products ADD COLUMN soundCloudUrl TEXT');
+  console.log('[liquid-music] migrated products: added soundCloudUrl column');
 }
 
 // The hand-tuned values that used to live in the hardcoded IMAGE_SCALE_OVERRIDES
@@ -830,8 +836,8 @@ function seedDatabase() {
     const insertStmt = db.prepare(`
       INSERT INTO products (
         id, name, subtitle, description, image, basePrice, category,
-        musicalKey, bpm, opusNumber, aromaticChords, accentColor, isFeatured, createdAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        musicalKey, bpm, opusNumber, aromaticChords, accentColor, isFeatured, soundCloudUrl, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertMany = db.transaction((products) => {
@@ -850,12 +856,24 @@ function seedDatabase() {
           JSON.stringify(p.aromaticChords || {}),
           p.accentColor || '#38bdf8',
           p.isFeatured ? 1 : 0,
+          p.soundCloudUrl || '',
           new Date().toISOString()
         );
       }
     });
 
     insertMany(INITIAL_PRODUCTS_SEED);
+  } else {
+    // Update missing soundCloudUrls for existing seeded products if null or empty
+    const updateSc = db.prepare('UPDATE products SET soundCloudUrl = ? WHERE id = ? AND (soundCloudUrl IS NULL OR soundCloudUrl = \'\')');
+    const updateMany = db.transaction((products) => {
+      for (const p of products) {
+        if (p.soundCloudUrl) {
+          updateSc.run(p.soundCloudUrl, p.id);
+        }
+      }
+    });
+    updateMany(INITIAL_PRODUCTS_SEED);
   }
 }
 
@@ -1443,8 +1461,8 @@ export function addProduct(prod) {
   const stmt = db.prepare(`
     INSERT INTO products (
       id, name, subtitle, description, image, basePrice, category,
-      musicalKey, bpm, opusNumber, aromaticChords, accentColor, isFeatured, artScale, createdAt
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      musicalKey, bpm, opusNumber, aromaticChords, accentColor, isFeatured, artScale, soundCloudUrl, createdAt
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const runTx = db.transaction(() => {
@@ -1463,6 +1481,7 @@ export function addProduct(prod) {
       prod.accentColor || '#38bdf8',
       prod.isFeatured ? 1 : 0,
       normalizeArtScale(prod.artScale),
+      prod.soundCloudUrl || '',
       new Date().toISOString()
     );
   });
@@ -1486,7 +1505,8 @@ export function updateProduct(prod) {
       aromaticChords = ?,
       accentColor = ?,
       isFeatured = ?,
-      artScale = ?
+      artScale = ?,
+      soundCloudUrl = ?
     WHERE id = ?
   `);
 
@@ -1505,6 +1525,7 @@ export function updateProduct(prod) {
       prod.accentColor || '#38bdf8',
       prod.isFeatured ? 1 : 0,
       normalizeArtScale(prod.artScale),
+      prod.soundCloudUrl || '',
       prod.id
     );
   });

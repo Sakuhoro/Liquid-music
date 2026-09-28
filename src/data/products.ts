@@ -210,6 +210,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#84cc16',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/sales/sales-renee?si=af04b67494ff4b1d8f335d089f07a1da&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'on-a-green',
@@ -229,6 +230,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#22c55e',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/7jecwj5lrfhr/sadness-on-a-green?si=eada90b6e3ed4b1684d0d9b303002817&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'mother-nature',
@@ -248,6 +250,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#ec4899',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/hurts/mother-nature?si=174e4e005b6a44e8ae13f16fb8de2c03&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'red-like-roses',
@@ -267,6 +270,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#f43f5e',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/jim-bob-383149079/red-like-roses-part-ii-full?si=8d04b1abd1b747afaa2603ab3336ba3e&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'serpent',
@@ -286,6 +290,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#10b981',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/sirenia-official/serpent?si=93acf0524c104447ac3da9173d521feb&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'spring-true-colors',
@@ -305,6 +310,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#84cc16',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/rush-garcia-297954716/clrs-a-rwby-orchestration?si=b076641aaeb149a28614f24b34bc6bf7&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'strong-hand',
@@ -324,6 +330,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#b91c1c',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/chvrches/strong-hand?si=d8c353b74a8a47cfa632655683b44908&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'orphelin',
@@ -343,6 +350,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#ef4444',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/lorientestard/the-reacher-orphelin?si=51cacd92041c4febb548cc6ff5d7f4e9&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'oscura',
@@ -362,6 +370,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#8b5cf6',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/lorien26/clair-obscur-expedition-33-clair-obscur?si=1f73dec65b0d43d6bf2ab32d22bb6e31&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'boop',
@@ -381,6 +390,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#10b981',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/timothy-madison-346969026/boop?si=06db0af08efb4d95a230df33bc841adf&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'gira-gira',
@@ -400,6 +410,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#f43f5e',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/ilya-homenko/ado-gira-gira?si=f311a58b038e4d24a9797e764ab449fa&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'holssi',
@@ -419,6 +430,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#06b6d4',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/yongsik-kim-129815277/iu-dlwlrma?si=ffe266b9e2514bc189cdaf9b55d56598&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'daydreaming',
@@ -438,6 +450,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#ec4899',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/aurorastrings-sc/quiet-corner-daydreaming?si=89a5158ce2dd450a85a0d5af1d84d415&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'blueming',
@@ -457,6 +470,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#3b82f6',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/noiselessflowers/blueming?si=7047aba498214b2e9a0a1af9726469f3&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'tragica',
@@ -476,6 +490,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#d97706',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/sirenia-official/tragica-tragedienne-spanish?si=613e24b1993646e59aab9eb221f77b26&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'rising',
@@ -495,6 +510,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#dc2626',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/user-181897094/rwby-volume-6-soundtrack-3?si=1c6a8949e18e4554be13bcb620ccacf7&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'usseewa',
@@ -514,6 +530,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#f59e0b',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/yuuki_370/ado-usseewa?si=b2f6fb0d80ed4c85b89d965601911550&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'birth-of-a-wish',
@@ -533,6 +550,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#2563eb',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/user-445793303/nier-automata-ost-birth-of-a?si=87e25dde3c7049b7aca4ac97f83c6813&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'thurs',
@@ -552,6 +570,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#eab308',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/sales/thurs-6-25?si=fa9f2fc0ae5c4f39a5bd7e71b614b71a&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'which-breath',
@@ -571,6 +590,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#10b981',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/devoncl/in-which-i-breath-life-from-death?si=c8c36c533b2e4310bf149f518d953fdb&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'full-of-love',
@@ -590,6 +610,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#ec4899',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/bjork/all-is-full-of-love-video-edit?si=ed5c22fc91044490bec10964e9bb14c0&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'berghain',
@@ -609,6 +630,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#78716c',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/rosaliaofficial/berghain?si=c04f83e8e9ad4543b54ac0a43bb5c322&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'kotone',
@@ -628,6 +650,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#fb923c',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/kotone-music/punishment?si=c3f6a41ac7e245ef93d35c23a72c515c&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
   {
     id: 'clearest-blue',
@@ -647,5 +670,6 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     },
     accentColor: '#38bdf8',
     isFeatured: false,
+    soundCloudUrl: 'https://soundcloud.com/chvrches/clearest-blue?si=82e00a3479714b0c9fe9f9b1d20f0e1b&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing',
   },
 ];

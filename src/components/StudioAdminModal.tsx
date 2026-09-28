@@ -1931,6 +1931,22 @@ export const StudioAdminModal: React.FC = () => {
                       />
                     </div>
 
+                    <div>
+                      <label className="block font-bold opacity-80 mb-1">Ссылка SoundCloud (для кнопки Аккорды)</label>
+                      <input
+                        type="text"
+                        value={editingProduct.soundCloudUrl || ''}
+                        onChange={(e) =>
+                          setEditingProduct({
+                            ...editingProduct,
+                            soundCloudUrl: e.target.value,
+                          })
+                        }
+                        placeholder="https://soundcloud.com/..."
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-white/5 focus:outline-none focus:border-amber-500 font-mono text-xs text-white"
+                      />
+                    </div>
+
                     <div className="pt-4 flex justify-end gap-3 border-t border-white/10">
                       <button
                         type="button"

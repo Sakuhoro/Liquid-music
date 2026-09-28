@@ -49,6 +49,7 @@ export interface ProductItem {
   // Artwork scale inside the 80% vinyl label circle. Editable in the admin cabinet.
   artScale?: number;
   isFeatured?: boolean;
+  soundCloudUrl?: string;
 }
 
 export interface CartItem {

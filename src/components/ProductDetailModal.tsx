@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { VolumeType, NicotineType } from '../types';
 import { calculatePrice, VOLUME_PRICING, NICOTINE_PRICING } from '../data/products';
@@ -7,6 +7,7 @@ import {
   X,
   Volume2,
   Check,
+  Pause,
 } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
 
@@ -46,14 +47,24 @@ export const ProductDetailModal: React.FC = () => {
   const [selectedVolume, setSelectedVolume] = useState<VolumeType>('30ml');
   const [selectedNicotine, setSelectedNicotine] = useState<NicotineType>('0mg');
   const [isAdded, setIsAdded] = useState(false);
+  const [isSCPlaying, setIsSCPlaying] = useState(false);
+
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const widgetRef = useRef<any>(null);
 
   useEffect(() => {
     setSelectedVolume('30ml');
     setSelectedNicotine('0mg');
     setIsAdded(false);
+    setIsSCPlaying(false);
+    widgetRef.current = null;
   }, [inspectedProduct]);
 
   if (!inspectedProduct) return null;
+
+  const trackUrl = inspectedProduct.soundCloudUrl || 'https://soundcloud.com/sales/sales-renee';
+  const encodedUrl = encodeURIComponent(trackUrl);
+  const scEmbedSrc = `https://w.soundcloud.com/player/?url=${encodedUrl}&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false`;
 
   const isDark = theme === 'dark';
 
@@ -75,8 +86,48 @@ export const ProductDetailModal: React.FC = () => {
     }, 1000);
   };
 
+  const setupSCWidget = (callback?: () => void) => {
+    if (!(window as any).SC) {
+      const script = document.createElement('script');
+      script.src = 'https://w.soundcloud.com/player/api.js';
+      script.onload = () => {
+        if (iframeRef.current && (window as any).SC) {
+          const widget = (window as any).SC.Widget(iframeRef.current);
+          widgetRef.current = widget;
+          widget.bind((window as any).SC.Widget.Events.PLAY, () => setIsSCPlaying(true));
+          widget.bind((window as any).SC.Widget.Events.PAUSE, () => setIsSCPlaying(false));
+          widget.bind((window as any).SC.Widget.Events.FINISH, () => setIsSCPlaying(false));
+          if (callback) callback();
+        }
+      };
+      document.body.appendChild(script);
+    } else if (iframeRef.current) {
+      if (!widgetRef.current) {
+        const widget = (window as any).SC.Widget(iframeRef.current);
+        widgetRef.current = widget;
+        widget.bind((window as any).SC.Widget.Events.PLAY, () => setIsSCPlaying(true));
+        widget.bind((window as any).SC.Widget.Events.PAUSE, () => setIsSCPlaying(false));
+        widget.bind((window as any).SC.Widget.Events.FINISH, () => setIsSCPlaying(false));
+      }
+      if (callback) callback();
+    }
+  };
+
   const handlePlayChord = () => {
-    soundEngine.playChime([523.25, 659.25, 783.99, 1046.50]);
+    if (isSCPlaying) {
+      if (widgetRef.current) {
+        widgetRef.current.pause();
+      }
+      setIsSCPlaying(false);
+    } else {
+      soundEngine.playChime([523.25, 659.25, 783.99, 1046.50]);
+      setupSCWidget(() => {
+        if (widgetRef.current) {
+          widgetRef.current.play();
+          setIsSCPlaying(true);
+        }
+      });
+    }
   };
 
   return (
@@ -123,11 +174,33 @@ export const ProductDetailModal: React.FC = () => {
               {/* Harmonic Chords Button Badge */}
               <button
                 onClick={handlePlayChord}
-                className="absolute bottom-3 right-3 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-black/70 hover:bg-amber-400 hover:text-slate-950 text-white text-[11px] sm:text-xs font-sans font-semibold flex items-center gap-1.5 backdrop-blur-md border border-white/20 transition-all duration-300 shadow-lg cursor-pointer group/btn min-h-[44px]"
+                className={`absolute bottom-3 right-3 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[11px] sm:text-xs font-sans font-semibold flex items-center gap-1.5 backdrop-blur-md border border-white/20 transition-all duration-300 shadow-lg cursor-pointer group/btn min-h-[44px] ${
+                  isSCPlaying
+                    ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-400/50 scale-105'
+                    : 'bg-black/70 hover:bg-amber-400 hover:text-slate-950 text-white'
+                }`}
               >
-                <Volume2 className="w-4 h-4 text-amber-400 group-hover/btn:text-slate-950 transition-colors" />
-                <span>Аккорды</span>
+                {isSCPlaying ? (
+                  <>
+                    <Pause className="w-4 h-4 text-slate-950 animate-pulse" />
+                    <span>Пауза</span>
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="w-4 h-4 text-amber-400 group-hover/btn:text-slate-950 transition-colors" />
+                    <span>Аккорды</span>
+                  </>
+                )}
               </button>
+
+              {/* Hidden SoundCloud Player Iframe Widget */}
+              <iframe
+                ref={iframeRef}
+                title="SoundCloud Chord Player"
+                src={scEmbedSrc}
+                className="hidden"
+                allow="autoplay"
+              />
             </div>
           </div>
 
