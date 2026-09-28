@@ -154,7 +154,7 @@ export const CatalogView: React.FC = () => {
                 }`}
               >
                 <Film className="w-3.5 h-3.5 shrink-0" />
-                <span className="whitespace-nowrap">3D Галерея</span>
+                <span className="whitespace-nowrap shrink-0">3D&nbsp;Галерея</span>
               </button>
               <button
                 onClick={() => setDisplayMode('grid')}

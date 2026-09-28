@@ -50,6 +50,11 @@
    fallback on purpose: it would bring the same split back whenever the web
    font failed to load. Georgia is the floor because it covers both scripts
    too, so there is no path where the two halves of a line diverge. */
+/* The branch reached for Cormorant Garamond here, which also carries a
+   Cyrillic subset. Playfair Display is kept instead: it was the face that was
+   asked for, and it covers 400-900 as a real weight range, whereas the
+   Cormorant request on that branch listed only 400/600/700, leaving the
+   font-extrabold used all over this site to be faked by the browser. */
 .font-serif {
   font-family: 'Playfair Display', Georgia, serif;
 }

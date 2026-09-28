@@ -232,6 +232,12 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
         </button>
       </div>
 
+      {/* The branch's Telegram block asked the visitor to type their own handle,
+          name and phone into three prompt() dialogs, inventing a suggested
+          name, so nothing ever came from Telegram and nothing was verified.
+          The real widget below replaces it: Telegram hands the browser a
+          payload signed by the bot, and the server checks that signature
+          before it will create an account. */}
       {/* Active Error Alert */}
       {activeError && (
         <div className="mb-6 p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm flex items-start gap-3 animate-shake">
