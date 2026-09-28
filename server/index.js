@@ -1,3 +1,6 @@
+// Loaded first so the Telegram bot credentials below are in process.env before
+// they are read. The file itself is gitignored; .env.example documents the keys.
+import 'dotenv/config'
 import express from 'express'
 import path from 'path'
 import fs from 'fs'
