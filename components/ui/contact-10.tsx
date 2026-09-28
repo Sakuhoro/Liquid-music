@@ -119,6 +119,35 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
     };
   }, [onFetchTelegramConfig]);
 
+  // The widget has to be added with createElement rather than innerHTML: a
+  // script node inserted through innerHTML is never executed, so Telegram's
+  // script landed in the document as dead markup and no button was ever drawn.
+  // Appended this way it runs on load, finds its own data-telegram-login tag and
+  // swaps itself for the button.
+  const tgWidgetHost = React.useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const host = tgWidgetHost.current;
+    if (!host || !tgEnabled || !tgUsername) return;
+
+    host.innerHTML = '';
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.setAttribute('data-telegram-login', tgUsername);
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-radius', '16');
+    script.setAttribute('data-userpic', 'true');
+    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+    host.appendChild(script);
+
+    // Telegram replaces the script with the button, so the host is emptied on
+    // the way out instead of trying to un-append a node that no longer exists.
+    return () => {
+      host.innerHTML = '';
+    };
+  }, [tgEnabled, tgUsername]);
+
   const activeError = error || clientError;
   // Once Telegram has vouched for the member, the name and the handle come from
   // the signature and must not be editable, and a password would be a second
@@ -259,15 +288,7 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
               <span className="h-px flex-1 bg-white/10" />
             </div>
             <div className="flex justify-center">
-              <div
-                className="[&_script]:!m-0"
-                dangerouslySetInnerHTML={{
-                  __html:
-                    `<script async src="https://telegram.org/js/telegram-widget.js?22"` +
-                    ` data-telegram-login="${tgUsername}" data-size="large" data-radius="16"` +
-                    ` data-userpic="true" data-onauth="onTelegramAuth(user)"><\/script>`,
-                }}
-              />
+              <div id="tg-widget-host" ref={tgWidgetHost} className="[&_iframe]:!border-0" />
             </div>
           </div>
         )}
