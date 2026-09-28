@@ -194,6 +194,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'renee',
+    soundCloudUrl: 'https://soundcloud.com/sales/sales-renee',
     name: 'Renee',
     subtitle: 'Refreshing Symphony of Italian Lemon, Bergamot & Green Tea',
     description: '',
@@ -213,6 +214,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'on-a-green',
+    soundCloudUrl: 'https://soundcloud.com/7jecwj5lrfhr/sadness-on-a-green',
     name: 'On a Green',
     subtitle: 'Soothing Blend of Lemon Tea & Wild Sweet Teas',
     description: '',
@@ -232,6 +234,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'mother-nature',
+    soundCloudUrl: 'https://soundcloud.com/hurts/mother-nature',
     name: 'Mother Nature',
     subtitle: 'Creamy Yogurt Fusion with Ripe Peaches & Wild Blueberries',
     description: 'Lush Greek yogurt base intertwined with succulent peaches, juicy blueberries, bilberries, and delicate cream.',
@@ -251,6 +254,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'red-like-roses',
+    soundCloudUrl: 'https://soundcloud.com/jim-bob-383149079/red-like-roses-part-ii-full',
     name: 'Red like Roses',
     subtitle: 'Botanical Floral Elegance of Elderflower, Rose & Fuji Apple',
     description: 'A sophisticated floral-fruit composition combining elderflower, rose essence, Fuji apple, cold pressed lime, and golden syrup.',
@@ -270,6 +274,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'serpent',
+    soundCloudUrl: 'https://soundcloud.com/sirenia-official/serpent',
     name: 'Serpent',
     subtitle: 'Crisp Green Apple Candy, Citrus Zest & Arctic Chill',
     description: 'A sharp, exhilarating green apple and candy symphony layered with sour apple, lemon lime, and an icy WS-23 finish.',
@@ -289,6 +294,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'spring-true-colors',
+    soundCloudUrl: 'https://soundcloud.com/rush-garcia-297954716/clrs-a-rwby-orchestration',
     name: 'Spring True Colors',
     subtitle: 'Vibrant Mint Candy, Citrus Lime & Lemonade Refreshment',
     description: '',
@@ -308,6 +314,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'strong-hand',
+    soundCloudUrl: 'https://soundcloud.com/chvrches/strong-hand',
     name: 'Strong Hand',
     subtitle: 'Bold Cranberry Lemonade Elixir & Dark Wild Cherries',
     description: 'A robust and tangy elixir combining sharp cranberries, sweet lemonade compote, and juicy black cherries.',
@@ -327,6 +334,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'orphelin',
+    soundCloudUrl: 'https://soundcloud.com/lorientestard/the-reacher-orphelin',
     name: 'Orphelin',
     subtitle: 'Sweet Pink Lemonade Symphony with Ripe Strawberry & Cactus Chill',
     description: 'A vibrant lemonade compote blended with juicy lemon, succulent strawberry, desert cactus nectar, and frosted WS-23.',
@@ -346,6 +354,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'oscura',
+    soundCloudUrl: 'https://soundcloud.com/lorien26/clair-obscur-expedition-33-clair-obscur',
     name: 'Oscura',
     subtitle: 'Botanical Harmony of Lavender, Botanical Gin, Ginger & Hibiscus',
     description: 'An intriguing floral-spiced composition of French lavender, aromatic gin, fresh ginger root, and hibiscus blossoms in sweet lemonade.',
@@ -365,6 +374,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'boop',
+    soundCloudUrl: 'https://soundcloud.com/timothy-madison-346969026/boop',
     name: 'Boop',
     subtitle: 'Effervescent Tarragon Soda, Anise, Sicilian Lemon & Marshmallow',
     description: '',
@@ -384,6 +394,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'gira-gira',
+    soundCloudUrl: 'https://soundcloud.com/ilya-homenko/ado-gira-gira',
     name: 'Gira Gira',
     subtitle: 'Sparkling Barberry Candy Soda, Red Currant & Chilled Ozone',
     description: 'An iconic Russian barberry candy soda experience with sweet red currant, clear lemonade, sparkling soda water, and ice.',
@@ -403,6 +414,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'holssi',
+    soundCloudUrl: 'https://soundcloud.com/yongsik-kim-129815277/iu-dlwlrma',
     name: 'Holssi',
     subtitle: 'Sub-Zero Spearmint, Menthol Chill & Fluffy Marshmallow',
     description: 'An arctic menthol breeze harmonized with spearmint leaves, cooling agents, sweetener, and soft marshmallow.',
@@ -422,6 +434,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'daydreaming',
+    soundCloudUrl: 'https://soundcloud.com/aurorastrings-sc/quiet-corner-daydreaming',
     name: 'Daydreaming',
     subtitle: 'Lush Forest Fruit Medley, Alpine Strawberry & Bavarian Cream',
     description: '',
@@ -441,6 +454,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'blueming',
+    soundCloudUrl: 'https://soundcloud.com/noiselessflowers/blueming',
     name: 'Blueming',
     subtitle: 'Playful Strawberry Bubble Gum, Banana & Marshmallow',
     description: 'A pop art symphony of juicy bubble gum, ripe banana, strawberry compote filling, marshmallow, and a hint of ice.',
@@ -460,6 +474,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'tragica',
+    soundCloudUrl: 'https://soundcloud.com/sirenia-official/tragica-tragedienne-spanish',
     name: 'Tragica',
     subtitle: 'Rich Strawberry Jam on Warm French Toast & Biscuit Crust',
     description: 'A dramatic gourmet dessert blending toasted French toast, melted butter base, golden biscuit, and thick strawberry jam.',
@@ -479,6 +494,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'rising',
+    soundCloudUrl: 'https://soundcloud.com/user-181897094/rwby-volume-6-soundtrack-3',
     name: 'Rising',
     subtitle: 'Sweet Tangy Rhubarb, Strawberry Jam & Warm Bakery Crust',
     description: 'A soaring bakery composition of tangy rhubarb, sweet strawberry jam, golden apple pie, warm biscuit, vanilla cream, and brown sugar.',
@@ -498,6 +514,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'usseewa',
+    soundCloudUrl: 'https://soundcloud.com/yuuki_370/ado-usseewa',
     name: 'Usseewa',
     subtitle: 'Decadent Belgian Waffle, Milky Caramel Fudge & Banana Custard',
     description: 'An explosive gourmet dessert symphony featuring crisp Belgian waffles, rich milky caramel fudge, creamy banana custard, whipped cream, and vanilla swirl.',
@@ -517,6 +534,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'birth-of-a-wish',
+    soundCloudUrl: 'https://soundcloud.com/user-445793303/nier-automata-ost-birth-of-a',
     name: 'Birth of a Wish',
     subtitle: 'Ethereal Green & Fuji Apple, Pear Nectar & Floral Hibiscus',
     description: 'A delicate and dreamlike blend of crisp green apple, juicy Fuji apple, sweet pear, vanilla classic, soft cream, and hibiscus floral notes.',
@@ -536,6 +554,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'thurs',
+    soundCloudUrl: 'https://soundcloud.com/sales/thurs-6-25',
     name: 'Thurs',
     subtitle: 'Zesty Juicy Lemon, Cold Pressed Lime, Sour Wizard & WS-23 Chill',
     description: 'A sharp and refreshing citrus storm combining juicy lemon, cold pressed lime, sour wizard punch, sweet marshmallow, and frosted WS-23.',
@@ -555,6 +574,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'which-breath',
+    soundCloudUrl: 'https://soundcloud.com/devoncl/in-which-i-breath-life-from-death',
     name: 'Which Breath',
     subtitle: 'Botanical Juniper Gin, Herbal Basil & Crisp Pear Chill',
     description: '',
@@ -574,6 +594,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'full-of-love',
+    soundCloudUrl: 'https://soundcloud.com/bjork/all-is-full-of-love-video-edit',
     name: 'Full of love',
     subtitle: 'Lush Forest Berry Medley, Concord Grape, Cherry & Mint Eucalyptus',
     description: 'A passionate fruit explosion featuring rich wild cherries, forest fruit mix, Concord grape, anise, raspberry, and soothing mint eucalyptus.',
@@ -593,6 +614,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'berghain',
+    soundCloudUrl: 'https://soundcloud.com/rosaliaofficial/berghain',
     name: 'Berghain',
     subtitle: 'Aged Bourbon, Jamaica Rhum, Morning Mimosa & Blood Orange',
     description: 'A deep nightlife elixir blending barrel-aged bourbon, dark Jamaica rhum, morning mimosa nectar, blood orange, and arctic winter mint.',
@@ -612,6 +634,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'kotone',
+    soundCloudUrl: 'https://soundcloud.com/kotone-music/punishment',
     name: 'Kotone',
     subtitle: 'Warm Apricot Croissant, Devon Cream & Rich Vanilla Custard Cheesecake',
     description: 'A decadent French bakery dessert featuring buttery warm croissants, juicy apricot glaze, Devon cream, Bavarian cream, and cheesecake.',
@@ -631,6 +654,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
   {
     id: 'clearest-blue',
+    soundCloudUrl: 'https://soundcloud.com/chvrches/clearest-blue',
     name: 'Clearest Blue',
     subtitle: 'Vibrant Lychee, Shisha Raspberry, Cactus Nectar & Vanilla Marshmallow',
     description: 'An uplifting blue melody blending sweet lychee, wild raspberries, dragonfruit nectar, desert cactus, and pillowy vanilla marshmallow.',
