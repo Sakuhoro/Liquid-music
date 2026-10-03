@@ -31,6 +31,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
   const isSwipingRef = useRef(false);
 
   const [renderPos, setRenderPos] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1200
   );
@@ -40,6 +41,21 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Automatic carousel rotation (3.5s interval)
+  useEffect(() => {
+    if (isPaused || items.length <= 1) return;
+
+    const interval = setInterval(() => {
+      if (isSwipingRef.current) return;
+      const maxIndex = items.length - 1;
+      const currentTarget = Math.round(targetPosRef.current);
+      const nextTarget = currentTarget >= maxIndex ? 0 : currentTarget + 1;
+      targetPosRef.current = nextTarget;
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [isPaused, items.length]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartRef.current = {
@@ -94,12 +110,15 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
     }
   };
 
-  // Main physics loop (Spring dynamics for natural stopping effect)
+  // Main physics loop (Spring dynamics for natural stopping effect & conditional state update)
   useEffect(() => {
     let animId: number;
     let lastTime = performance.now();
+    let isRunning = true;
 
     const updateLoop = (now: number) => {
+      if (!isRunning) return;
+
       const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
 
@@ -116,18 +135,28 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
       currentPosRef.current += velocityRef.current * dt;
 
       // Snap to exact target when velocity and displacement are negligible
-      if (Math.abs(velocityRef.current) < 0.001 && Math.abs(displacement) < 0.001) {
+      if (Math.abs(velocityRef.current) < 0.0005 && Math.abs(displacement) < 0.0005) {
         currentPosRef.current = targetPosRef.current;
         velocityRef.current = 0;
       }
 
-      setRenderPos(currentPosRef.current);
+      // Only trigger React state updates when position is actively changing
+      // to avoid continuous 60fps re-renders when stationary which degrades performance
+      setRenderPos((prev) => {
+        if (Math.abs(prev - currentPosRef.current) > 0.0001) {
+          return currentPosRef.current;
+        }
+        return prev;
+      });
 
       animId = requestAnimationFrame(updateLoop);
     };
 
     animId = requestAnimationFrame(updateLoop);
-    return () => cancelAnimationFrame(animId);
+    return () => {
+      isRunning = false;
+      cancelAnimationFrame(animId);
+    };
   }, []);
 
   // Wheel event hijacking with e.preventDefault() & smooth position targeting
@@ -166,17 +195,28 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [items.length]);
 
-  // Calculate scaled offset step based on viewport width (minimal gap on mobile viewports)
-  const offsetStep = windowWidth < 640 ? Math.min(windowWidth * 0.42, 160) : windowWidth < 1024 ? 350 : 410;
+  // Calculate scaled offset step based on viewport width (doubled for 2x carousel scale)
+  const offsetStep = windowWidth < 640 ? Math.min(windowWidth * 0.85, 320) : windowWidth < 1024 ? 700 : 820;
   const activeIndex = Math.max(0, Math.min(items.length - 1, Math.round(renderPos)));
 
   return (
     <div
       ref={containerRef}
-      onTouchStart={handleTouchStart}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={(e) => {
+        setIsPaused(true);
+        handleTouchStart(e);
+      }}
       onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
+      onTouchEnd={(e) => {
+        setIsPaused(false);
+        handleTouchEnd(e);
+      }}
+      onTouchCancel={(e) => {
+        setIsPaused(false);
+        handleTouchEnd(e);
+      }}
       className={`fixed inset-0 w-screen h-screen m-0 p-0 overflow-hidden bg-transparent text-white select-none z-10 flex flex-col justify-between touch-pan-y ${className}`}
       style={{ margin: 0, padding: 0 }}
     >
@@ -196,14 +236,14 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
       <div className="relative z-30 flex-1 w-full flex items-center justify-center overflow-hidden py-4">
         <div className="w-full max-w-7xl px-4 flex items-center justify-center relative">
 
-          {/* Card Container: 1.5x Height Scaling (68vh / 75vh / 80vh max-h-[820px]) and 0-y container skew */}
-          <div className="relative w-full h-[68vh] sm:h-[75vh] lg:h-[80vh] max-h-[820px] flex items-center justify-center transform-gpu transition-transform duration-500">
+          {/* Card Container: 2x Scale Height & Width (80vh / 86vh / 92vh max-h-[950px]) */}
+          <div className="relative w-full h-[80vh] sm:h-[86vh] lg:h-[92vh] max-h-[950px] flex items-center justify-center transform-gpu transition-transform duration-500">
             {items.map((item, index) => {
               const diff = index - renderPos;
               const absDiff = Math.abs(diff);
               const isActive = index === activeIndex;
 
-              // Compute offset translation along pure X axis (y: 0) with 1.5x scaled step
+              // Compute offset translation along pure X axis (y: 0) with 2x scaled step
               const xOffset = diff * offsetStep;
               const scale = Math.max(0.75, 1 - absDiff * 0.18);
               const opacity = Math.max(0.2, 1 - absDiff * 0.35);
@@ -229,9 +269,8 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                     zIndex: zIndex,
                   }}
                   transition={{ duration: 0.05, ease: 'linear' }}
-                  // 1.5x Card Width scaling: w-[360px] sm:w-[570px] lg:w-[630px] max-w-[88vw]
-                  // -skew-y-3 is applied to card visuals directly to preserve 3D tilt without slanting movement trajectory
-                  className={`absolute w-[250px] xs:w-[280px] sm:w-[520px] lg:w-[630px] max-w-[80vw] h-full rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer shadow-2xl border -skew-y-2 sm:-skew-y-3 transition-colors duration-300 ${
+                  // 2x Card Width scaling: w-[500px] xs:w-[560px] sm:w-[850px] lg:w-[1100px] max-w-[92vw]
+                  className={`absolute w-[500px] xs:w-[560px] sm:w-[850px] lg:w-[1100px] max-w-[92vw] h-full rounded-3xl sm:rounded-[2.5rem] overflow-hidden cursor-pointer shadow-2xl border -skew-y-2 sm:-skew-y-3 transition-colors duration-300 ${
                     isActive
                       ? 'border-amber-400/80 shadow-amber-500/20 shadow-2xl ring-2 ring-amber-400/50'
                       : 'border-white/15 hover:border-white/40'
@@ -250,20 +289,20 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
 
-                  {/* Top Badge */}
-                  <div className="absolute top-5 left-5 right-5 flex justify-between items-center gap-3 z-10">
-                    <span className="text-[0.8125rem] sm:text-[1.125rem] font-mono uppercase tracking-wide sm:tracking-widest font-bold px-2.5 sm:px-5 py-1.5 sm:py-2.5 rounded-full bg-black/70 backdrop-blur-md text-amber-300 border border-amber-400/30">
+                  {/* Top Badge - Scaled for 2x dimensions */}
+                  <div className="absolute top-8 left-8 right-8 flex justify-between items-center gap-4 z-10">
+                    <span className="text-sm sm:text-lg font-mono uppercase tracking-wide sm:tracking-widest font-bold px-4 sm:px-7 py-2 sm:py-3.5 rounded-full bg-black/70 backdrop-blur-md text-amber-300 border border-amber-400/30">
                       {item.badge}
                     </span>
-                    <Disc className={`w-6 h-6 shrink-0 text-amber-400 ${isActive ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
+                    <Disc className={`w-8 h-8 sm:w-10 sm:h-10 shrink-0 text-amber-400 ${isActive ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
                   </div>
 
-                  {/* Bottom Content - Scaled padding and typography for 1.5x cards */}
-                  <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-10 lg:p-12 z-10 flex flex-col justify-end bg-gradient-to-t from-black via-black/85 to-transparent">
-                    <h3 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
+                  {/* Bottom Content - Scaled typography and padding for 2x cards */}
+                  <div className="absolute bottom-0 left-0 right-0 p-8 sm:p-14 lg:p-16 z-10 flex flex-col justify-end bg-gradient-to-t from-black via-black/85 to-transparent">
+                    <h3 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
                       {item.title}
                     </h3>
-                    <p className="text-[11px] sm:text-sm text-amber-300/90 font-mono mt-3 line-clamp-2 leading-relaxed">
+                    <p className="text-xs sm:text-base lg:text-lg text-amber-300/90 font-mono mt-4 line-clamp-2 leading-relaxed">
                       {item.description}
                     </p>
 
@@ -272,7 +311,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                         e.stopPropagation();
                         onSelectItem(item.id);
                       }}
-                      className={`mt-4 sm:mt-6 w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-mono uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer min-h-[44px] ${
+                      className={`mt-6 sm:mt-8 w-full py-4 sm:py-5 rounded-2xl sm:rounded-3xl text-sm sm:text-base font-mono uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer min-h-[54px] ${
                         isActive
                           ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg shadow-amber-400/30'
                           : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
