@@ -59,6 +59,9 @@ export default function App() {
       root.classList.add('light');
       root.classList.remove('dark');
     }
+    // data-theme mirrors the class for anything that reads the attribute
+    // instead of the class list.
+    root.dataset.theme = theme;
   }, [theme]);
 
   // Autoplay Policy Handler (User Interaction Listener)

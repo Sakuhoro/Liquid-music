@@ -1,8 +1,7 @@
 import React from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { ThemeToggle } from './ThemeToggle';
 import {
-  Sun,
-  Moon,
   ShoppingBag,
   User,
   Sliders,
@@ -14,7 +13,6 @@ import {
 
 export const Navigation: React.FC = () => {
   const theme = useAppStore((state) => state.theme);
-  const toggleTheme = useAppStore((state) => state.toggleTheme);
   const viewMode = useAppStore((state) => state.viewMode);
   const setViewMode = useAppStore((state) => state.setViewMode);
   const cartCount = useAppStore((state) => state.getCartItemCount());
@@ -74,19 +72,7 @@ export const Navigation: React.FC = () => {
           </button>
 
           {/* Theme Toggle (Light / Dark) Mobile */}
-          <button
-            id="theme-mode-toggle-mobile"
-            onClick={toggleTheme}
-            aria-label={isDark ? 'Switch to Airy Daylight' : 'Switch to Musical Night'}
-            title={isDark ? 'Switch to Airy Daylight' : 'Switch to Musical Night'}
-            className="liquid-glass w-9 h-9 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
-          >
-            {isDark ? (
-              <Sun className="w-3.5 h-3.5 text-amber-300" />
-            ) : (
-              <Moon className="w-3.5 h-3.5 text-sky-800" />
-            )}
-          </button>
+          <ThemeToggle id="theme-mode-toggle-mobile" />
 
           <button
             id="open-cart-btn-mobile"
@@ -168,18 +154,7 @@ export const Navigation: React.FC = () => {
         </button>
 
         {/* Theme Toggle (Light / Dark) */}
-        <button
-          id="theme-mode-toggle"
-          onClick={toggleTheme}
-          title={isDark ? 'Switch to Airy Daylight' : 'Switch to Musical Night'}
-          className="liquid-glass w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
-        >
-          {isDark ? (
-            <Sun className="w-3.5 h-3.5 text-amber-300" />
-          ) : (
-            <Moon className="w-3.5 h-3.5 text-sky-800" />
-          )}
-        </button>
+        <ThemeToggle id="theme-mode-toggle" />
 
         {/* Cart Drawer Trigger */}
         <button

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import CollectionCarousel, { CollectionCarouselItem } from './ui/CollectionCarousel';
 import DollyGallery from './ui/DollyGallery';
-import PainGirlGallery from './PainGirlGallery';
+import PainGirlSpiralSection from './PainGirlSpiralSection';
 import { sanitizeRussianText } from '../utils/sanitizeText';
 
 // Metadata for Collection Cards
@@ -132,7 +132,7 @@ export const CatalogView: React.FC = () => {
   // A gallery collection has nothing to filter, search or grid out, so it never
   // reaches the product catalogue below.
   if (isGalleryCollection(activeCollection)) {
-    return <PainGirlGallery />;
+    return <PainGirlSpiralSection />;
   }
 
   return (
