@@ -26,6 +26,7 @@ export const DEFAULT_COLLECTION_VIDEOS: CollectionVideosConfig = {
   Autumn: '/videos/night-head.mp4',
   'Permanent 1': '/videos/night-head.mp4',
   'Permanent 2': '/videos/night-head.mp4',
+  'Pain Girl': '/videos/night-head.mp4',
 };
 
 // The server returns an order with a flat item list keyed by productId, and
@@ -333,6 +334,7 @@ export const useAppStore = create<AppState>()(
         Autumn: false,
         'Permanent 1': false,
         'Permanent 2': false,
+        'Pain Girl': false,
       },
       toggleArchiveCollection: (col) =>
         set((state) => ({
@@ -349,6 +351,7 @@ export const useAppStore = create<AppState>()(
             Autumn: archived,
             'Permanent 1': archived,
             'Permanent 2': archived,
+            'Pain Girl': archived,
           },
         }),
       isCollectionArchived: (col) => {
@@ -937,13 +940,26 @@ export const useAppStore = create<AppState>()(
         flavorPrices: state.flavorPrices,
         isAdminLoggedIn: state.isAdminLoggedIn,
       }),
-      version: 7,
+      version: 8,
       // v6 and earlier kept orders in localStorage. They are no longer the
       // source of truth, so the stored copy is dropped on the next load and the
       // real history is fetched from the server instead.
+      //
+      // collectionVideos needs the defaults underneath it for a different
+      // reason: zustand merges the stored slice in shallowly, so a record
+      // written before a collection existed replaces the whole object and
+      // leaves the new key undefined. Defaults first, stored values on top.
       migrate: (persistedState) => {
         const state = persistedState as Partial<AppState>;
-        return { ...state, ordersHistory: [], lastPlacedOrder: null } as AppState;
+        return {
+          ...state,
+          collectionVideos: {
+            ...DEFAULT_COLLECTION_VIDEOS,
+            ...(state.collectionVideos ?? {}),
+          },
+          ordersHistory: [],
+          lastPlacedOrder: null,
+        } as AppState;
       },
     }
   )

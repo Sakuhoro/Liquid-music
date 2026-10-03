@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import {
   CollectionName,
   getCollectionTitle,
+  isGalleryCollection,
 } from '../types';
 import {
   Search,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import SkewedCarousel, { SkewedCarouselItem } from './ui/skewed-carousel';
 import DollyGallery from './ui/DollyGallery';
+import PainGirlGallery from './PainGirlGallery';
 import { sanitizeRussianText } from '../utils/sanitizeText';
 
 // Metadata for Collection Skewed Cards
@@ -57,6 +59,16 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
     badge: 'Постоянная коллекция',
     color: 'from-emerald-500/80 to-teal-900/80',
   },
+  {
+    // The one collection with no flavours behind it: its tab is a gallery.
+    // Cover is a placeholder until the collection art is supplied.
+    id: 'Pain Girl',
+    title: 'Pain Girl',
+    description: 'Сезонная коллекция образов: тихая, плотная и очень личная история, рассказанная кадрами.',
+    image: '/images/pain-girl/cover.svg',
+    badge: 'Сезонная коллекция',
+    color: 'from-pink-400/80 to-slate-900/80',
+  },
 ];
 
 type DisplayMode = 'dolly' | 'grid';
@@ -97,6 +109,12 @@ export const CatalogView: React.FC = () => {
         onSelectItem={(id) => setActiveCollection(id as CollectionName)}
       />
     );
+  }
+
+  // A gallery collection has nothing to filter, search or grid out, so it never
+  // reaches the product catalogue below.
+  if (isGalleryCollection(activeCollection)) {
+    return <PainGirlGallery />;
   }
 
   return (

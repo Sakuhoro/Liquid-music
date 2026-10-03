@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { ProductItem, CollectionName, PlacedOrder, VolumeType, NicotineType, RecipeItem } from '../types';
+import { ProductItem, CollectionName, PlacedOrder, VolumeType, NicotineType, RecipeItem, isGalleryCollection } from '../types';
 import { ART_SCALE_MIN, ART_SCALE_MAX, ART_SCALE_DEFAULT, clampArtScale, getItemScale } from '../utils/vinylScale';
 import { parseRecipeText, formatRecipeText } from '../utils/recipeParser';
 import {
@@ -46,6 +46,7 @@ const ALL_COLLECTIONS: CollectionName[] = [
   'Autumn',
   'Permanent 1',
   'Permanent 2',
+  'Pain Girl',
 ];
 
 const COLLECTION_DISPLAY_NAMES: Record<string, string> = {
@@ -55,6 +56,7 @@ const COLLECTION_DISPLAY_NAMES: Record<string, string> = {
   Autumn: 'Осенняя',
   'Permanent 1': 'Permanent 1',
   'Permanent 2': 'Permanent 2',
+  'Pain Girl': 'Pain Girl',
 };
 
 const VOLUMES: VolumeType[] = ['30ml', '60ml', '120ml'];
@@ -1771,7 +1773,7 @@ export const StudioAdminModal: React.FC = () => {
                         }
                         className="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-slate-900 focus:outline-none focus:border-amber-500 text-xs font-bold text-white"
                       >
-                        {ALL_COLLECTIONS.map((c) => (
+                        {ALL_COLLECTIONS.filter((c) => !isGalleryCollection(c)).map((c) => (
                           <option key={c} value={c}>
                             {c}
                           </option>

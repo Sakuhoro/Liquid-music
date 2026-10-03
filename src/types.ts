@@ -6,13 +6,26 @@ export type CollectionName =
   | 'Summer'
   | 'Autumn'
   | 'Permanent 1'
-  | 'Permanent 2';
+  | 'Permanent 2'
+  // Seasonal art collection: a gallery rather than a range of flavours, so it
+  // never appears on a product record.
+  | 'Pain Girl';
 
 // Public-facing collection titles. Used instead of the internal "Permanent 1"/"Permanent 2" keys.
 export const COLLECTION_TITLES: Partial<Record<CollectionName, string>> = {
   'Permanent 1': 'Bones of what you Believe',
   'Permanent 2': 'Velvet Distortion',
+  // Already reads as a title, so the "Collection" fallback would only clutter it.
+  'Pain Girl': 'Pain Girl',
 };
+
+// The one collection that has no flavour behind it. Its tab shows a gallery
+// instead of a product grid, so the product catalogue must not be filtered by
+// it: the archive badge, the recipe panel and the flavour price filters all
+// assume the category exists on at least one product.
+export const GALLERY_COLLECTION: CollectionName = 'Pain Girl';
+export const isGalleryCollection = (collection: CollectionName | 'All'): boolean =>
+  collection === GALLERY_COLLECTION;
 
 export const getCollectionTitle = (collection: CollectionName): string =>
   COLLECTION_TITLES[collection] ?? `${collection} Collection`;
@@ -122,6 +135,7 @@ export interface CollectionVideosConfig {
   Autumn: string;
   'Permanent 1': string;
   'Permanent 2': string;
+  'Pain Girl': string;
 }
 
 export interface RecipeItem {
