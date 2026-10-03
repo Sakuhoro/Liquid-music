@@ -12,7 +12,7 @@ import {
   LayoutGrid,
   Film,
 } from 'lucide-react';
-import CircularCarousel, { CircularCarouselItem } from './ui/CircularCarousel';
+import CollectionCarousel, { CollectionCarouselItem } from './ui/CollectionCarousel';
 import DollyGallery from './ui/DollyGallery';
 import PainGirlGallery from './PainGirlGallery';
 import { sanitizeRussianText } from '../utils/sanitizeText';
@@ -86,7 +86,7 @@ export const CatalogView: React.FC = () => {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('dolly');
   const isDark = theme === 'dark';
 
-  const collectionCarouselItems: CircularCarouselItem[] = useMemo(
+  const collectionCarouselItems: CollectionCarouselItem[] = useMemo(
     () =>
       COLLECTION_CARDS.map((card) => ({
         id: card.id,
@@ -117,10 +117,10 @@ export const CatalogView: React.FC = () => {
 
   const isOverview = activeCollection === 'All';
 
-  // Module 1: If user is viewing all collections, render Circular Carousel
+  // Module 1: If user is viewing all collections, render the collection carousel
   if (isOverview) {
     return (
-      <CircularCarousel
+      <CollectionCarousel
         items={collectionCarouselItems}
         preset="cylinder"
         cardWidth={440}
