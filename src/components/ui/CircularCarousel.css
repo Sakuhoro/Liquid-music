@@ -3,6 +3,11 @@
   --cc-radius: 12px;
   --cc-inner: 0.4;
   position: relative;
+  /* Contract: height:100% resolves only against a *definite* parent height. A
+     flex-1 or min-h-[…] wrapper is not definite, so the percentage falls back to
+     auto, collapses to zero against these absolutely-positioned children, and
+     the overflow:hidden below clips the whole ring away. Give the wrapper a
+     real height (h-[…vh]), or make this root position:absolute inset:0. */
   width: 100%;
   height: 100%;
   overflow: hidden;

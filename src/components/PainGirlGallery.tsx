@@ -64,9 +64,12 @@ export const PainGirlGallery: React.FC = () => {
           <p className="text-sm font-medium opacity-80">Галерея пока пуста</p>
         </div>
       ) : (
-        /* The ring is laid out from its own box, not from the viewport, so it
-           has to be given a height here — there is no intrinsic one. */
-        <div className="w-full flex-1 min-h-[58vh] sm:min-h-[62vh] px-2 sm:px-6">
+        /* The ring is height:100% inside an overflow:hidden box, so its height
+           has to come from a *definite* parent height. A flex-1/min-h-[…]
+           wrapper does not count: the percentage falls back to auto, collapses
+           to zero against absolutely-positioned children, and the whole ring is
+           clipped away. Hence a plain vh height here rather than flex fill. */}
+        <div className="w-full h-[58vh] sm:h-[62vh] max-h-[820px] px-2 sm:px-6">
           <CircularCarousel
             items={PAIN_GIRL_GALLERY}
             preset="cylinder"
