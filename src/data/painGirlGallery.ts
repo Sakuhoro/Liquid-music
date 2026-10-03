@@ -9,8 +9,8 @@ export interface GalleryItem {
  * The Pain Girl collection is a gallery, not a range of flavours, so its frames
  * live here instead of in the product table.
  *
- * Order is the reading order of the ring, front card first. `aspectRatio` in
- * PainGirlGallery has to match the shape of the artwork, otherwise the cards
+ * Order is the reading order of the carousel, first card leading. PainGirlGallery
+ * asks for square cards to match the shape of the artwork, otherwise the cards
  * crop it -- these are all square to within a few percent.
  */
 export const PAIN_GIRL_GALLERY: GalleryItem[] = [

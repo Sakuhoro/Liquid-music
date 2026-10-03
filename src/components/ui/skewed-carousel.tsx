@@ -9,18 +9,48 @@ export interface SkewedCarouselItem {
   image: string;
   badge: string;
   color: string;
+  alt?: string;
 }
 
 interface SkewedCarouselProps {
   items: SkewedCarouselItem[];
-  onSelectItem: (id: string) => void;
+  onSelectItem?: (id: string) => void;
   className?: string;
+  /**
+   * 'overlay' pins the carousel to the viewport and gives it a stage of its
+   * own, the way the collection overview uses it. 'inline' makes it fill the
+   * space it is handed inside a page instead.
+   */
+  layout?: 'overlay' | 'inline';
+  /**
+   * 'hijack' turns the wheel into carousel navigation, which is right for a
+   * fullscreen sheet but would trap scrolling on a page. 'pass' leaves the
+   * wheel alone and drags only.
+   */
+  scrollMode?: 'hijack' | 'pass';
+  /** Arrow keys are listened for on window; turn off when something else owns the keys. */
+  keyboardNav?: boolean;
+  /** Overview art is tall, gallery artwork is square. */
+  cardAspect?: 'portrait' | 'square';
+  showHeader?: boolean;
+  showFooter?: boolean;
+  showCta?: boolean;
+  /** Noun for the footer counter. */
+  itemNoun?: string;
 }
 
 export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
   items,
   onSelectItem,
   className = '',
+  layout = 'overlay',
+  scrollMode = 'hijack',
+  keyboardNav = true,
+  cardAspect = 'portrait',
+  showHeader = true,
+  showFooter = true,
+  showCta = true,
+  itemNoun = 'Коллекция',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const targetPosRef = useRef(0);
@@ -132,6 +162,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
 
   // Wheel event hijacking with e.preventDefault() & smooth position targeting
   useEffect(() => {
+    if (scrollMode !== 'hijack') return;
     const container = containerRef.current;
     if (!container) return;
 
@@ -149,10 +180,11 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
     return () => {
       container.removeEventListener('wheel', handleWheel);
     };
-  }, [items.length]);
+  }, [items.length, scrollMode]);
 
   // Keyboard navigation
   useEffect(() => {
+    if (!keyboardNav) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       const maxIndex = Math.max(0, items.length - 1);
       if (e.key === 'ArrowLeft') {
@@ -164,40 +196,69 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [items.length]);
+  }, [items.length, keyboardNav]);
+
+  const isSquare = cardAspect === 'square';
+
+  // A square card is sized from its own width so the artwork is never cropped.
+  const squareSize = Math.min(
+    windowWidth < 640 ? 260 : windowWidth < 1024 ? 400 : 520,
+    Math.round(windowWidth * 0.82)
+  );
 
   // Calculate scaled offset step based on viewport width (minimal gap on mobile viewports)
-  const offsetStep = windowWidth < 640 ? Math.min(windowWidth * 0.42, 160) : windowWidth < 1024 ? 350 : 410;
+  const offsetStep = isSquare
+    ? Math.round(squareSize * 0.58)
+    : windowWidth < 640
+      ? Math.min(windowWidth * 0.42, 160)
+      : windowWidth < 1024
+        ? 350
+        : 410;
   const activeIndex = Math.max(0, Math.min(items.length - 1, Math.round(renderPos)));
+
+  const stageClasses = isSquare
+    ? 'relative w-full flex items-center justify-center'
+    : 'relative w-full h-[68vh] sm:h-[75vh] lg:h-[80vh] max-h-[820px] flex items-center justify-center transform-gpu transition-transform duration-500';
+
+  const cardSizeClasses = isSquare
+    ? 'w-full'
+    : 'w-[250px] xs:w-[280px] sm:w-[520px] lg:w-[630px] max-w-[80vw]';
 
   return (
     <div
       ref={containerRef}
+      data-carousel="skewed"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
-      className={`fixed inset-0 w-screen h-screen m-0 p-0 overflow-hidden bg-transparent text-white select-none z-10 flex flex-col justify-between touch-pan-y ${className}`}
+      className={
+        layout === 'overlay'
+          ? `fixed inset-0 w-screen h-screen m-0 p-0 overflow-hidden bg-transparent text-white select-none z-10 flex flex-col justify-between touch-pan-y ${className}`
+          : `relative w-full m-0 p-0 overflow-hidden bg-transparent text-white select-none flex flex-col touch-pan-y ${className}`
+      }
       style={{ margin: 0, padding: 0 }}
     >
       {/* Subtle translucent ambient contrast overlays (keeps background video crystal clear) */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60 pointer-events-none z-0" />
 
       {/* Skewed Carousel Header */}
-      <div className="relative z-30 pt-8 px-8 sm:px-12 flex items-center justify-between border-b border-white/10 pb-6 backdrop-blur-md bg-black/25">
-        <div>
-          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white drop-shadow-md">
-            Коллекции Liquid Music
-          </h1>
+      {showHeader && (
+        <div className="relative z-30 pt-8 px-8 sm:px-12 flex items-center justify-between border-b border-white/10 pb-6 backdrop-blur-md bg-black/25">
+          <div>
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white drop-shadow-md">
+              Коллекции Liquid Music
+            </h1>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Skewed Stage - Unskewed container for strict horizontal scroll axis */}
       <div className="relative z-30 flex-1 w-full flex items-center justify-center overflow-hidden py-4">
         <div className="w-full max-w-7xl px-4 flex items-center justify-center relative">
 
           {/* Card Container: 1.5x Height Scaling (68vh / 75vh / 80vh max-h-[820px]) and 0-y container skew */}
-          <div className="relative w-full h-[68vh] sm:h-[75vh] lg:h-[80vh] max-h-[820px] flex items-center justify-center transform-gpu transition-transform duration-500">
+          <div className={stageClasses} style={isSquare ? { height: squareSize } : undefined}>
             {items.map((item, index) => {
               const diff = index - renderPos;
               const absDiff = Math.abs(diff);
@@ -215,7 +276,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                   key={item.id}
                   onClick={() => {
                     if (isActive) {
-                      onSelectItem(item.id);
+                      onSelectItem?.(item.id);
                     } else {
                       targetPosRef.current = index;
                     }
@@ -229,21 +290,23 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                     zIndex: zIndex,
                   }}
                   transition={{ duration: 0.05, ease: 'linear' }}
-                  // 1.5x Card Width scaling: w-[360px] sm:w-[570px] lg:w-[630px] max-w-[88vw]
                   // -skew-y-3 is applied to card visuals directly to preserve 3D tilt without slanting movement trajectory
-                  className={`absolute w-[250px] xs:w-[280px] sm:w-[520px] lg:w-[630px] max-w-[80vw] h-full rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer shadow-2xl border -skew-y-2 sm:-skew-y-3 transition-colors duration-300 ${
+                  className={`absolute ${cardSizeClasses} ${
+                    isSquare ? '' : 'h-full'
+                  } rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer shadow-2xl border -skew-y-2 sm:-skew-y-3 transition-colors duration-300 ${
                     isActive
                       ? 'border-amber-400/80 shadow-amber-500/20 shadow-2xl ring-2 ring-amber-400/50'
                       : 'border-white/15 hover:border-white/40'
                   }`}
                   style={{
                     transformStyle: 'preserve-3d',
+                    ...(isSquare ? { width: squareSize, height: squareSize } : {}),
                   }}
                 >
                   {/* Card Background Image */}
                   <img
                     src={item.image}
-                    alt={item.title}
+                    alt={item.alt ?? item.title}
                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
                   />
 
@@ -267,19 +330,21 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
                       {item.description}
                     </p>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectItem(item.id);
-                      }}
-                      className={`mt-4 sm:mt-6 w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-mono uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer min-h-[44px] ${
-                        isActive
-                          ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg shadow-amber-400/30'
-                          : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
-                      }`}
-                    >
-                      <span>Открыть коллекцию</span>
-                    </button>
+                    {showCta && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectItem?.(item.id);
+                        }}
+                        className={`mt-4 sm:mt-6 w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-mono uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer min-h-[44px] ${
+                          isActive
+                            ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg shadow-amber-400/30'
+                            : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                        }`}
+                      >
+                        <span>Открыть коллекцию</span>
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               );
@@ -290,30 +355,32 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
       </div>
 
       {/* Footer Navigation Controls */}
-      <div className="relative z-30 pb-8 px-8 flex items-center justify-between border-t border-white/10 pt-4 backdrop-blur-md bg-black/30">
-        <div className="text-xs font-mono text-stone-300">
-          Коллекция <span className="text-amber-400 font-bold">{activeIndex + 1}</span> из{' '}
-          <span className="text-stone-200">{items.length}</span>
-        </div>
+      {showFooter && (
+        <div className="relative z-30 pb-8 px-8 flex items-center justify-between border-t border-white/10 pt-4 backdrop-blur-md bg-black/30">
+          <div className="text-xs font-mono text-stone-300">
+            {itemNoun} <span className="text-amber-400 font-bold">{activeIndex + 1}</span> из{' '}
+            <span className="text-stone-200">{items.length}</span>
+          </div>
 
-        {/* Indicator Dots */}
-        <div className="flex items-center gap-2">
-          {items.map((item, idx) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                targetPosRef.current = idx;
-              }}
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                activeIndex === idx
-                  ? 'w-8 bg-amber-400 shadow-md shadow-amber-400/50'
-                  : 'w-2 bg-white/30 hover:bg-white/60'
-              }`}
-              aria-label={`Go to slide ${idx + 1}`}
-            />
-          ))}
+          {/* Indicator Dots */}
+          <div className="flex items-center gap-2">
+            {items.map((item, idx) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  targetPosRef.current = idx;
+                }}
+                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                  activeIndex === idx
+                    ? 'w-8 bg-amber-400 shadow-md shadow-amber-400/50'
+                    : 'w-2 bg-white/30 hover:bg-white/60'
+                }`}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

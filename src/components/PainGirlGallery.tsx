@@ -1,20 +1,66 @@
-import React from 'react';
-import { ArrowLeft, ImageOff } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ImageOff, X } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { getCollectionTitle } from '../types';
 import { PAIN_GIRL_GALLERY } from '../data/painGirlGallery';
-import CircularCarousel from './ui/CircularCarousel';
+import SkewedCarousel, { SkewedCarouselItem } from './ui/skewed-carousel';
+
+const toCarouselItems = (): SkewedCarouselItem[] =>
+  PAIN_GIRL_GALLERY.map((frame, index) => ({
+    id: frame.src,
+    title: frame.title,
+    description: frame.subtitle,
+    image: frame.src,
+    badge: String(index + 1).padStart(2, '0'),
+    color: '',
+    alt: frame.alt,
+  }));
 
 /**
  * The tab a gallery collection opens on. Every other collection tab renders the
- * product grid, so this one brings its own header and its own stage: a circular
- * ring of frames with no search box and no grid toggle, because neither means
- * anything here.
+ * product grid, so this one brings its own header and its own stage: the same
+ * skewed carousel the collection overview uses, narrowed to square cards because
+ * the artwork is square, with no collection CTA because there is no collection to
+ * open -- clicking a frame opens the frame itself.
  */
 export const PainGirlGallery: React.FC = () => {
   const setActiveCollection = useAppStore((state) => state.setActiveCollection);
   const theme = useAppStore((state) => state.theme);
   const isDark = theme === 'dark';
+
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  const close = useCallback(() => setOpenIndex(null), []);
+  const step = useCallback(
+    (delta: number) =>
+      setOpenIndex((prev) =>
+        prev === null ? prev : (prev + delta + PAIN_GIRL_GALLERY.length) % PAIN_GIRL_GALLERY.length
+      ),
+    []
+  );
+
+  useEffect(() => {
+    if (openIndex === null) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+      if (e.key === 'ArrowLeft') step(-1);
+      if (e.key === 'ArrowRight') step(1);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [openIndex, close, step]);
+
+  const open = openIndex === null ? null : PAIN_GIRL_GALLERY[openIndex];
 
   return (
     <div
@@ -64,25 +110,86 @@ export const PainGirlGallery: React.FC = () => {
           <p className="text-sm font-medium opacity-80">Галерея пока пуста</p>
         </div>
       ) : (
-        /*
-          The ring is height:100% inside an overflow:hidden box, so its height
-          has to come from a definite parent height. A flex or min-h wrapper is
-          not definite: the percentage falls back to auto, collapses to zero
-          against the absolutely positioned cards, and the whole ring is clipped
-          away. The contract is written down in CircularCarousel.css.
-        */
-        <div className="w-full h-[58vh] sm:h-[62vh] max-h-[820px] px-2 sm:px-6">
-          <CircularCarousel
-            items={PAIN_GIRL_GALLERY}
-            preset="cylinder"
-            intro="rise"
-            cardWidth={216}
-            aspectRatio={1}
-            speed={14}
-            captions
-            fadeColor={isDark ? '#071826' : '#d7e3ec'}
-            cornerRadius={16}
+        <div className="w-full">
+          <SkewedCarousel
+            items={toCarouselItems()}
+            onSelectItem={(id) =>
+              setOpenIndex(PAIN_GIRL_GALLERY.findIndex((frame) => frame.src === id))
+            }
+            layout="inline"
+            // The overview owns the viewport, so the wheel can drive the carousel.
+            // Here it sits in a page between other sections, so scrolling has to
+            // keep scrolling and the arrow keys are left to the lightbox.
+            scrollMode="pass"
+            keyboardNav={false}
+            cardAspect="square"
+            showHeader={false}
+            showCta={false}
+            itemNoun="Работа"
           />
+        </div>
+      )}
+
+      {open && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={open.title}
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col animate-fade-rise"
+          onClick={close}
+        >
+          <div className="flex items-center justify-between gap-4 px-4 sm:px-6 py-4 shrink-0">
+            <span className="text-xs font-mono uppercase tracking-widest text-amber-300">
+              Работа {(openIndex ?? 0) + 1} из {PAIN_GIRL_GALLERY.length}
+            </span>
+            <button
+              ref={closeButtonRef}
+              onClick={close}
+              aria-label="Закрыть"
+              className="p-2 rounded-full bg-white/10 hover:bg-amber-400 hover:text-slate-950 text-white transition-colors cursor-pointer"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="flex-1 min-h-0 flex items-center justify-center px-4 pb-2" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={open.src}
+              alt={open.alt}
+              className="max-h-full max-w-full object-contain drop-shadow-2xl"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 pb-6 pt-2 shrink-0">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                step(-1);
+              }}
+              aria-label="Предыдущая работа"
+              className="p-2.5 rounded-full bg-white/10 hover:bg-amber-400 hover:text-slate-950 text-white transition-colors cursor-pointer shrink-0"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+
+            <div className="min-w-0 text-center">
+              <h3 className="font-serif text-xl sm:text-3xl font-extrabold text-white tracking-tight truncate">
+                {open.title}
+              </h3>
+              <p className="text-xs font-mono text-amber-300/90 mt-1 truncate">{open.subtitle}</p>
+            </div>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                step(1);
+              }}
+              aria-label="Следующая работа"
+              className="p-2.5 rounded-full bg-white/10 hover:bg-amber-400 hover:text-slate-950 text-white transition-colors cursor-pointer shrink-0"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       )}
     </div>
