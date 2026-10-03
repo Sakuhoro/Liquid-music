@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import Shredder from './ui/Shredder';
 import {
   X,
   Trash2,
@@ -169,92 +170,101 @@ export const CartDrawer: React.FC = () => {
               </p>
             </div>
           ) : (
-            cart.map((item, index) => (
-              <div
-                key={item.id}
-                className="hall-list-in p-4 rounded-2xl border flex gap-3.5"
-                style={{
-                  background: raised,
-                  borderColor: 'var(--hall-border)',
-                  // Stagger is capped at six rows so a full satchel does not
-                  // crawl in.
-                  animationDelay: `${Math.min(index, 6) * 45}ms`,
-                }}
-              >
-                <img
-                  src={item.product.image}
-                  alt={item.product.name}
-                  className="w-24 h-24 sm:w-16 sm:h-16 rounded-xl object-cover shrink-0"
-                  style={{ border: '1px solid var(--hall-border)' }}
-                />
+            // Rows ride on a sheet: drag one sideways (or, with a mouse, down
+            // through the sheet) to take it out of the cart. The shredder calls
+            // back into the store only once the tear has finished, and the trash
+            // button below is still there for anyone who would rather not throw.
+            <Shredder
+              items={cart}
+              tone={isDark ? 'dark' : 'light'}
+              getKey={(item) => item.id}
+              onShred={(item) => removeFromCart(item.id)}
+              renderItem={(item, index) => (
+                <div
+                  className="hall-list-in p-4 rounded-2xl border flex gap-3.5"
+                  style={{
+                    background: raised,
+                    borderColor: 'var(--hall-border)',
+                    // Stagger is capped at six rows so a full satchel does not
+                    // crawl in.
+                    animationDelay: `${Math.min(index, 6) * 45}ms`,
+                  }}
+                >
+                  <img
+                    src={item.product.image}
+                    alt={item.product.name}
+                    className="w-24 h-24 sm:w-16 sm:h-16 rounded-xl object-cover shrink-0"
+                    style={{ border: '1px solid var(--hall-border)' }}
+                  />
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-serif hall-text-base font-semibold leading-snug truncate">
-                      {item.product.name}
-                    </h4>
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      aria-label={`Убрать ${item.product.name}`}
-                      className="hall-focusable p-1 transition-colors cursor-pointer"
-                      style={{ color: 'var(--hall-text-faint)' }}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-2 mt-1.5 hall-text-2xs font-mono" style={{ color: 'var(--hall-varnish)' }}>
-                    <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
-                      {item.volume} · {item.volumePrice}₽
-                    </span>
-                    <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
-                      {item.nicotine} · +{item.nicotinePrice}₽
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-3">
-                    <div
-                      className="flex items-center gap-1 rounded-lg p-1 hall-focusable"
-                      style={{ background: 'var(--hall-border)' }}
-                    >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-serif hall-text-base font-semibold leading-snug truncate">
+                        {item.product.name}
+                      </h4>
                       <button
-                        onClick={() => updateCartQuantity(item.id, -1)}
-                        aria-label="Уменьшить количество"
-                        className="w-5 h-5 rounded flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
-                        style={{ background: 'var(--hall-surface)' }}
+                        onClick={() => removeFromCart(item.id)}
+                        aria-label={`Убрать ${item.product.name}`}
+                        className="hall-focusable p-1 transition-colors cursor-pointer"
+                        style={{ color: 'var(--hall-text-faint)' }}
                       >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="hall-text-sm font-mono font-bold w-5 text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateCartQuantity(item.id, 1)}
-                        aria-label="Увеличить количество"
-                        className="w-5 h-5 rounded flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
-                        style={{ background: 'var(--hall-surface)' }}
-                      >
-                        <Plus className="w-3 h-3" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
 
-                    <div className="text-right">
-                      <span
-                        className="font-serif hall-text-base font-bold"
-                        style={{ color: 'var(--hall-varnish)' }}
-                      >
-                        {formatRub(item.totalUnitPrice * item.quantity)} ₽
+                    <div className="flex items-center gap-2 mt-1.5 hall-text-2xs font-mono" style={{ color: 'var(--hall-varnish)' }}>
+                      <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
+                        {item.volume} · {item.volumePrice}₽
                       </span>
-                      {item.quantity > 1 && (
-                        <div className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
-                          {formatRub(item.totalUnitPrice)} ₽ / шт
-                        </div>
-                      )}
+                      <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
+                        {item.nicotine} · +{item.nicotinePrice}₽
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-3">
+                      <div
+                        className="flex items-center gap-1 rounded-lg p-1 hall-focusable"
+                        style={{ background: 'var(--hall-border)' }}
+                      >
+                        <button
+                          onClick={() => updateCartQuantity(item.id, -1)}
+                          aria-label="Уменьшить количество"
+                          className="w-5 h-5 rounded flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
+                          style={{ background: 'var(--hall-surface)' }}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="hall-text-sm font-mono font-bold w-5 text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateCartQuantity(item.id, 1)}
+                          aria-label="Увеличить количество"
+                          className="w-5 h-5 rounded flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
+                          style={{ background: 'var(--hall-surface)' }}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <div className="text-right">
+                        <span
+                          className="font-serif hall-text-base font-bold"
+                          style={{ color: 'var(--hall-varnish)' }}
+                        >
+                          {formatRub(item.totalUnitPrice * item.quantity)} ₽
+                        </span>
+                        {item.quantity > 1 && (
+                          <div className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
+                            {formatRub(item.totalUnitPrice)} ₽ / шт
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              )}
+            />
           )}
         </div>
 

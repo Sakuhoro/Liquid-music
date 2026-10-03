@@ -1,0 +1,52 @@
+.shredder {
+  position: relative;
+  width: 100%;
+  isolation: isolate;
+}
+
+/* The paper sits behind the rows and never takes a pointer: it is a backdrop,
+   sized from the row list so the texture always lines up with the sheet. */
+.shredder__paper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.shredder__list {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+.shredder__item {
+  position: relative;
+  cursor: grab;
+  /* pan-y, not pan-x as upstream ships it. The page has to stay scrollable
+     with a finger that lands on a row, so vertical pans belong to the browser;
+     what is left for us to claim is the sideways swipe. */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform;
+}
+
+.shredder__item[data-dragging] {
+  cursor: grabbing;
+}
+
+.shredder__item[data-axis='x'] {
+  z-index: 30;
+}
+
+.shredder[data-paused='true'] .shredder__item {
+  cursor: default;
+  touch-action: auto;
+}
