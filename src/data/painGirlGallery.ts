@@ -5,9 +5,9 @@ export interface GalleryItem {
   subtitle: string;
 }
 
-// Every frame but the first is still waiting on artwork, so they all point at
-// the cover: one placeholder to delete once the real images land, rather than
-// five more to hunt down. The cover doubles as the collection card too.
+// The story frames have not arrived yet, so they all point at the abstract
+// cover: one placeholder to delete once the real images land, rather than six
+// to hunt down. The collection card shows the artwork instead.
 const PLACEHOLDER = '/images/pain-girl/cover.svg';
 
 const placeholder = (n: number): GalleryItem => ({
@@ -21,17 +21,14 @@ const placeholder = (n: number): GalleryItem => ({
  * The Pain Girl collection is a gallery, not a range of flavours, so its frames
  * live here instead of in the product table.
  *
- * `sofia-isella.jpg` is portrait (736x920), and the carousel is asked for a 4:5
- * card in PainGirlGallery so nothing gets cropped. Later frames of a different
- * shape can be letterboxed by the card's `object-fit: cover` instead.
+ * Every entry is a placeholder today. Replacing `src` (and `alt`/`title` once
+ * the captions are known) is all it takes: the carousel re-measures and replays
+ * its entrance whenever the list of sources changes. `aspectRatio` in
+ * PainGirlGallery has to match the shape of the incoming artwork, otherwise the
+ * cards crop it.
  */
 export const PAIN_GIRL_GALLERY: GalleryItem[] = [
-  {
-    src: '/images/pain-girl/sofia-isella.jpg',
-    alt: 'Sofia Isella',
-    title: 'Sofia Isella',
-    subtitle: 'Сезонная коллекция',
-  },
+  placeholder(1),
   placeholder(2),
   placeholder(3),
   placeholder(4),

@@ -72,7 +72,7 @@ export const PainGirlGallery: React.FC = () => {
             preset="cylinder"
             intro="rise"
             cardWidth={216}
-            aspectRatio={0.8}
+            aspectRatio={1}
             speed={14}
             captions
             fadeColor={isDark ? '#071826' : '#d7e3ec'}

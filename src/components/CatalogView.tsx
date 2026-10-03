@@ -61,11 +61,12 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
   },
   {
     // The one collection with no flavours behind it: its tab is a gallery.
-    // Cover is a placeholder until the collection art is supplied.
+    // Its card carries the collection artwork; the gallery frames are still
+    // waiting on the story images.
     id: 'Pain Girl',
     title: 'Pain Girl',
     description: 'Сезонная коллекция образов: тихая, плотная и очень личная история, рассказанная кадрами.',
-    image: '/images/pain-girl/cover.svg',
+    image: '/images/pain-girl/sofia-isella.jpg',
     badge: 'Сезонная коллекция',
     color: 'from-pink-400/80 to-slate-900/80',
   },
