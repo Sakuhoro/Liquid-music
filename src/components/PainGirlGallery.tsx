@@ -64,11 +64,13 @@ export const PainGirlGallery: React.FC = () => {
           <p className="text-sm font-medium opacity-80">Галерея пока пуста</p>
         </div>
       ) : (
-        /* The ring is height:100% inside an overflow:hidden box, so its height
-           has to come from a *definite* parent height. A flex-1/min-h-[…]
-           wrapper does not count: the percentage falls back to auto, collapses
-           to zero against absolutely-positioned children, and the whole ring is
-           clipped away. Hence a plain vh height here rather than flex fill. */}
+        /*
+          The ring is height:100% inside an overflow:hidden box, so its height
+          has to come from a definite parent height. A flex or min-h wrapper is
+          not definite: the percentage falls back to auto, collapses to zero
+          against the absolutely positioned cards, and the whole ring is clipped
+          away. The contract is written down in CircularCarousel.css.
+        */
         <div className="w-full h-[58vh] sm:h-[62vh] max-h-[820px] px-2 sm:px-6">
           <CircularCarousel
             items={PAIN_GIRL_GALLERY}
