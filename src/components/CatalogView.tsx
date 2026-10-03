@@ -12,13 +12,13 @@ import {
   LayoutGrid,
   Film,
 } from 'lucide-react';
-import SkewedCarousel, { SkewedCarouselItem } from './ui/skewed-carousel';
+import CircularCarousel, { CircularCarouselItem } from './ui/CircularCarousel';
 import DollyGallery from './ui/DollyGallery';
 import PainGirlGallery from './PainGirlGallery';
 import { sanitizeRussianText } from '../utils/sanitizeText';
 
-// Metadata for Collection Skewed Cards
-const COLLECTION_CARDS: SkewedCarouselItem[] = [
+// Metadata for Collection Cards
+const COLLECTION_CARDS = [
   {
     id: 'Spring',
     title: 'Весенняя коллекция',
@@ -86,6 +86,21 @@ export const CatalogView: React.FC = () => {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('dolly');
   const isDark = theme === 'dark';
 
+  const collectionCarouselItems: CircularCarouselItem[] = useMemo(
+    () =>
+      COLLECTION_CARDS.map((card) => ({
+        id: card.id,
+        title: card.title,
+        subtitle: card.badge,
+        description: card.description,
+        src: card.image,
+        image: card.image,
+        badge: card.badge,
+        color: card.color,
+      })),
+    []
+  );
+
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const matchesCollection =
@@ -102,11 +117,13 @@ export const CatalogView: React.FC = () => {
 
   const isOverview = activeCollection === 'All';
 
-  // Module 1: If user is viewing all collections, render full-screen Skewed Carousel (w-screen h-screen)
+  // Module 1: If user is viewing all collections, render Circular Carousel
   if (isOverview) {
     return (
-      <SkewedCarousel
-        items={COLLECTION_CARDS}
+      <CircularCarousel
+        items={collectionCarouselItems}
+        preset="cylinder"
+        cardWidth={440}
         onSelectItem={(id) => setActiveCollection(id as CollectionName)}
       />
     );
