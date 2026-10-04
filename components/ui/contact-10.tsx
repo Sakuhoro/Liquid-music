@@ -125,11 +125,15 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
   // Appended this way it runs on load, finds its own data-telegram-login tag and
   // swaps itself for the button.
   const tgWidgetHost = React.useRef<HTMLDivElement | null>(null);
+  // Set when the bot is configured but no button ever turned up, so the form can
+  // say so instead of leaving a gap where the button should be.
+  const [tgUnreachable, setTgUnreachable] = useState(false);
 
   useEffect(() => {
     const host = tgWidgetHost.current;
     if (!host || !tgEnabled || !tgUsername) return;
 
+    setTgUnreachable(false);
     host.innerHTML = '';
     const script = document.createElement('script');
     script.async = true;
@@ -141,9 +145,35 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
     script.setAttribute('data-onauth', 'onTelegramAuth(user)');
     host.appendChild(script);
 
+    // Telegram draws the button inside its iframe only once it is told the
+    // iframe is on screen, and it makes that call from the iframe's load event.
+    // Its visibility test treats any ancestor below 10% opacity as hidden, and
+    // this form is inside a modal that fades in from opacity 0 over 0.8s -- so a
+    // widget that finished loading during the fade was never told, and stayed
+    // blank until the page happened to scroll, resize or refocus. Nudging a
+    // resize once the fade is over re-runs exactly that test.
+    const nudge = () => window.dispatchEvent(new Event('resize'));
+    const nudgeTimers = [600, 1000, 1600].map((delay) => window.setTimeout(nudge, delay));
+
+    // The same nudge also covers the widget loading late, after the timers above
+    // have already run: whenever the iframe appears, check visibility again.
+    const observer = new MutationObserver(() => {
+      if (host.querySelector('iframe')) nudge();
+    });
+    observer.observe(host, { childList: true, subtree: true });
+
+    // Nothing at all after a while means the script itself never arrived, which
+    // is what a blocked telegram.org looks like.
+    const watchdog = window.setTimeout(() => {
+      if (!host.querySelector('iframe')) setTgUnreachable(true);
+    }, 7000);
+
     // Telegram replaces the script with the button, so the host is emptied on
     // the way out instead of trying to un-append a node that no longer exists.
     return () => {
+      observer.disconnect();
+      window.clearTimeout(watchdog);
+      nudgeTimers.forEach((id) => window.clearTimeout(id));
       host.innerHTML = '';
     };
   }, [tgEnabled, tgUsername]);
@@ -293,6 +323,23 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
             <div className="flex justify-center">
               <div id="tg-widget-host" ref={tgWidgetHost} className="[&_iframe]:!border-0" />
             </div>
+            {/* The host stays mounted either way: if the script turns up late
+                the button can still appear above this note. */}
+            {tgUnreachable && (
+              <p className="text-center text-xs font-sans text-stone-400 leading-relaxed">
+                Кнопка Telegram не загрузилась — telegram.org недоступен из вашей сети или
+                заблокирован расширением. Можно войти напрямую через{' '}
+                <a
+                  href={`https://t.me/${tgUsername}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
+                >
+                  @{tgUsername}
+                </a>
+                , или заполнить поля ниже.
+              </p>
+            )}
           </div>
         )}
 

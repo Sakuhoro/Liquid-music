@@ -1,7 +1,5 @@
-import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { getCollectionTitle } from '../types';
 import { PAIN_GIRL_GALLERY } from '../data/painGirlGallery';
 import InfiniteSpiral from './ui/InfiniteSpiral';
 
@@ -15,9 +13,24 @@ import InfiniteSpiral from './ui/InfiniteSpiral';
  * here, so the artwork stays defined in one place.
  */
 export const PainGirlSpiralSection: React.FC = () => {
-  const setActiveCollection = useAppStore((state) => state.setActiveCollection);
   const theme = useAppStore((state) => state.theme);
   const isDark = theme === 'dark';
+
+  // The frames double on a desktop, and so does the stage they travel through:
+  // the component shrinks whatever does not fit, so leaving the stage at 650px
+  // would have quietly scaled the growth straight back out again.
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+  );
+
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 768px)');
+    const onChange = () => setIsDesktop(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+
+  const growth = isDesktop ? 2 : 1;
 
   const spiralItems = PAIN_GIRL_GALLERY.map((frame, index) => ({
     id: frame.src,
@@ -27,82 +40,36 @@ export const PainGirlSpiralSection: React.FC = () => {
   }));
 
   return (
-    <div id="pain-girl-gallery" className="relative z-10 flex-1 w-full py-4 pb-16 flex flex-col animate-fade-rise">
-      <div className="max-w-7xl mx-auto w-full px-6 sm:px-8">
-        <div
-          className={`flex flex-col gap-4 mb-4 pb-6 border-b ${
-            isDark ? 'border-white/10' : 'border-slate-300'
-          }`}
-        >
-          <div>
-            <button
-              onClick={() => setActiveCollection('All')}
-              className={`inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest mb-2 cursor-pointer transition-colors ${
-                isDark
-                  ? 'text-amber-400 hover:text-amber-300'
-                  : 'text-amber-700 hover:text-amber-800 font-bold'
-              }`}
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Все коллекции</span>
-            </button>
-
-            <h2
-              className={`font-sans text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight antialiased ${
-                isDark ? 'text-white' : 'text-slate-950'
-              }`}
-            >
-              {getCollectionTitle('Pain Girl')}
-            </h2>
-            <p
-              className={`text-sm sm:text-base mt-2 max-w-xl font-sans font-normal antialiased leading-relaxed ${
-                isDark ? 'text-stone-300' : 'text-slate-800'
-              }`}
-            >
-              Сезонная коллекция образов.
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <div
+      id="pain-girl-gallery"
+      className="relative z-10 flex-1 w-full flex flex-col animate-fade-rise"
+    >
       {/*
         touch-pan-y hands the vertical pan back to the page. Without it the
         spiral would swallow every scroll that starts on it and the sections
         below would be unreachable on a phone.
       */}
-      <div className="relative w-full h-[650px] overflow-hidden flex items-center justify-center my-8 touch-pan-y">
+      <div
+        className="relative w-full overflow-hidden flex items-center justify-center touch-pan-y"
+        style={{ height: 650 * growth }}
+      >
         <InfiniteSpiral
           items={spiralItems}
           animationMode="all"
-          cardHeight={150}
-          cardRadius={12}
-          cardWidth={120}
+          cardHeight={150 * growth}
+          cardRadius={12 * growth}
+          cardWidth={120 * growth}
           centerScale={1.25}
           direction="up"
           edgeBlur={5}
           edgeFade={0.35}
           imageFit="cover"
           pauseOnHover
-          perspective={1100}
-          radius={180}
+          perspective={1100 * growth}
+          radius={180 * growth}
           speed={0.5}
-          verticalSpacing={65}
+          verticalSpacing={65 * growth}
         />
-      </div>
-
-      <div className="max-w-7xl mx-auto w-full px-6 sm:px-8">
-        <ul className="flex flex-wrap gap-x-5 gap-y-2 justify-center">
-          {PAIN_GIRL_GALLERY.map((frame) => (
-            <li
-              key={frame.src}
-              className={`text-[0.6875rem] font-mono uppercase tracking-widest ${
-                isDark ? 'text-stone-400' : 'text-slate-600'
-              }`}
-            >
-              {frame.title}
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ export const Navigation: React.FC = () => {
   const theme = useAppStore((state) => state.theme);
   const viewMode = useAppStore((state) => state.viewMode);
   const setViewMode = useAppStore((state) => state.setViewMode);
+  const setActiveCollection = useAppStore((state) => state.setActiveCollection);
   const cartCount = useAppStore((state) => state.getCartItemCount());
   const setIsCartOpen = useAppStore((state) => state.setIsCartOpen);
   const currentUser = useAppStore((state) => state.currentUser);
@@ -109,7 +110,13 @@ export const Navigation: React.FC = () => {
 
         <button
           id="nav-link-collections"
-          onClick={() => setViewMode('catalog')}
+          // Goes back to the collection overview, not just to the catalogue
+          // view: a gallery tab has no back control of its own, so without the
+          // reset this link would land you straight back on it.
+          onClick={() => {
+            setActiveCollection('All');
+            setViewMode('catalog');
+          }}
           className={`shrink-0 min-h-[44px] px-2 hover:opacity-100 transition-all flex items-center gap-1.5 cursor-pointer ${
             viewMode === 'catalog'
               ? 'font-bold border-b-2 border-amber-400 pb-0.5'

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Disc, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Disc } from 'lucide-react';
 import './CollectionCarousel.css';
 
 export interface CollectionCarouselItem {
@@ -176,14 +176,6 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
   const activeIndex =
     count > 0 ? Math.round(normalizedRotation / angleStep) % count : 0;
 
-  const navigatePrev = () => {
-    setRotation((prev) => prev + angleStep);
-  };
-
-  const navigateNext = () => {
-    setRotation((prev) => prev - angleStep);
-  };
-
   if (items.length === 0) return null;
 
   return (
@@ -200,15 +192,6 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
     >
       {/* Translucent background gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/70 pointer-events-none z-0" />
-
-      {/* Top Header Header */}
-      <div className="relative z-20 w-full pt-6 sm:pt-8 px-6 sm:px-12 flex items-center justify-between border-b border-white/10 pb-4 sm:pb-6 backdrop-blur-md bg-black/25">
-        <div>
-          <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white drop-shadow-md">
-            Коллекции Liquid Music
-          </h1>
-        </div>
-      </div>
 
       {/* Main 3D Cylinder Stage */}
       <div className="collection-carousel-stage z-10 my-auto">
@@ -313,49 +296,6 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Navigation Controls and Indicators */}
-      <div className="relative z-20 w-full pb-6 sm:pb-8 px-6 sm:px-12 flex items-center justify-between border-t border-white/10 pt-4 backdrop-blur-md bg-black/30">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={navigatePrev}
-            className="p-2 sm:p-2.5 rounded-full bg-white/10 hover:bg-amber-400 hover:text-slate-950 text-white border border-white/20 transition-all cursor-pointer"
-            aria-label="Previous Collection"
-          >
-            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          <button
-            onClick={navigateNext}
-            className="p-2 sm:p-2.5 rounded-full bg-white/10 hover:bg-amber-400 hover:text-slate-950 text-white border border-white/20 transition-all cursor-pointer"
-            aria-label="Next Collection"
-          >
-            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-
-          <span className="text-xs font-mono text-stone-300 ml-2">
-            Коллекция <span className="text-amber-400 font-bold">{activeIndex + 1}</span> из{' '}
-            <span className="text-stone-200">{count}</span>
-          </span>
-        </div>
-
-        {/* Indicator Dots */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {items.map((item, idx) => (
-            <button
-              key={item.id || idx}
-              onClick={() => {
-                setRotation(-idx * angleStep);
-              }}
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                activeIndex === idx
-                  ? 'w-6 sm:w-8 bg-amber-400 shadow-md shadow-amber-400/50'
-                  : 'w-2 bg-white/30 hover:bg-white/60'
-              }`}
-              aria-label={`Go to slide ${idx + 1}`}
-            />
-          ))}
         </div>
       </div>
     </div>
