@@ -63,7 +63,7 @@ const COLLECTION_CARDS = [
     id: 'Pain Girl',
     title: 'Pain Girl',
     description: 'Особенная атмосфера и мрачная эстетика в 6 авторских композициях.',
-    image: '/Pain girl.jpg',
+    image: '/uploads/c96094d56906441e8ea5a8a6a4c0b429_img_1K.jpg',
     badge: 'Special Collection',
     color: 'from-stone-800/80 to-black/90',
   },
