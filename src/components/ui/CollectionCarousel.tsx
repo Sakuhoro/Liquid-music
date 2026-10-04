@@ -190,8 +190,11 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
       onTouchEnd={handleTouchEnd}
       className={`collection-carousel-wrapper ${containerHeight} ${className}`}
     >
-      {/* Translucent background gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/70 pointer-events-none z-0" />
+      {/* Deliberately no overlay of its own here. This wrapper fills the screen
+          below the header, so a full-bleed tint stops dead at the header's lower
+          edge and reads as a seam between two darkening levels. The video and
+          its tint already cover header and carousel in one pass; the cards keep
+          their own gradients, which is all the contrast they need. */}
 
       {/* Main 3D Cylinder Stage */}
       <div className="collection-carousel-stage z-10 my-auto">

@@ -103,8 +103,12 @@ export const PainGirlSpiralSection: React.FC = () => {
         spiral would swallow every scroll that starts on it and the sections
         below would be unreachable on a phone.
       */}
+      {/* The stage gives up the left of the screen from md up. The artwork
+          behind it is anchored to the left edge, and the spiral sitting on top
+          of the subject is the thing this avoids. A phone has no width to spare
+          for the two, so there the spiral stays full width and centred. */}
       <div
-        className="relative w-full overflow-hidden flex items-center justify-center touch-pan-y"
+        className="relative w-full overflow-hidden flex items-center justify-center touch-pan-y md:ml-auto md:w-[72%] lg:w-[64%] xl:w-[58%]"
         style={{ height: 650 * growth }}
       >
         <InfiniteSpiral
@@ -130,7 +134,7 @@ export const PainGirlSpiralSection: React.FC = () => {
       <button
         id="pain-girl-buy-btn"
         onClick={() => setIsStoryModalOpen(true)}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 px-5 py-3 rounded-2xl bg-[#111] hover:bg-[#222] border border-[#333] hover:border-[#555] text-amber-400 hover:text-amber-300 font-mono text-xs sm:text-sm uppercase tracking-wider font-bold transition-all duration-300 shadow-lg cursor-pointer"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 md:left-auto md:right-[6vw] md:translate-x-0 z-30 px-5 py-3 rounded-2xl bg-[#111] hover:bg-[#222] border border-[#333] hover:border-[#555] text-amber-400 hover:text-amber-300 font-mono text-xs sm:text-sm uppercase tracking-wider font-bold transition-all duration-300 shadow-lg cursor-pointer"
       >
         Оформить коллекцию
       </button>

@@ -16,6 +16,15 @@ const COLLECTION_VIDEOS: Partial<Record<CollectionName, { light: string; dark: s
   'Permanent 1': { light: '/videos/bones.mp4', dark: '/videos/bones.mp4' },
 };
 
+// Some collections are artwork rather than footage, and a still reads better
+// than a clip here: the illustration is the point, so it is anchored to the
+// left edge, which is where the subject stands, and the screen's own content is
+// laid out to the right of it. Kept in this file so there is still exactly one
+// background layer behind the header and the content below it.
+const COLLECTION_STILL: Partial<Record<CollectionName, { image: string; position: string }>> = {
+  'Pain Girl': { image: '/Pain girl.jpg', position: 'left center' },
+};
+
 // The clips carry a generation watermark along the right-hand margin, so each
 // one is blown up and anchored left of centre to push that margin out of
 // frame. Zooming further crops more of the right side; the source resolution
@@ -32,6 +41,7 @@ export const BackgroundVideo: React.FC = () => {
 
   const collectionCut =
     activeCollection === 'All' ? undefined : COLLECTION_VIDEOS[activeCollection];
+  const still = activeCollection === 'All' ? undefined : COLLECTION_STILL[activeCollection];
   const currentVideoSrc = collectionCut
     ? isDark
       ? collectionCut.dark
@@ -41,6 +51,8 @@ export const BackgroundVideo: React.FC = () => {
       : HERO_VIDEO_LIGHT;
 
   useEffect(() => {
+    // Nothing to play when the collection brings its own artwork.
+    if (still) return;
     const playSafe = async () => {
       if (videoRef.current) {
         try {
@@ -52,34 +64,54 @@ export const BackgroundVideo: React.FC = () => {
       }
     };
     playSafe();
-  }, [currentVideoSrc]);
+  }, [currentVideoSrc, still]);
 
   return (
     <div
       id="cinematic-video-stage"
       className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0 select-none"
     >
-      {/* Strictly Clean Cinematic Looping Video - No Character Silhouettes or Floating Notes */}
-      <video
-        key={currentVideoSrc}
-        ref={videoRef}
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-1000"
-        style={{ transform: `scale(${VIDEO_ZOOM})`, transformOrigin: VIDEO_ORIGIN }}
-        src={currentVideoSrc}
-      />
+      {still ? (
+        <>
+          {/* Still artwork in place of the clip. The scrim is flat rather than a
+              gradient on purpose: a directional one would put a second tonal
+              break across the screen, which is the seam this layer exists to
+              avoid. */}
+          <div
+            data-testid="collection-still"
+            className="absolute inset-0 z-0 bg-cover bg-no-repeat"
+            style={{
+              backgroundImage: `url('${still.image}')`,
+              backgroundPosition: still.position,
+            }}
+          />
+          <div className="absolute inset-0 z-1 pointer-events-none bg-black/25" />
+        </>
+      ) : (
+        <>
+          {/* Strictly Clean Cinematic Looping Video - No Character Silhouettes or Floating Notes */}
+          <video
+            key={currentVideoSrc}
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-1000"
+            style={{ transform: `scale(${VIDEO_ZOOM})`, transformOrigin: VIDEO_ORIGIN }}
+            src={currentVideoSrc}
+          />
 
-      {/* Clean, Subtle Atmospheric Contrast Tint to preserve contrast for foreground typography */}
-      <div
-        className={`absolute inset-0 z-1 pointer-events-none transition-colors duration-1000 ${
-          isDark
-            ? 'bg-gradient-to-t from-[hsl(201,100%,13%)] via-[hsla(201,100%,13%,0.65)] to-[hsla(201,100%,10%,0.35)]'
-            : 'bg-gradient-to-t from-[hsl(204,45%,96%)] via-[hsla(204,45%,96%,0.45)] to-[hsla(204,45%,96%,0.2)]'
-        }`}
-      />
+          {/* Clean, Subtle Atmospheric Contrast Tint to preserve contrast for foreground typography */}
+          <div
+            className={`absolute inset-0 z-1 pointer-events-none transition-colors duration-1000 ${
+              isDark
+                ? 'bg-gradient-to-t from-[hsl(201,100%,13%)] via-[hsla(201,100%,13%,0.65)] to-[hsla(201,100%,10%,0.35)]'
+                : 'bg-gradient-to-t from-[hsl(204,45%,96%)] via-[hsla(204,45%,96%,0.45)] to-[hsla(204,45%,96%,0.2)]'
+            }`}
+          />
+        </>
+      )}
     </div>
   );
 };
