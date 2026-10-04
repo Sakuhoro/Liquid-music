@@ -64,7 +64,7 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
     id: 'Pain Girl',
     title: 'Pain Girl',
     description: 'Особенная атмосфера и мрачная эстетика в 6 авторских композициях.',
-    image: '/Pain girl.jpg',
+    image: '/uploads/c96094d56906441e8ea5a8a6a4c0b429_img_1K.jpg',
     badge: 'Special Collection',
     color: 'from-stone-800/80 to-black/90',
   },
@@ -139,7 +139,13 @@ export const CatalogView: React.FC = () => {
     };
 
     return (
-      <div id="pain-girl-collection-stage" className="relative z-10 flex-1 w-full min-h-[88vh] flex flex-col justify-between bg-black text-white p-4 sm:p-8 animate-fade-rise">
+      <div
+        id="pain-girl-collection-stage"
+        className="relative z-10 flex-1 w-full min-h-[88vh] flex flex-col justify-between text-white p-4 sm:p-8 animate-fade-rise bg-cover bg-left bg-no-repeat"
+        style={{
+          backgroundImage: `linear-gradient(to right, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.95)), url('/Pain girl.jpg')`,
+        }}
+      >
         {/* Top Header Ribbon & Action Buttons */}
         <div className="max-w-7xl mx-auto w-full flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-white/10 z-20">
           <div>
