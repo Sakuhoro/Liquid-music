@@ -26,6 +26,8 @@ export const Navigation: React.FC = () => {
   const isBgMusicPlaying = useAppStore((state) => state.isBgMusicPlaying);
   const toggleBgMusic = useAppStore((state) => state.toggleBgMusic);
 
+  const activeCollection = useAppStore((state) => state.activeCollection);
+  const isPainGirl = activeCollection === 'Pain Girl';
   const isDark = theme === 'dark';
 
   const handleAccountClick = () => {
@@ -41,7 +43,7 @@ export const Navigation: React.FC = () => {
   return (
     <header
       id="main-app-nav"
-      className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 px-4 sm:px-8 py-4 sm:py-6 max-w-7xl mx-auto w-full"
+      className="relative z-20 flex flex-col md:flex-row items-center justify-between gap-4 px-4 sm:px-8 py-3 sm:py-4 min-h-[72px] sm:min-h-[80px] max-w-7xl mx-auto w-full"
     >
       <div className="flex items-center justify-between w-full md:w-auto">
         {/* Brand Logo: Plain text "Liquid Music" */}
@@ -72,8 +74,8 @@ export const Navigation: React.FC = () => {
             )}
           </button>
 
-          {/* Theme Toggle (Light / Dark) Mobile */}
-          <ThemeToggle id="theme-mode-toggle-mobile" />
+          {/* Theme Toggle (Light / Dark) Mobile - hidden in Pain Girl collection */}
+          {!isPainGirl && <ThemeToggle id="theme-mode-toggle-mobile" />}
 
           <button
             id="open-cart-btn-mobile"
@@ -160,8 +162,8 @@ export const Navigation: React.FC = () => {
           )}
         </button>
 
-        {/* Theme Toggle (Light / Dark) */}
-        <ThemeToggle id="theme-mode-toggle" />
+        {/* Theme Toggle (Light / Dark) - hidden in Pain Girl collection */}
+        {!isPainGirl && <ThemeToggle id="theme-mode-toggle" />}
 
         {/* Cart Drawer Trigger */}
         <button

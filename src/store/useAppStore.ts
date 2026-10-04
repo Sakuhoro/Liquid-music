@@ -539,9 +539,13 @@ export const useAppStore = create<AppState>()(
 
       addToCart: (product, volume, nicotine) => {
         const itemId = `${product.id}-${volume}-${nicotine}`;
-        const volPrice = VOLUME_PRICING[volume];
-        const nicPrice = NICOTINE_PRICING[nicotine];
-        const unitPrice = volPrice + nicPrice;
+        // A set is not a bottle: quoting it off the volume/nicotine table would
+        // show one bottle's price for six, and the customer would meet the real
+        // total only at checkout.
+        const setPrice = product.setPricing?.[nicotine];
+        const volPrice = setPrice === undefined ? VOLUME_PRICING[volume] : 0;
+        const nicPrice = setPrice === undefined ? NICOTINE_PRICING[nicotine] : 0;
+        const unitPrice = setPrice === undefined ? volPrice + nicPrice : setPrice;
 
         set((state) => {
           // Adding no longer throws the drawer open. It used to, which meant
@@ -571,6 +575,7 @@ export const useAppStore = create<AppState>()(
             volumePrice: volPrice,
             nicotinePrice: nicPrice,
             totalUnitPrice: unitPrice,
+            setUnitPrice: setPrice,
             quantity: 1,
           };
           return {
@@ -878,16 +883,32 @@ export const useAppStore = create<AppState>()(
         try {
           // Only the choices go up. Prices, the loyalty discount and the total
           // are all decided on the server.
-          const res = await fetch('/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              items: cart.map((item) => ({
+          const expandedItems: Array<{ productId: string; volume: VolumeType; nicotine: NicotineType; quantity: number }> = [];
+          for (const item of cart) {
+            if (item.product.id === 'pain-girl-bundle' || item.id.includes('pain-girl-bundle')) {
+              for (let i = 1; i <= 6; i++) {
+                expandedItems.push({
+                  productId: `pain-girl-${i}`,
+                  volume: '60ml',
+                  nicotine: item.nicotine,
+                  quantity: item.quantity,
+                });
+              }
+            } else {
+              expandedItems.push({
                 productId: item.product.id,
                 volume: item.volume,
                 nicotine: item.nicotine,
                 quantity: item.quantity,
-              })),
+              });
+            }
+          }
+
+          const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              items: expandedItems,
             }),
           });
 

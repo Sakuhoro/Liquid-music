@@ -7,28 +7,29 @@ export type CollectionName =
   | 'Autumn'
   | 'Permanent 1'
   | 'Permanent 2'
-  // Seasonal art collection: a gallery rather than a range of flavours, so it
-  // never appears on a product record.
+  // Seasonal art collection: its tab shows the spiral gallery, but the six
+  // compositions behind it are real products.
   | 'Pain Girl';
 
 // Public-facing collection titles. Used instead of the internal "Permanent 1"/"Permanent 2" keys.
 export const COLLECTION_TITLES: Partial<Record<CollectionName, string>> = {
+  Spring: 'Весенняя коллекция',
+  Summer: 'Летняя коллекция',
+  Autumn: 'Зимняя коллекция',
   'Permanent 1': 'Bones of what you Believe',
   'Permanent 2': 'Velvet Distortion',
   // Already reads as a title, so the "Collection" fallback would only clutter it.
   'Pain Girl': 'Pain Girl',
 };
 
-// The one collection that has no flavour behind it. Its tab shows a gallery
-// instead of a product grid, so the product catalogue must not be filtered by
-// it: the archive badge, the recipe panel and the flavour price filters all
-// assume the category exists on at least one product.
+// The one collection whose tab is a gallery instead of a product grid: opening
+// it goes to the spiral, so the catalogue's own grid never renders it.
 export const GALLERY_COLLECTION: CollectionName = 'Pain Girl';
 export const isGalleryCollection = (collection: CollectionName | 'All'): boolean =>
   collection === GALLERY_COLLECTION;
 
 export const getCollectionTitle = (collection: CollectionName): string =>
-  COLLECTION_TITLES[collection] ?? `${collection} Collection`;
+  COLLECTION_TITLES[collection] ?? collection;
 
 export interface VolumeOption {
   volume: VolumeType;
@@ -65,6 +66,10 @@ export interface ProductItem {
   // When absent the button falls back to the generated chord.
   audioFile?: string | null;
   isFeatured?: boolean;
+  // Price of the whole set per nicotine strength, for products sold as one
+  // unit. The volume/nicotine table prices a single bottle, so a set has to
+  // bring its own numbers or it would be quoted at one bottle's price.
+  setPricing?: Partial<Record<NicotineType, number>>;
 }
 
 export interface CartItem {
@@ -74,7 +79,10 @@ export interface CartItem {
   nicotine: NicotineType;
   volumePrice: number;
   nicotinePrice: number;
-  totalUnitPrice: number; // volumePrice + nicotinePrice
+  totalUnitPrice: number; // volumePrice + nicotinePrice, or the set price
+  // Set on a line that is sold as a whole rather than priced off the
+  // volume/nicotine table, so the drawer can label it as a set.
+  setUnitPrice?: number;
   quantity: number;
 }
 

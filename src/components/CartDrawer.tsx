@@ -213,12 +213,20 @@ export const CartDrawer: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2 mt-1.5 hall-text-2xs font-mono" style={{ color: 'var(--hall-varnish)' }}>
-                      <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
-                        {item.volume} · {item.volumePrice}₽
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
-                        {item.nicotine} · +{item.nicotinePrice}₽
-                      </span>
+                      {item.setUnitPrice === undefined ? (
+                        <>
+                          <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
+                            {item.volume} · {item.volumePrice}₽
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
+                            {item.nicotine} · +{item.nicotinePrice}₽
+                          </span>
+                        </>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
+                          Сет {item.volume} · {item.nicotine}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between mt-3">

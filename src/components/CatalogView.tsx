@@ -40,8 +40,8 @@ const COLLECTION_CARDS = [
     title: 'Зимняя коллекция',
     description: 'Глубокие, согревающие аккорды и неторопливые инструментальные мелодии, созданные, чтобы укутать вас уютом в сезон холодов и вьюг.',
     image: '/uploads/photo_2026-09-15_00-00-17.jpg',
-    badge: 'Сезонная коллекция',
-    color: 'from-orange-500/80 to-stone-900/80',
+    badge: 'Зимняя коллекция',
+    color: 'from-blue-600/80 to-slate-900/80',
   },
   {
     id: 'Permanent 1',
@@ -60,15 +60,12 @@ const COLLECTION_CARDS = [
     color: 'from-emerald-500/80 to-teal-900/80',
   },
   {
-    // The one collection with no flavours behind it: its tab is a gallery.
-    // Its card carries the collection artwork; the gallery frames are still
-    // waiting on the story images.
     id: 'Pain Girl',
     title: 'Pain Girl',
-    description: 'Сезонная коллекция образов: тихая, плотная и очень личная история, рассказанная кадрами.',
-    image: '/images/pain-girl/sofia-isella.jpg',
-    badge: 'Сезонная коллекция',
-    color: 'from-pink-400/80 to-slate-900/80',
+    description: 'Особенная атмосфера и мрачная эстетика в 6 авторских композициях.',
+    image: '/Pain girl.jpg',
+    badge: 'Special Collection',
+    color: 'from-stone-800/80 to-black/90',
   },
 ];
 
@@ -294,7 +291,7 @@ export const CatalogView: React.FC = () => {
                     <span className={`text-[11px] font-sans font-bold px-2.5 py-1 rounded-full border antialiased ${
                       isDark ? 'text-stone-300 border-white/15 bg-white/5' : 'text-slate-700 border-slate-300 bg-slate-100'
                     }`}>
-                      {product.category}
+                      {product.category === 'Autumn' ? 'Зимняя' : getCollectionTitle(product.category as CollectionName)}
                     </span>
                   </div>
                 </div>

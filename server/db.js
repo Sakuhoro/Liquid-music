@@ -877,44 +877,153 @@ export const INITIAL_PRODUCTS_SEED = [
     accentColor: '#38bdf8',
     isFeatured: 0,
   },
+  {
+    id: 'pain-girl-1',
+    name: 'Everybody supports women',
+    subtitle: 'Pain Girl Collection',
+    description: 'Композиция из коллекции Pain Girl.',
+    image: '/Pain girl.jpg',
+    basePrice: 1333,
+    category: 'Pain Girl',
+    musicalKey: 'C Minor',
+    bpm: 90,
+    opusNumber: 'PG-01',
+    aromaticChords: { top: 'Dark Berries', heart: 'Smoked Vanilla', base: 'Deep Woods' },
+    accentColor: '#181818',
+    isFeatured: 1,
+  },
+  {
+    id: 'pain-girl-2',
+    name: 'Out in the Garden',
+    subtitle: 'Pain Girl Collection',
+    description: 'Композиция из коллекции Pain Girl.',
+    image: '/Pain girl.jpg',
+    basePrice: 1333,
+    category: 'Pain Girl',
+    musicalKey: 'D Minor',
+    bpm: 85,
+    opusNumber: 'PG-02',
+    aromaticChords: { top: 'Night Jasmine', heart: 'Black Tea', base: 'Earthy Amber' },
+    accentColor: '#181818',
+    isFeatured: 1,
+  },
+  {
+    id: 'pain-girl-3',
+    name: 'Above the Neck',
+    subtitle: 'Pain Girl Collection',
+    description: 'Композиция из коллекции Pain Girl.',
+    image: '/Pain girl.jpg',
+    basePrice: 1333,
+    category: 'Pain Girl',
+    musicalKey: 'E Minor',
+    bpm: 95,
+    opusNumber: 'PG-03',
+    aromaticChords: { top: 'Crisp Ozone', heart: 'Frosted Mint', base: 'Clean Cedar' },
+    accentColor: '#181818',
+    isFeatured: 1,
+  },
+  {
+    id: 'pain-girl-4',
+    name: 'Evergreen soldier',
+    subtitle: 'Pain Girl Collection',
+    description: 'Композиция из коллекции Pain Girl.',
+    image: '/Pain girl.jpg',
+    basePrice: 1333,
+    category: 'Pain Girl',
+    musicalKey: 'F Minor',
+    bpm: 88,
+    opusNumber: 'PG-04',
+    aromaticChords: { top: 'Pine Needle', heart: 'Eucalyptus', base: 'Oakmoss' },
+    accentColor: '#181818',
+    isFeatured: 1,
+  },
+  {
+    id: 'pain-girl-5',
+    name: 'Sex concept',
+    subtitle: 'Pain Girl Collection',
+    description: 'Композиция из коллекции Pain Girl.',
+    image: '/Pain girl.jpg',
+    basePrice: 1333,
+    category: 'Pain Girl',
+    musicalKey: 'G Minor',
+    bpm: 100,
+    opusNumber: 'PG-05',
+    aromaticChords: { top: 'Ripe Cherry', heart: 'Dark Chocolate', base: 'Musk & Spice' },
+    accentColor: '#181818',
+    isFeatured: 1,
+  },
+  {
+    id: 'pain-girl-6',
+    name: 'hot gum',
+    subtitle: 'Pain Girl Collection',
+    description: 'Композиция из коллекции Pain Girl.',
+    image: '/Pain girl.jpg',
+    basePrice: 1335,
+    category: 'Pain Girl',
+    musicalKey: 'A Minor',
+    bpm: 105,
+    opusNumber: 'PG-06',
+    aromaticChords: { top: 'Cinnamon Spice', heart: 'Bubblegum', base: 'Sweet Resin' },
+    accentColor: '#181818',
+    isFeatured: 1,
+  },
 ];
 
 // Helper to seed initial products if empty
 function seedDatabase() {
   const countStmt = db.prepare('SELECT COUNT(*) as count FROM products');
   const { count } = countStmt.get();
+
+  const insertStmt = db.prepare(`
+    INSERT INTO products (
+      id, name, subtitle, description, image, basePrice, category,
+      musicalKey, bpm, opusNumber, aromaticChords, accentColor, isFeatured,
+      audioFile, createdAt
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const insertMany = db.transaction((products) => {
+    for (const p of products) {
+      insertStmt.run(
+        p.id,
+        p.name,
+        p.subtitle || '',
+        p.description || '',
+        p.image,
+        p.basePrice,
+        p.category,
+        p.musicalKey || 'C Major',
+        p.bpm || 120,
+        p.opusNumber || '',
+        JSON.stringify(p.aromaticChords || {}),
+        p.accentColor || '#38bdf8',
+        p.isFeatured ? 1 : 0,
+        normalizeAudioFile(p.audioFile),
+        new Date().toISOString()
+      );
+    }
+  });
+
   if (count === 0) {
-    const insertStmt = db.prepare(`
-      INSERT INTO products (
-        id, name, subtitle, description, image, basePrice, category,
-        musicalKey, bpm, opusNumber, aromaticChords, accentColor, isFeatured,
-        audioFile, createdAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const insertMany = db.transaction((products) => {
-      for (const p of products) {
-        insertStmt.run(
-          p.id,
-          p.name,
-          p.subtitle || '',
-          p.description || '',
-          p.image,
-          p.basePrice,
-          p.category,
-          p.musicalKey || 'C Major',
-          p.bpm || 120,
-          p.opusNumber || '',
-          JSON.stringify(p.aromaticChords || {}),
-          p.accentColor || '#38bdf8',
-          p.isFeatured ? 1 : 0,
-          normalizeAudioFile(p.audioFile),
-          new Date().toISOString()
-        );
-      }
-    });
-
     insertMany(INITIAL_PRODUCTS_SEED);
+    return;
+  }
+
+  // A collection shipped after the catalogue went live never reaches an existing
+  // install, because the seed above only fires on an empty table. Collections the
+  // catalogue has never heard of are seeded, and only those: a product missing
+  // from a collection that is already there may well have been deleted on
+  // purpose, and everything already stored is left exactly as the admin edited it.
+  const knownCategories = new Set(
+    db.prepare('SELECT DISTINCT category FROM products').all().map((row) => row.category)
+  );
+  const missing = INITIAL_PRODUCTS_SEED.filter((p) => !knownCategories.has(p.category));
+  if (missing.length > 0) {
+    insertMany(missing);
+    console.log(
+      `[liquid-music] migrated products: seeded ${missing.length} products for new collections ` +
+        `[${[...new Set(missing.map((p) => p.category))].join(', ')}]`
+    );
   }
 }
 
