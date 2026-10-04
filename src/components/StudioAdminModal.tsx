@@ -46,15 +46,17 @@ const ALL_COLLECTIONS: CollectionName[] = [
   'Autumn',
   'Permanent 1',
   'Permanent 2',
+  'Pain Girl',
 ];
 
 const COLLECTION_DISPLAY_NAMES: Record<string, string> = {
   All: 'Все коллекции',
   Spring: 'Весенняя',
   Summer: 'Летняя',
-  Autumn: 'Осенняя',
+  Autumn: 'Зимняя',
   'Permanent 1': 'Permanent 1',
   'Permanent 2': 'Permanent 2',
+  'Pain Girl': 'Pain Girl',
 };
 
 const VOLUMES: VolumeType[] = ['30ml', '60ml', '120ml'];

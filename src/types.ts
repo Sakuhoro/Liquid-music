@@ -6,16 +6,21 @@ export type CollectionName =
   | 'Summer'
   | 'Autumn'
   | 'Permanent 1'
-  | 'Permanent 2';
+  | 'Permanent 2'
+  | 'Pain Girl';
 
 // Public-facing collection titles. Used instead of the internal "Permanent 1"/"Permanent 2" keys.
 export const COLLECTION_TITLES: Partial<Record<CollectionName, string>> = {
+  Spring: 'Весенняя коллекция',
+  Summer: 'Летняя коллекция',
+  Autumn: 'Зимняя коллекция',
   'Permanent 1': 'Bones of what you Believe',
   'Permanent 2': 'Velvet Distortion',
+  'Pain Girl': 'Pain Girl',
 };
 
 export const getCollectionTitle = (collection: CollectionName): string =>
-  COLLECTION_TITLES[collection] ?? `${collection} Collection`;
+  COLLECTION_TITLES[collection] ?? collection;
 
 export interface VolumeOption {
   volume: VolumeType;

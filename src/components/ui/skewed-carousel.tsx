@@ -180,13 +180,12 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
       className={`fixed inset-0 w-screen h-screen m-0 p-0 overflow-hidden bg-transparent text-white select-none z-10 flex flex-col justify-between touch-pan-y ${className}`}
       style={{ margin: 0, padding: 0 }}
     >
-      {/* Subtle translucent ambient contrast overlays (keeps background video crystal clear) */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60 pointer-events-none z-0" />
+      {/* Seamless single background video plane */}
 
-      {/* Skewed Carousel Header */}
-      <div className="relative z-30 pt-8 px-8 sm:px-12 flex items-center justify-between border-b border-white/10 pb-6 backdrop-blur-md bg-black/25">
+      {/* Skewed Carousel Title Bar */}
+      <div className="relative z-30 pt-4 px-8 sm:px-12 flex items-center justify-between pb-3 border-b border-white/10">
         <div>
-          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white drop-shadow-md">
+          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white drop-shadow-md">
             Коллекции Liquid Music
           </h1>
         </div>
@@ -290,7 +289,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
       </div>
 
       {/* Footer Navigation Controls */}
-      <div className="relative z-30 pb-8 px-8 flex items-center justify-between border-t border-white/10 pt-4 backdrop-blur-md bg-black/30">
+      <div className="relative z-30 pb-6 px-8 flex items-center justify-between border-t border-white/10 pt-4">
         <div className="text-xs font-mono text-stone-300">
           Коллекция <span className="text-amber-400 font-bold">{activeIndex + 1}</span> из{' '}
           <span className="text-stone-200">{items.length}</span>

@@ -29,6 +29,8 @@ export const Navigation: React.FC = () => {
   const toggleBgMusic = useAppStore((state) => state.toggleBgMusic);
   const setIsSoundCloudOpen = useAppStore((state) => state.setIsSoundCloudOpen);
 
+  const activeCollection = useAppStore((state) => state.activeCollection);
+  const isPainGirl = activeCollection === 'Pain Girl';
   const isDark = theme === 'dark';
 
   const handleAccountClick = () => {
@@ -44,7 +46,7 @@ export const Navigation: React.FC = () => {
   return (
     <header
       id="main-app-nav"
-      className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 px-4 sm:px-8 py-4 sm:py-6 max-w-7xl mx-auto w-full"
+      className="relative z-20 flex flex-col md:flex-row items-center justify-between gap-4 px-4 sm:px-8 py-3 sm:py-4 min-h-[72px] sm:min-h-[80px] max-w-7xl mx-auto w-full"
     >
       <div className="flex items-center justify-between w-full md:w-auto">
         {/* Brand Logo: Plain text "Liquid Music" */}
@@ -75,20 +77,22 @@ export const Navigation: React.FC = () => {
             )}
           </button>
 
-          {/* Theme Toggle (Light / Dark) Mobile */}
-          <button
-            id="theme-mode-toggle-mobile"
-            onClick={toggleTheme}
-            aria-label={isDark ? 'Switch to Airy Daylight' : 'Switch to Musical Night'}
-            title={isDark ? 'Switch to Airy Daylight' : 'Switch to Musical Night'}
-            className="liquid-glass w-9 h-9 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
-          >
-            {isDark ? (
-              <Sun className="w-3.5 h-3.5 text-amber-300" />
-            ) : (
-              <Moon className="w-3.5 h-3.5 text-sky-800" />
-            )}
-          </button>
+          {/* Theme Toggle (Light / Dark) Mobile - hidden in Pain Girl collection */}
+          {!isPainGirl && (
+            <button
+              id="theme-mode-toggle-mobile"
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Switch to Airy Daylight' : 'Switch to Musical Night'}
+              title={isDark ? 'Switch to Airy Daylight' : 'Switch to Musical Night'}
+              className="liquid-glass w-9 h-9 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
+            >
+              {isDark ? (
+                <Sun className="w-3.5 h-3.5 text-amber-300" />
+              ) : (
+                <Moon className="w-3.5 h-3.5 text-sky-800" />
+              )}
+            </button>
+          )}
 
           <button
             id="open-cart-btn-mobile"
@@ -179,19 +183,21 @@ export const Navigation: React.FC = () => {
           <Radio className="w-3.5 h-3.5 text-orange-400" />
         </button>
 
-        {/* Theme Toggle (Light / Dark) */}
-        <button
-          id="theme-mode-toggle"
-          onClick={toggleTheme}
-          title={isDark ? 'Switch to Airy Daylight' : 'Switch to Musical Night'}
-          className="liquid-glass w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
-        >
-          {isDark ? (
-            <Sun className="w-3.5 h-3.5 text-amber-300" />
-          ) : (
-            <Moon className="w-3.5 h-3.5 text-sky-800" />
-          )}
-        </button>
+        {/* Theme Toggle (Light / Dark) - hidden in Pain Girl collection */}
+        {!isPainGirl && (
+          <button
+            id="theme-mode-toggle"
+            onClick={toggleTheme}
+            title={isDark ? 'Switch to Airy Daylight' : 'Switch to Musical Night'}
+            className="liquid-glass w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
+          >
+            {isDark ? (
+              <Sun className="w-3.5 h-3.5 text-amber-300" />
+            ) : (
+              <Moon className="w-3.5 h-3.5 text-sky-800" />
+            )}
+          </button>
+        )}
 
         {/* Cart Drawer Trigger */}
         <button

@@ -3,6 +3,8 @@ import { useAppStore } from '../store/useAppStore';
 import {
   CollectionName,
   getCollectionTitle,
+  NicotineType,
+  ProductItem,
 } from '../types';
 import {
   Search,
@@ -10,6 +12,7 @@ import {
   ArrowLeft,
   LayoutGrid,
   Film,
+  X,
 } from 'lucide-react';
 import SkewedCarousel, { SkewedCarouselItem } from './ui/skewed-carousel';
 import DollyGallery from './ui/DollyGallery';
@@ -38,8 +41,8 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
     title: 'Зимняя коллекция',
     description: 'Глубокие, согревающие аккорды и неторопливые инструментальные мелодии, созданные, чтобы укутать вас уютом в сезон холодов и вьюг.',
     image: '/uploads/photo_2026-09-15_00-00-17.jpg',
-    badge: 'Сезонная коллекция',
-    color: 'from-orange-500/80 to-stone-900/80',
+    badge: 'Зимняя коллекция',
+    color: 'from-blue-600/80 to-slate-900/80',
   },
   {
     id: 'Permanent 1',
@@ -57,6 +60,14 @@ const COLLECTION_CARDS: SkewedCarouselItem[] = [
     badge: 'Постоянная коллекция',
     color: 'from-emerald-500/80 to-teal-900/80',
   },
+  {
+    id: 'Pain Girl',
+    title: 'Pain Girl',
+    description: 'Особенная атмосфера и мрачная эстетика в 6 авторских композициях.',
+    image: '/Pain girl.jpg',
+    badge: 'Special Collection',
+    color: 'from-stone-800/80 to-black/90',
+  },
 ];
 
 type DisplayMode = 'dolly' | 'grid';
@@ -67,11 +78,24 @@ export const CatalogView: React.FC = () => {
   const activeCollection = useAppStore((state) => state.activeCollection);
   const setActiveCollection = useAppStore((state) => state.setActiveCollection);
   const isCollectionArchived = useAppStore((state) => state.isCollectionArchived);
+  const addToCart = useAppStore((state) => state.addToCart);
+  const setIsCartOpen = useAppStore((state) => state.setIsCartOpen);
   const theme = useAppStore((state) => state.theme);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [displayMode, setDisplayMode] = useState<DisplayMode>('dolly');
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
+  const [selectedNicotine, setSelectedNicotine] = useState<NicotineType>('3mg');
   const isDark = theme === 'dark';
+
+  const painGirlTracks = [
+    { name: 'Everybody supports women' },
+    { name: 'Out in the Garden' },
+    { name: 'Above the Neck' },
+    { name: 'Evergreen soldier' },
+    { name: 'Sex concept' },
+    { name: 'hot gum' },
+  ];
 
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
@@ -88,6 +112,165 @@ export const CatalogView: React.FC = () => {
   }, [products, activeCollection, searchQuery]);
 
   const isOverview = activeCollection === 'All';
+
+  // Dedicated Pain Girl Collection View
+  if (activeCollection === 'Pain Girl') {
+    const bundlePrice =
+      selectedNicotine === '0mg' ? 8000 : selectedNicotine === '3mg' ? 8300 : 8600;
+
+    const handleAddBundleToCart = () => {
+      const bundleProduct: ProductItem = {
+        id: 'pain-girl-bundle',
+        name: 'Коллекция Pain Girl (6 х 60ml)',
+        subtitle: 'Полный сет из 6 авторских композиций',
+        description: '6 флаконов по 60мл: Everybody supports women, Out in the Garden, Above the Neck, Evergreen soldier, Sex concept, hot gum.',
+        image: '/Pain girl.jpg',
+        basePrice: bundlePrice,
+        category: 'Pain Girl',
+        musicalKey: 'C Minor',
+        bpm: 90,
+        opusNumber: 'PG-SET',
+        aromaticChords: { top: 'Special Collection', heart: '6 Flavors Set', base: '60ml each' },
+        accentColor: '#181818',
+      };
+      addToCart(bundleProduct, '60ml', selectedNicotine);
+      setIsStoryModalOpen(false);
+      setIsCartOpen(true);
+    };
+
+    return (
+      <div id="pain-girl-collection-stage" className="relative z-10 flex-1 w-full min-h-[88vh] flex flex-col justify-between bg-black text-white p-4 sm:p-8 animate-fade-rise">
+        {/* Top Header Ribbon & Action Buttons */}
+        <div className="max-w-7xl mx-auto w-full flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-white/10 z-20">
+          <div>
+            <span className="text-xs font-mono uppercase tracking-widest text-stone-400 font-bold">Специальная коллекция</span>
+            <h2 className="font-serif text-3xl sm:text-5xl font-extrabold tracking-tight text-white mt-1">Pain Girl</h2>
+          </div>
+
+          {/* Action Buttons styled with dark gloomy palette */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setActiveCollection('All')}
+              className="px-5 py-3 rounded-2xl bg-[#111] hover:bg-[#222] border border-[#333] hover:border-[#555] text-stone-300 hover:text-white font-mono text-xs sm:text-sm uppercase tracking-wider font-bold transition-all duration-300 shadow-lg cursor-pointer flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Вернуться к коллекциям</span>
+            </button>
+
+            <button
+              onClick={() => setIsStoryModalOpen(true)}
+              className="px-5 py-3 rounded-2xl bg-[#111] hover:bg-[#222] border border-[#333] hover:border-[#555] text-amber-400 hover:text-amber-300 font-mono text-xs sm:text-sm uppercase tracking-wider font-bold transition-all duration-300 shadow-lg cursor-pointer flex items-center gap-2"
+            >
+              <span>Послушать историю</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Pain Girl Section Container: Left-aligned illustration, Right-aligned spiral */}
+        <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col lg:flex-row items-center justify-between gap-8 py-8 relative">
+          {/* Left-Aligned Artwork Visual Block */}
+          <div className="w-full lg:w-1/2 flex items-center justify-center lg:justify-start pointer-events-none relative z-10">
+            <img
+              src="/Pain girl.jpg"
+              alt="Pain Girl Visual"
+              className="max-h-[65vh] w-auto max-w-full object-contain object-left rounded-3xl border border-white/10 shadow-2xl"
+            />
+          </div>
+
+          {/* Right-Aligned Interactive Spiral Component */}
+          <div className="w-full lg:w-1/2 flex flex-col items-center justify-center relative z-20">
+            <div className="relative w-80 h-80 sm:w-96 sm:h-96 rounded-full flex items-center justify-center border border-stone-800 bg-stone-950/80 shadow-2xl p-6 overflow-hidden">
+              {/* Outer Spiral Rings */}
+              <div className="absolute inset-0 rounded-full border border-white/5 animate-spin" style={{ animationDuration: '30s' }} />
+              <div className="absolute inset-8 rounded-full border border-white/10 animate-spin" style={{ animationDuration: '20s', animationDirection: 'reverse' }} />
+              <div className="absolute inset-16 rounded-full border border-white/15" />
+
+              {/* Spiral Center Vinyl / Cover */}
+              <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full overflow-hidden border-2 border-stone-700 shadow-inner flex items-center justify-center">
+                <img src="/Pain girl.jpg" alt="Pain Girl Spiral" className="w-full h-full object-cover rounded-full" />
+                <div className="absolute w-6 h-6 rounded-full bg-black border border-stone-600 z-10" />
+              </div>
+            </div>
+
+            {/* Track positions display */}
+            <div className="mt-6 w-full max-w-md space-y-2 font-mono text-xs text-stone-300">
+              <h4 className="text-center text-amber-400 font-bold uppercase tracking-wider mb-3">Состав коллекции (6 х 60ml):</h4>
+              {painGirlTracks.map((track, idx) => (
+                <div key={idx} className="flex items-center justify-between px-4 py-2 rounded-xl bg-[#111] border border-[#222]">
+                  <span className="text-stone-400 font-bold">{idx + 1}.</span>
+                  <span className="font-semibold text-white truncate px-2">{track.name}</span>
+                  <span className="text-amber-400 text-[10px] uppercase font-bold">60ml</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Window: "Послушать историю" */}
+        {isStoryModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-rise">
+            <div className="relative w-full max-w-lg rounded-3xl bg-[#111] border border-[#333] p-6 sm:p-8 text-white shadow-2xl">
+              <button
+                onClick={() => setIsStoryModalOpen(false)}
+                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-32 h-32 rounded-2xl overflow-hidden border border-stone-700 shadow-lg">
+                  <img src="/Pain girl.jpg" alt="Pain Girl Artwork" className="w-full h-full object-cover" />
+                </div>
+
+                <h3 className="font-serif text-2xl font-extrabold text-white">Pain Girl Collection</h3>
+                <p className="text-xs text-stone-300 font-sans leading-relaxed">
+                  Эксклюзивная сет-коллекция из 6 авторских композиций объёмом 60мл каждая. Выберите желаемую крепость для всего сета.
+                </p>
+
+                {/* Nicotine Strength Selector */}
+                <div className="w-full space-y-2 pt-2">
+                  <label className="block text-xs font-mono uppercase font-bold text-amber-400">Выберите крепость никотина:</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['0mg', '3mg', '6mg'] as NicotineType[]).map((nic) => {
+                      const label = nic === '0mg' ? '0 мг' : nic === '3mg' ? '3 мг' : '6 мг';
+                      const isSelected = selectedNicotine === nic;
+                      return (
+                        <button
+                          key={nic}
+                          onClick={() => setSelectedNicotine(nic)}
+                          className={`py-3 rounded-xl text-xs font-mono font-bold border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md font-extrabold'
+                              : 'bg-[#181818] text-stone-300 border-[#333] hover:border-[#555]'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Price Display */}
+                <div className="w-full pt-4 border-t border-[#222] flex items-center justify-between">
+                  <span className="text-xs font-mono uppercase text-stone-400 font-bold">Итоговая цена:</span>
+                  <span className="font-serif text-3xl font-extrabold text-amber-400">{bundlePrice} руб.</span>
+                </div>
+
+                {/* Add to Cart / Checkout Button */}
+                <button
+                  onClick={handleAddBundleToCart}
+                  className="w-full py-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-mono font-extrabold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-lg shadow-amber-400/20"
+                >
+                  Оформить коллекцию ({bundlePrice} руб.)
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // Module 1: If user is viewing all collections, render full-screen Skewed Carousel (w-screen h-screen)
   if (isOverview) {
@@ -258,7 +441,7 @@ export const CatalogView: React.FC = () => {
                     <span className={`text-[11px] font-sans font-bold px-2.5 py-1 rounded-full border antialiased ${
                       isDark ? 'text-stone-300 border-white/15 bg-white/5' : 'text-slate-700 border-slate-300 bg-slate-100'
                     }`}>
-                      {product.category}
+                      {product.category === 'Autumn' ? 'Зимняя' : getCollectionTitle(product.category as CollectionName)}
                     </span>
                   </div>
                 </div>

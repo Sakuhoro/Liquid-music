@@ -610,7 +610,7 @@ app.post('/api/orders', requireAuth, (req, res) => {
     // client never gets to say what an item costs or what it is called.
     const items = []
     for (const line of parseResult.data.items) {
-      const unitPrice = calculateUnitPrice(line.volume, line.nicotine)
+      let unitPrice = calculateUnitPrice(line.volume, line.nicotine)
       if (unitPrice === null) {
         return res.status(400).json({ error: 'Неизвестный объем или крепость.' })
       }
@@ -618,6 +618,23 @@ app.post('/api/orders', requireAuth, (req, res) => {
       if (!product) {
         return res.status(400).json({ error: `Товар ${line.productId} больше не доступен.` })
       }
+
+      if (product.category === 'Pain Girl' || product.id.startsWith('pain-girl-')) {
+        let painGirlBase = 1333
+        let painGirlExtra = 1335
+        if (line.nicotine === '1.5mg') {
+          painGirlBase = 1358
+          painGirlExtra = 1360
+        } else if (line.nicotine === '3mg') {
+          painGirlBase = 1383
+          painGirlExtra = 1385
+        } else if (line.nicotine === '6mg') {
+          painGirlBase = 1433
+          painGirlExtra = 1435
+        }
+        unitPrice = product.id === 'pain-girl-6' ? painGirlExtra : painGirlBase
+      }
+
       items.push({
         productId: product.id,
         productName: product.name,
