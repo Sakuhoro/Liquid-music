@@ -1,6 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { CollectionName } from '../types';
+import { PAIN_GIRL_ARTWORK } from '../data/painGirlGallery';
 
 // Shown for the hero and for any collection without its own cut.
 const HERO_VIDEO_LIGHT = '/videos/role-act-as-a-master-animato.mp4';
@@ -16,13 +17,38 @@ const COLLECTION_VIDEOS: Partial<Record<CollectionName, { light: string; dark: s
   'Permanent 1': { light: '/videos/bones.mp4', dark: '/videos/bones.mp4' },
 };
 
+interface StillBackground {
+  image: string;
+  /** Where the subject sits when the artwork fills the screen. */
+  position: string;
+  /**
+   * Set when a narrow screen cannot put the artwork and the content side by side.
+   * The artwork then goes across the screen at its own proportions, sitting just
+   * under the header, and the content starts where the artwork ends, so the
+   * composition is neither cropped nor covered.
+   */
+  band?: {
+    /** Kept in step with the room the screen leaves for it. */
+    aspectRatio: string;
+    /** Measured off the file: what the artwork fades out into at its edges. */
+    surround: string;
+  };
+}
+
 // Some collections are artwork rather than footage, and a still reads better
 // than a clip here: the illustration is the point, so it is anchored to the
 // left edge, which is where the subject stands, and the screen's own content is
 // laid out to the right of it. Kept in this file so there is still exactly one
 // background layer behind the header and the content below it.
-const COLLECTION_STILL: Partial<Record<CollectionName, { image: string; position: string }>> = {
-  'Pain Girl': { image: '/Pain girl.jpg', position: 'left center' },
+const COLLECTION_STILL: Partial<Record<CollectionName, StillBackground>> = {
+  'Pain Girl': {
+    image: PAIN_GIRL_ARTWORK.src,
+    position: 'left center',
+    band: {
+      aspectRatio: `${PAIN_GIRL_ARTWORK.width} / ${PAIN_GIRL_ARTWORK.height}`,
+      surround: '#0a0a0a',
+    },
+  },
 };
 
 // The clips carry a generation watermark along the right-hand margin, so each
@@ -50,6 +76,21 @@ export const BackgroundVideo: React.FC = () => {
       ? HERO_VIDEO_DARK
       : HERO_VIDEO_LIGHT;
 
+  // The header belongs to the page rather than to this layer, but on a narrow
+  // screen the artwork has to start below it. Measured rather than assumed: its
+  // height depends on how the links wrap, which changes with the width.
+  const [chromeTop, setChromeTop] = useState(0);
+
+  useEffect(() => {
+    const header = document.getElementById('main-app-nav');
+    if (!header) return;
+    const read = () => setChromeTop(Math.round(header.getBoundingClientRect().height));
+    read();
+    const observer = new ResizeObserver(read);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     // Nothing to play when the collection brings its own artwork.
     if (still) return;
@@ -73,18 +114,42 @@ export const BackgroundVideo: React.FC = () => {
     >
       {still ? (
         <>
-          {/* Still artwork in place of the clip. The scrim is flat rather than a
-              gradient on purpose: a directional one would put a second tonal
-              break across the screen, which is the seam this layer exists to
-              avoid. */}
+          {/*
+            A phone gets the whole composition at its own proportions, sitting just
+            under the header, with the screen's content starting where the artwork
+            ends. A portrait crop of a landscape illustration would show nothing
+            but its dark margins, which is why the artwork is laid out whole here
+            instead of being covered to fit. Tablet and up get it full-screen with
+            the content laid out beside it. Either way this is one layer behind
+            the header and the content, which is what keeps them reading as a
+            single canvas.
+          */}
+          {still.band ? (
+            <div
+              data-testid="collection-still-band"
+              className="absolute inset-0 z-0 bg-no-repeat md:hidden"
+              style={{
+                // The artwork's own surround, so the parts of the screen it does
+                // not reach are the same flat black rather than the page's grey.
+                // Nothing stops on an edge: the file fades into this colour.
+                backgroundColor: still.band.surround,
+                backgroundImage: `url('${still.image}')`,
+                backgroundSize: '100% auto',
+                backgroundPosition: `left ${chromeTop}px`,
+              }}
+            />
+          ) : null}
           <div
             data-testid="collection-still"
-            className="absolute inset-0 z-0 bg-cover bg-no-repeat"
+            className={`absolute inset-0 z-0 bg-cover bg-no-repeat ${still.band ? 'hidden md:block' : ''}`}
             style={{
               backgroundImage: `url('${still.image}')`,
               backgroundPosition: still.position,
             }}
           />
+          {/* Scrim flat rather than a gradient on purpose: a directional one would
+              put a second tonal break across the screen, which is the seam this
+              layer exists to avoid. */}
           <div className="absolute inset-0 z-1 pointer-events-none bg-black/25" />
         </>
       ) : (

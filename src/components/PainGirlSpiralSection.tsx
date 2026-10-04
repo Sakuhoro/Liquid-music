@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { NicotineType, ProductItem } from '../types';
-import { PAIN_GIRL_GALLERY } from '../data/painGirlGallery';
+import { PAIN_GIRL_ARTWORK, PAIN_GIRL_GALLERY } from '../data/painGirlGallery';
 import InfiniteSpiral from './ui/InfiniteSpiral';
 
 // The collection is sold as one set of six 60ml bottles. The price follows the
@@ -26,6 +26,12 @@ const BUNDLE_NICOTINE: NicotineType[] = ['0mg', '3mg', '6mg'];
  * here, so the artwork stays defined in one place. The set is bought from the
  * floating control below: the spiral itself stays bare, because a header and a
  * caption list were both removed from it on purpose.
+ *
+ * The key art behind the screen is painted by the background layer, not here,
+ * so it sits under the header as well. From tablet up it fills the screen with
+ * the subject on the left and the stage takes the right; on a phone there is no
+ * width for the two side by side, so the artwork becomes a band across the top
+ * and the spiral starts underneath it. Either way the two never overlap.
  */
 export const PainGirlSpiralSection: React.FC = () => {
   const products = useAppStore((state) => state.products);
@@ -103,13 +109,25 @@ export const PainGirlSpiralSection: React.FC = () => {
         spiral would swallow every scroll that starts on it and the sections
         below would be unreachable on a phone.
       */}
+      {/*
+        Room for the artwork band on a phone. It is the same aspect ratio the
+        background layer paints the artwork at, and the same width, so the spiral
+        begins exactly where the artwork ends.
+      */}
+      <div
+        aria-hidden
+        className="w-full shrink-0 md:hidden"
+        style={{ aspectRatio: `${PAIN_GIRL_ARTWORK.width} / ${PAIN_GIRL_ARTWORK.height}` }}
+      />
+
       {/* The stage gives up the left of the screen from md up. The artwork
           behind it is anchored to the left edge, and the spiral sitting on top
           of the subject is the thing this avoids. A phone has no width to spare
-          for the two, so there the spiral stays full width and centred. */}
+          for the two, so there the artwork takes a band across the top and the
+          spiral fills what is left of the screen, full width and centred. */}
       <div
-        className="relative w-full overflow-hidden flex items-center justify-center touch-pan-y md:ml-auto md:w-[72%] lg:w-[64%] xl:w-[58%]"
-        style={{ height: 650 * growth }}
+        className="relative w-full flex-1 min-h-[360px] md:flex-none md:min-h-0 overflow-hidden flex items-center justify-center touch-pan-y md:ml-auto md:w-[72%] lg:w-[64%] xl:w-[58%]"
+        style={isDesktop ? { height: 650 * growth } : undefined}
       >
         <InfiniteSpiral
           items={spiralItems}
