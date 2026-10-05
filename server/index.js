@@ -457,7 +457,14 @@ app.post('/api/telegram/webhook', async (req, res) => {
 
   // Telegram wants a 200 for updates we are not acting on, otherwise it retries
   // them until they succeed.
-  if (!query || typeof query !== 'object') return res.json({ ok: true })
+  if (!query || typeof query !== 'object') {
+    // Someone writing to the bot is how the studio's chat id is found. It is
+    // only logged, never trusted and never stored: nothing here decides who may
+    // delete an order, and the message itself is not kept.
+    const chat = update.message?.chat
+    if (chat?.id) console.log(`[liquid-music] telegram chat seen: ${chat.id} (${chat.type || 'unknown'})`)
+    return res.json({ ok: true })
+  }
 
   const requestedId = String(query.data || '').replace(/^delete_test_order:/, '')
   const isDeleteButton = String(query.data || '').startsWith('delete_test_order:')
