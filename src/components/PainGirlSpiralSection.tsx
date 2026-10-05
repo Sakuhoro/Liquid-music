@@ -175,11 +175,14 @@ export const PainGirlSpiralSection: React.FC = () => {
         />
       </div>
 
-      {/* Absolute, so the stage keeps the height it was measured at. */}
+      {/* Absolute, so the stage keeps the height it was measured at. From tablet
+          up it is pinned near the foot of the first screenful by CSS rather than
+          the foot of the stage, which is taller than the screen on purpose; a
+          phone leaves it in the flow, where the stage fits the screen anyway. */}
       <button
         id="pain-girl-buy-btn"
         onClick={() => setIsStoryModalOpen(true)}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 md:left-auto md:right-[6vw] md:translate-x-0 z-30 px-5 py-3 rounded-2xl bg-[#111] hover:bg-[#222] border border-[#333] hover:border-[#555] text-amber-400 hover:text-amber-300 font-mono text-xs sm:text-sm uppercase tracking-wider font-bold transition-all duration-300 shadow-lg cursor-pointer"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 md:left-auto md:right-[3vw] md:translate-x-0 z-30 px-5 py-3 rounded-2xl bg-[#111] hover:bg-[#222] border border-[#333] hover:border-[#555] text-amber-400 hover:text-amber-300 font-mono text-xs sm:text-sm uppercase tracking-wider font-bold transition-all duration-300 shadow-lg cursor-pointer"
       >
         Оформить коллекцию
       </button>

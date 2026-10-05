@@ -149,7 +149,10 @@ export const CatalogView: React.FC = () => {
           <div>
             <button
               onClick={() => setActiveCollection('All')}
-              className={`inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest mb-2 cursor-pointer transition-colors ${
+              // 44px is the smallest target a thumb can hit. The link was a line
+              // of 12px text with no padding, so on a phone it was 16px tall --
+              // a hair's width across the ribbon that switches collections back.
+              className={`relative inline-flex items-center gap-2 min-h-[44px] text-xs font-mono uppercase tracking-widest mb-2 cursor-pointer transition-colors ${
                 isDark ? 'text-amber-400 hover:text-amber-300' : 'text-amber-700 hover:text-amber-800 font-bold'
               }`}
             >
@@ -182,7 +185,9 @@ export const CatalogView: React.FC = () => {
               <button
                 onClick={() => setDisplayMode('dolly')}
                 title="3D Gallery"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
+                // min-h rather than more padding: the pill keeps its look, and a
+                // 28px-tall switch is awkward to change view with a thumb.
+                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                   displayMode === 'dolly'
                     ? 'bg-amber-500 text-stone-950 font-semibold shadow-md'
                     : isDark ? 'text-stone-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
@@ -194,7 +199,7 @@ export const CatalogView: React.FC = () => {
               <button
                 onClick={() => setDisplayMode('grid')}
                 title="Сетка"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                   displayMode === 'grid'
                     ? 'bg-amber-500 text-stone-950 font-semibold shadow-md'
                     : isDark ? 'text-stone-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'

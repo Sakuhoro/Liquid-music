@@ -464,6 +464,23 @@
   max-height: 85dvh;
 }
 
+/* The buy control on the collection stage. The stage is deliberately taller than
+   the screen so the helix has room to travel, and the control used to sit at the
+   stage's foot -- which on a laptop put it most of a screen below the fold, so
+   arriving on the collection meant scrolling to discover that it could be bought
+   at all. From tablet up it is pinned near the foot of the first screenful
+   instead, which is where the customer is already looking, and kept clear of the
+   frames by hugging the stage's own edge. The 12.5rem is the room for the button
+   itself, its margin, and the header it has to start below: the control is
+   positioned inside the section, not inside the window, so the header's height is
+   part of the distance. On a phone the control is placed in the flow and this does
+   not apply: there the stage fits the screen anyway. */
+@media (min-width: 768px) {
+  #pain-girl-buy-btn {
+    top: calc(100dvh - 12.5rem);
+    bottom: auto;
+  }
+}
 /* The cart is a sheet, so it is capped against the screen it is open on rather
    than allowed to be a full-height panel with one row at the top of it. 85dvh
    leaves the backdrop visible above and below, which is what says "this closes
