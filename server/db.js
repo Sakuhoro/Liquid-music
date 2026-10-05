@@ -1976,6 +1976,32 @@ export function getAllOrders() {
   return orders.map((order) => ({ ...order, items: itemsStmt.all(order.id) }));
 }
 
+// Removing an order has to undo the loyalty credit the order paid out, not just
+// drop the row: createOrder counts the total towards the customer's spend, so
+// deleting the order on its own would leave behind a discount that was never
+// earned. The balance is recomputed from the orders that remain, in the same
+// transaction as the delete, so the two can never disagree afterwards.
+export function deleteTestOrder(businessOrderId) {
+  const order = db.prepare('SELECT id, userId FROM orders WHERE orderId = ?').get(businessOrderId);
+  if (!order) return { ok: false, error: 'Заказ не найден.' };
+
+  const remove = db.transaction((row) => {
+    // order_items.orderId holds the orders.id key, not the LM-... number.
+    db.prepare('DELETE FROM order_items WHERE orderId = ?').run(row.id);
+    db.prepare('DELETE FROM orders WHERE id = ?').run(row.id);
+
+    const { total } = db
+      .prepare('SELECT COALESCE(SUM(total), 0) AS total FROM orders WHERE userId = ?')
+      .get(row.userId);
+    const tier = getLoyaltyTier(total);
+    db.prepare('UPDATE users SET loyaltySpend = ?, loyaltyDiscountPct = ? WHERE id = ?').run(total, tier.pct, row.userId);
+
+    return total;
+  });
+
+  return { ok: true, orderId: businessOrderId, userId: order.userId, spend: remove(order) };
+}
+
 export function getLoyaltyForUser(userId) {
   const user = db.prepare('SELECT loyaltySpend, loyaltyDiscountPct FROM users WHERE id = ?').get(userId);
   if (!user) return null;

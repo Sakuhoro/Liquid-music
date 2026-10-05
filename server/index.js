@@ -35,6 +35,7 @@ import {
   createOrder,
   getOrdersByUser,
   getAllOrders,
+  deleteTestOrder,
   getLoyaltyForUser,
   calculateUnitPrice,
   VOLUME_PRICING,
@@ -344,6 +345,167 @@ app.post('/api/auth/login', (req, res) => {
   }
 })
 
+// --- Telegram order notifications -------------------------------------------
+// A new order is announced in the studio's chat with a button that throws the
+// order away again. That button is destructive, so the request behind it is not
+// trusted on arrival: Telegram authenticates the webhook with a secret header,
+// and the chat the press came from has to be one of the configured staff chats.
+const TELEGRAM_ORDER_CHAT_ID = process.env.TELEGRAM_ORDER_CHAT_ID || process.env.TELEGRAM_ADMIN_CHAT_ID || ''
+const TELEGRAM_STAFF_CHAT_IDS = [
+  TELEGRAM_ORDER_CHAT_ID,
+  process.env.TELEGRAM_ADMIN_CHAT_ID,
+  process.env.TELEGRAM_MANAGER_CHAT_ID,
+].filter(Boolean)
+const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || ''
+
+const formatRub = (value) => `${new Intl.NumberFormat('ru-RU').format(Math.round(Number(value) || 0))} ₽`
+
+// One call to the Bot API. Returns null instead of throwing, because a Telegram
+// outage is not a reason to fail the customer's checkout or the webhook.
+async function callTelegram(method, payload) {
+  if (!TELEGRAM_BOT_TOKEN) return null
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const body = await response.json().catch(() => null)
+    if (!response.ok || !body || body.ok !== true) {
+      console.error(`[liquid-music] telegram ${method} failed:`, body ? body.description : response.status)
+      return null
+    }
+    return body.result
+  } catch (err) {
+    console.error(`[liquid-music] telegram ${method} threw:`, err.message)
+    return null
+  }
+}
+
+// The buyer's Telegram handle, or their name and id when the handle we stored is
+// not a handle at all: a person who registered with a phone number still has to
+// be recognisable in the chat.
+function describeBuyer(user) {
+  const raw = String(user?.telegramId || '').trim()
+  if (raw.startsWith('@')) return raw
+  const name = String(user?.fullName || '').trim()
+  if (raw && /^@?\d{4,}$/.test(raw)) {
+    const handle = raw.startsWith('@') ? raw : `@${raw}`
+    return name ? `${name} ${handle}` : handle
+  }
+  return name || raw || 'без контакта'
+}
+
+function orderMessageText(order, user) {
+  const lines = [`📦 Новый заказ #${order.orderId}`, '', `👤 ${describeBuyer(user)}`]
+  if (user?.phone) lines.push(`☎️ ${user.phone}`)
+  lines.push('')
+  for (const item of order.items) {
+    lines.push(
+      `• ${item.productName} — ${item.volume} / ${item.nicotine} × ${item.quantity} — ${formatRub(item.unitPrice * item.quantity)}`
+    )
+  }
+  lines.push('')
+  if (order.discountAmount > 0) {
+    lines.push(`Скидка ${order.discountPct}%: −${formatRub(order.discountAmount)}`)
+  }
+  lines.push(`Итого: ${formatRub(order.total)}`)
+  return lines.join('\n')
+}
+
+// Announced after the order is committed and deliberately not awaited: the
+// customer has already paid and must not be kept waiting on Telegram, and a
+// failed announcement must not roll the order back.
+async function notifyOrderCreated(order, user) {
+  if (!TELEGRAM_ORDER_CHAT_ID) return
+  await callTelegram('sendMessage', {
+    chat_id: TELEGRAM_ORDER_CHAT_ID,
+    text: orderMessageText(order, user),
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: '🗑 Удалить тестовый заказ', callback_data: `delete_test_order:${order.orderId}` }],
+      ],
+    },
+  })
+}
+
+function isStaffChat(chatId) {
+  const id = String(chatId ?? '')
+  return TELEGRAM_STAFF_CHAT_IDS.some((configured) => String(configured) === id)
+}
+
+// The order number out of a callback payload. Anything that is not one of our own
+// LM-... numbers is refused rather than passed to the database.
+const ORDER_ID_PATTERN = /^LM-[A-Z0-9]{1,32}$/
+
+app.post('/api/telegram/webhook', async (req, res) => {
+  // Without a configured secret there is no way to tell Telegram's request from
+  // anyone else's, so the endpoint refuses everything rather than trusting an
+  // unauthenticated body.
+  if (!TELEGRAM_WEBHOOK_SECRET) {
+    return res.status(503).json({ error: 'Telegram webhook не настроен на сервере.' })
+  }
+
+  const given = Buffer.from(String(req.get('X-Telegram-Bot-Api-Secret-Token') || ''), 'utf8')
+  const expected = Buffer.from(TELEGRAM_WEBHOOK_SECRET, 'utf8')
+  if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) {
+    return res.status(401).json({ error: 'Не удалось подтвердить источник запроса.' })
+  }
+
+  const update = req.body && typeof req.body === 'object' ? req.body : {}
+  const query = update.callback_query
+
+  // Telegram wants a 200 for updates we are not acting on, otherwise it retries
+  // them until they succeed.
+  if (!query || typeof query !== 'object') return res.json({ ok: true })
+
+  const requestedId = String(query.data || '').replace(/^delete_test_order:/, '')
+  const isDeleteButton = String(query.data || '').startsWith('delete_test_order:')
+
+  // Rejecting the press is answered politely and changes nothing else: the order
+  // stays, the button stays, and whoever pressed it is told why.
+  if (!isDeleteButton || !ORDER_ID_PATTERN.test(requestedId)) {
+    await callTelegram('answerCallbackQuery', { callback_query_id: query.id, text: 'Действие не поддерживается.', show_alert: false })
+    return res.json({ ok: true })
+  }
+
+  if (!isStaffChat(query.message?.chat?.id)) {
+    await callTelegram('answerCallbackQuery', { callback_query_id: query.id, text: '🚫 Недостаточно прав.', show_alert: true })
+    return res.json({ ok: true })
+  }
+
+  let result
+  try {
+    result = deleteTestOrder(requestedId)
+  } catch (err) {
+    console.error('[liquid-music] telegram order delete failed:', err.message)
+    result = { ok: false, error: err.message }
+  }
+
+  if (result.ok) {
+    await callTelegram('answerCallbackQuery', {
+      callback_query_id: query.id,
+      text: `❌ Заказ #${requestedId} успешно удален`,
+      show_alert: false,
+    })
+    // The order is gone, so the button that would delete it again has to go too,
+    // otherwise the chat fills up with dead buttons.
+    await callTelegram('editMessageReplyMarkup', {
+      chat_id: query.message.chat.id,
+      message_id: query.message.message_id,
+      reply_markup: { inline_keyboard: [] },
+    })
+    return res.json({ ok: true, deleted: result.orderId })
+  }
+
+  await callTelegram('answerCallbackQuery', {
+    callback_query_id: query.id,
+    text: `⚠️ ${result.error}`,
+    show_alert: true,
+  })
+  return res.json({ ok: true })
+})
+
 // --- Telegram sign-in ------------------------------------------------------
 // The widget hands the browser a payload signed by the bot, and the signature
 // is keyed on the bot token. That token is the only thing that makes a claimed
@@ -650,6 +812,10 @@ app.post('/api/orders', requireAuth, (req, res) => {
 
     const order = createOrder({ userId: req.user.id, items })
     const full = getOrdersByUser(req.user.id).find((o) => o.id === order.id)
+
+    // Announced, not awaited: the order is already saved, so Telegram is told
+    // about it in the background and the checkout returns straight away.
+    notifyOrderCreated(full, req.user).catch(() => {})
 
     return res.status(201).json({
       success: true,
