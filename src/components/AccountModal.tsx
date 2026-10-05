@@ -18,18 +18,13 @@ import {
 const formatRub = (value: number) =>
   new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(value);
 
-const TIER_LABEL: Record<string, string> = {
-  BASE: 'Первое слушание',
-  SILVER: 'Серебряный слушатель',
-  GOLD: 'Золотой слушатель',
-};
-
 // Shown verbatim in the cabinet so the scheme needs no interpretation:
 // the threshold is a strict "more than", and the rate it unlocks applies
-// to the following order, not the one that crossed it.
+// to the following order, not the one that crossed it. These are discount
+// steps, not a tier ladder: the member's status reads as one name.
 const LOYALTY_RULES = [
-  { threshold: 20000, pct: 5, tier: 'silver' },
-  { threshold: 30000, pct: 10, tier: 'gold' },
+  { threshold: 20000, pct: 5 },
+  { threshold: 30000, pct: 10 },
 ];
 
 const STATUS_LABEL: Record<string, string> = {
@@ -39,7 +34,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_TONE: Record<string, string> = {
   'Pending Verification': 'var(--hall-varnish)',
-  Confirmed: 'var(--tier-silver)',
+  Confirmed: 'var(--hall-varnish)',
 };
 
 // Progress toward the next tier, as a percentage. A member with no next
@@ -98,7 +93,7 @@ export const AccountModal: React.FC = () => {
         role="dialog"
         aria-modal="true"
         aria-label="Личный кабинет"
-        className="hall-account-card relative w-full max-w-3xl rounded-3xl overflow-hidden border hall-settle my-auto"
+        className="hall-account-card hall-modal-fit relative w-full max-w-3xl rounded-3xl overflow-hidden border hall-settle my-auto flex flex-col"
         style={{
           background: 'var(--hall-surface)',
           borderColor: 'var(--hall-border)',
@@ -125,7 +120,7 @@ export const AccountModal: React.FC = () => {
               <User className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div className="min-w-0">
-              <div className="inline-flex items-center gap-1.5 hall-text-2xs font-mono" style={{ color: 'var(--tier-gold)' }}>
+              <div className="inline-flex items-center gap-1.5 hall-text-2xs font-mono" style={{ color: 'var(--hall-loyalty)' }}>
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Авторизованный слушатель</span>
               </div>
@@ -146,16 +141,14 @@ export const AccountModal: React.FC = () => {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="hall-text-2xs font-mono uppercase tracking-wider" style={{ color: 'var(--hall-text-faint)' }}>
+                    Программа лояльности
+                  </div>
+                  {/* One status name, not a ladder of them. The member's standing
+                      is a single thing; which discount step it has reached is
+                      what the bar and the rates below are for. */}
+                  <div className="font-serif hall-text-xl mt-0.5" style={{ color: 'var(--hall-varnish)' }}>
                     Постоянный слушатель
                   </div>
-                  {/* The tier name is only worth showing once there is a tier
-                      to have earned. At the starting level it read as a
-                      slogan rather than a status. */}
-                  {loyalty.tier !== 'BASE' && (
-                    <div className="font-serif hall-text-xl mt-0.5" style={{ color: `var(--tier-${loyalty.tier.toLowerCase()})` }}>
-                      {TIER_LABEL[loyalty.tier] ?? loyalty.tier}
-                    </div>
-                  )}
                 </div>
                 <div className="text-right shrink-0">
                   <div className="font-serif hall-text-3xl font-bold" style={{ color: 'var(--hall-varnish)' }}>
@@ -180,7 +173,7 @@ export const AccountModal: React.FC = () => {
                   className="h-full rounded-full transition-[width] duration-500"
                   style={{
                     width: `${progress}%`,
-                    background: `var(--tier-${loyalty.tier.toLowerCase()})`,
+                    background: 'var(--hall-varnish)',
                     transitionTimingFunction: 'var(--motion-ease-out)',
                   }}
                 />
@@ -217,7 +210,7 @@ export const AccountModal: React.FC = () => {
                       style={{ color: unlocked ? 'var(--hall-text)' : 'var(--hall-text-faint)' }}
                     >
                       {unlocked ? (
-                        <Check className="w-4 h-4 shrink-0" style={{ color: `var(--tier-${rule.tier})` }} />
+                        <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--hall-varnish)' }} />
                       ) : (
                         <span
                           className="w-4 h-4 rounded-full shrink-0"
@@ -240,7 +233,7 @@ export const AccountModal: React.FC = () => {
         >
           {[
             { Icon: Send, label: 'Telegram', value: currentUser.telegram, tone: 'var(--hall-varnish)' },
-            { Icon: Phone, label: 'Телефон', value: currentUser.phone, tone: 'var(--tier-silver)' },
+            { Icon: Phone, label: 'Телефон', value: currentUser.phone, tone: 'var(--hall-text-muted)' },
             { Icon: Calendar, label: 'В студии с', value: currentUser.registeredAt, tone: 'var(--hall-varnish)' },
           ].map(({ Icon, label, value, tone }) => (
             <div key={label} className="flex items-center justify-between gap-2 sm:gap-3">
@@ -257,8 +250,11 @@ export const AccountModal: React.FC = () => {
           ))}
         </div>
 
-        {/* Order history */}
-        <div className="p-4 sm:p-8">
+        {/* Order history. This is the part that grows, so it is the part that
+            takes the remaining height and scrolls: the card is capped by
+            hall-modal-fit, and without the flex/min-h-0 pair below the cap
+            would push the history's own scroll away instead of bounding it. */}
+        <div className="p-4 sm:p-8 flex-1 min-h-0 overflow-y-auto">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-serif hall-text-xl flex items-center gap-2">
               <Disc3 className="w-4 h-4" style={{ color: 'var(--hall-varnish)' }} />
@@ -354,7 +350,7 @@ export const AccountModal: React.FC = () => {
                         {order.discountAmount ? (
                           <div
                             className="flex items-center justify-between hall-text-2xs font-mono pt-2"
-                            style={{ borderTop: '1px solid var(--hall-border)', color: 'var(--tier-gold)' }}
+                            style={{ borderTop: '1px solid var(--hall-border)', color: 'var(--hall-loyalty)' }}
                           >
                             <span className="flex items-center gap-1.5">
                               <Sparkles className="w-3 h-3" />

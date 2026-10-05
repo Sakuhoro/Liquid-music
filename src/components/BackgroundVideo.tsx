@@ -33,6 +33,24 @@ interface StillBackground {
     /** Measured off the file: what the artwork fades out into at its edges. */
     surround: string;
   };
+  /**
+   * Set when the artwork can be given its own half of a wide screen instead of
+   * being laid across all of it. The file is 1366x768, so on a 16:9 screen a
+   * full-bleed cover crop has to throw away about a third of the width to reach
+   * the height; splitting the screen instead lets the artwork keep more of
+   * itself and leaves the rest pure black for the content to sit on.
+   *
+   * Everything about the split's geometry -- how much of the screen the artwork
+   * takes, how it is cropped or fitted, how far it fades into black, and the
+   * width that leaves for the stage -- is in CSS (--pain-girl-art-width,
+   * .hall-pain-art, --pain-girl-stage-width), because the stage reserves that
+   * room from the same numbers. Only what is measured off the file is here:
+   * where inside it the subject stands.
+   */
+  split?: {
+    /** Where inside the artwork the panel's share lands, horizontally. */
+    focal: string;
+  };
 }
 
 // Some collections are artwork rather than footage, and a still reads better
@@ -47,6 +65,11 @@ const COLLECTION_STILL: Partial<Record<CollectionName, StillBackground>> = {
     band: {
       aspectRatio: `${PAIN_GIRL_ARTWORK.width} / ${PAIN_GIRL_ARTWORK.height}`,
       surround: '#0a0a0a',
+    },
+    split: {
+      // Measured off the file: the subject sits left of the file's middle, with
+      // her head around 38% across and her body running down from there.
+      focal: '38%',
     },
   },
 };
@@ -139,18 +162,64 @@ export const BackgroundVideo: React.FC = () => {
               }}
             />
           ) : null}
-          <div
-            data-testid="collection-still"
-            className={`absolute inset-0 z-0 bg-cover bg-no-repeat ${still.band ? 'hidden md:block' : ''}`}
-            style={{
-              backgroundImage: `url('${still.image}')`,
-              backgroundPosition: still.position,
-            }}
-          />
+          {/* The artwork's own black, filling whatever the artwork does not. On
+              a phone that is the screen above and below the band, already the
+              band's own background; from tablet up it is the whole of the
+              content's half, so the spiral reads against pure black with no
+              image behind it. */}
+          {still.split ? (
+            <div
+              data-testid="collection-still-surround-wide"
+              className="absolute inset-0 z-0 hidden md:block"
+              style={{ backgroundColor: '#0a0a0a' }}
+            />
+          ) : null}
+          {/*
+            A wide screen is split rather than covered. The artwork is painted
+            into its own share of the width and the rest of the screen is the
+            artwork's own surround, so the two meet along a fade instead of along
+            an edge, and everything the content sits on behind it is black. Both
+            the share and the fade live in CSS (--pain-girl-art-width,
+            .hall-pain-art), so the section that reserves the room reads the same
+            number the artwork is painted against.
+          */}
+          {still.split ? (
+            <div
+              data-testid="collection-still-split"
+              className="hall-pain-art z-0 hidden md:block"
+              style={{
+                // Only the horizontal placement is set here: the panel's size,
+                // where it is cropped or fitted, and the fade into the stage are
+                // all in CSS (.hall-pain-art), which the stage's own width is
+                // measured from -- so the picture and the spiral cannot disagree
+                // about where they meet.
+                backgroundPositionX: still.split.focal,
+                backgroundImage: `url('${still.image}')`,
+              }}
+            />
+          ) : (
+            <div
+              data-testid="collection-still"
+              className="absolute inset-0 z-0 bg-cover bg-no-repeat"
+              style={{
+                backgroundImage: `url('${still.image}')`,
+                backgroundPosition: still.position,
+              }}
+            />
+          )}
           {/* Scrim flat rather than a gradient on purpose: a directional one would
               put a second tonal break across the screen, which is the seam this
-              layer exists to avoid. */}
-          <div className="absolute inset-0 z-1 pointer-events-none bg-black/25" />
+              layer exists to avoid. Over a split the scrim only covers the
+              artwork's own half, so the content's half stays the pure black it
+              is meant to be. */}
+          {still.split ? (
+            // Only while the artwork is cropped into its panel. Past 2560 it is
+            // shown whole and nothing is laid over it, so darkening it would
+            // leave the black inside the panel a shade off the black outside it.
+            <div className="hall-pain-scrim hall-pain-art z-1 pointer-events-none bg-black/25" />
+          ) : (
+            <div className="absolute inset-0 z-1 pointer-events-none bg-black/25" />
+          )}
         </>
       ) : (
         <>

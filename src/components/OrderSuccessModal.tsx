@@ -164,7 +164,7 @@ export const OrderSuccessModal: React.FC = () => {
             {lastPlacedOrder.discountAmount ? (
               <div
                 className="flex items-center justify-between gap-4 hall-text-sm font-mono pt-3 sm:pt-4"
-                style={{ borderTop: '1px solid var(--hall-border)', color: 'var(--tier-gold)' }}
+                style={{ borderTop: '1px solid var(--hall-border)', color: 'var(--hall-loyalty)' }}
               >
                 <span className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4" />

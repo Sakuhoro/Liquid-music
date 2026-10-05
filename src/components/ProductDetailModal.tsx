@@ -120,7 +120,7 @@ export const ProductDetailModal: React.FC = () => {
       <div
         id="product-inspect-modal-card"
         onClick={(e) => e.stopPropagation()}
-        className={`relative w-full max-w-4xl rounded-3xl overflow-hidden border shadow-2xl backdrop-blur-2xl cursor-default transition-all duration-300 ${
+        className={`hall-product-card hall-modal-fit relative w-full max-w-4xl rounded-3xl overflow-hidden border shadow-2xl backdrop-blur-2xl cursor-default transition-all duration-300 ${
           isDark
             ? 'bg-slate-950/90 border-white/15 text-stone-100 shadow-black/90'
             : 'bg-stone-900/95 border-white/20 text-stone-100 shadow-black/80'
@@ -136,7 +136,7 @@ export const ProductDetailModal: React.FC = () => {
         </button>
 
         {/* Modal Main Content Grid - Apple/Stripe Editorial Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 p-5 sm:p-8 lg:p-12 items-center max-h-[90vh] overflow-y-auto">
+        <div className="hall-product-body grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 p-5 sm:p-8 lg:p-12 items-center max-h-[85dvh] overflow-y-auto">
 
           {/* LEFT COLUMN: Clean Album Cover Image */}
           <div className="md:col-span-5 flex flex-col items-center justify-center relative">

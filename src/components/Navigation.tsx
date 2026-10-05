@@ -65,12 +65,12 @@ export const Navigation: React.FC = () => {
             onClick={toggleBgMusic}
             aria-label={isBgMusicPlaying ? 'Mute Background Melody' : 'Play Background Melody'}
             title={isBgMusicPlaying ? 'Mute Background Melody' : 'Play Background Melody'}
-            className="liquid-glass w-9 h-9 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
+            className="liquid-glass nav-control nav-control--touch rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
           >
             {isBgMusicPlaying ? (
-              <Volume2 className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <Volume2 className="nav-control__icon text-amber-400 animate-pulse" />
             ) : (
-              <VolumeX className="w-3.5 h-3.5 opacity-60" />
+              <VolumeX className="nav-control__icon opacity-60" />
             )}
           </button>
 
@@ -81,10 +81,10 @@ export const Navigation: React.FC = () => {
             id="open-cart-btn-mobile"
             onClick={() => setIsCartOpen(true)}
             aria-label="Open cart"
-            className="liquid-glass min-w-[44px] min-h-[44px] px-3.5 py-1.5 rounded-full flex items-center justify-center gap-1.5 cursor-pointer"
+            className="liquid-glass nav-control nav-control--touch rounded-full flex items-center justify-center cursor-pointer"
           >
-            <ShoppingBag className="w-4 h-4 opacity-80" />
-            <span className="text-xs font-semibold font-mono">{cartCount}</span>
+            <ShoppingBag className="nav-control__icon opacity-80" />
+            <span className="nav-control__count font-semibold font-mono">{cartCount}</span>
           </button>
         </div>
       </div>
@@ -153,12 +153,12 @@ export const Navigation: React.FC = () => {
           id="bg-music-toggle-btn"
           onClick={toggleBgMusic}
           title={isBgMusicPlaying ? 'Mute Background Melody' : 'Play Background Melody'}
-          className="liquid-glass w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
+          className="liquid-glass nav-control rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 text-stone-200"
         >
           {isBgMusicPlaying ? (
-            <Volume2 className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            <Volume2 className="nav-control__icon text-amber-400 animate-pulse" />
           ) : (
-            <VolumeX className="w-3.5 h-3.5 opacity-60" />
+            <VolumeX className="nav-control__icon opacity-60" />
           )}
         </button>
 
@@ -169,10 +169,10 @@ export const Navigation: React.FC = () => {
         <button
           id="open-cart-btn"
           onClick={() => setIsCartOpen(true)}
-          className="liquid-glass px-3.5 py-1.5 rounded-full flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+          className="liquid-glass nav-control rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95"
         >
-          <ShoppingBag className="w-3.5 h-3.5 opacity-80" />
-          <span className="text-xs font-semibold font-mono">
+          <ShoppingBag className="nav-control__icon opacity-80" />
+          <span className="nav-control__count font-semibold font-mono">
             {cartCount}
           </span>
         </button>

@@ -123,10 +123,10 @@ export const CartDrawer: React.FC = () => {
           color: 'var(--hall-text)',
           boxShadow: 'var(--hall-shadow)',
         }}
-        className="w-full max-w-2xl h-full flex flex-col border-l backdrop-blur-2xl hall-drawer-in"
+        className="hall-cart-panel w-full max-w-2xl h-full flex flex-col border-l backdrop-blur-2xl hall-drawer-in"
       >
         {/* Header */}
-        <div className="relative p-6 border-b overflow-hidden" style={{ borderColor: 'var(--hall-border)' }}>
+        <div className="hall-cart-head relative p-6 border-b overflow-hidden" style={{ borderColor: 'var(--hall-border)' }}>
           <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
@@ -158,7 +158,7 @@ export const CartDrawer: React.FC = () => {
         </div>
 
         {/* Items */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-3">
+        <div className="hall-cart-rows flex-1 overflow-y-auto p-6 space-y-3">
           {cart.length === 0 ? (
             <div className="py-24 text-center space-y-3">
               <Disc3 className="w-12 h-12 mx-auto" style={{ color: 'var(--hall-text-faint)' }} />
@@ -291,7 +291,7 @@ export const CartDrawer: React.FC = () => {
               {discountPct > 0 && (
                 <div
                   className="flex items-baseline justify-between hall-list-in"
-                  style={{ color: 'var(--tier-gold)' }}
+                  style={{ color: 'var(--hall-loyalty)' }}
                 >
                   <span className="flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" />

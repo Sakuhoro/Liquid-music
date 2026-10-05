@@ -272,10 +272,10 @@
      individual utility classes. */
   --hall-type-scale: 1.5;
 
-  /* Loyalty tiers, so a tier reads the same everywhere it appears. */
-  --tier-base: oklch(0.72 0.02 250);
-  --tier-silver: oklch(0.78 0.03 240);
-  --tier-gold: oklch(0.79 0.142 78);
+  /* Loyalty standing. One name is shown, so the only token left is what it is
+     coloured by; which discount step a member has reached is carried by the
+     bar and the rates spelled out beside it. */
+  --hall-loyalty: oklch(0.79 0.142 78);
 }
 
 .light {
@@ -290,9 +290,221 @@
   --hall-text-faint: oklch(0.21 0.03 250 / 38%);
   --hall-shadow: 0 24px 64px -16px oklch(0.2 0.03 250 / 22%);
 
-  --tier-base: oklch(0.52 0.02 250);
-  --tier-silver: oklch(0.56 0.03 240);
-  --tier-gold: oklch(0.62 0.135 62);
+  --hall-loyalty: oklch(0.62 0.135 62);
+}
+
+/* ------------------------------------------------------------------
+   Display scaling
+   Two knobs, and the modules below read them rather than carrying
+   pixel values of their own.
+
+   --display-scale is how big a module wants to be on the screen in
+   front of you. A 13-inch laptop is wide enough to be a desktop but
+   only ~800px tall, so a module sized for a 27-inch panel runs off the
+   bottom of it and has to be scrolled back to, which is the awkward
+   clipping this corrects. 0.85 is that correction. The width guard
+   keeps it off a wide-but-short window, where the extra room would
+   make space for the module instead of taking it away.
+
+   --control-scale is the header's own knob and leans the other way:
+   the mute, theme and cart controls are a fixed handful of pixels,
+   which on a 32- or 50-inch panel reads as specks, so they grow with
+   the display while the modules around them stay their size.
+   ------------------------------------------------------------------ */
+:root {
+  --display-scale: 1;
+  --control-scale: 1;
+}
+
+@media (max-height: 850px) and (max-width: 1440px) {
+  :root {
+    --display-scale: 0.85;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --control-scale: 1.12;
+  }
+}
+
+@media (min-width: 2560px) {
+  :root {
+    --control-scale: 1.4;
+  }
+}
+
+@media (min-width: 3840px) {
+  :root {
+    --control-scale: 1.55;
+  }
+}
+
+/* Header utility controls: the mute toggle, the theme switch and the cart
+   trigger. Their box, their glyph and the figure inside them all come off the
+   one knob, so they stay the same size as each other at any width and the row
+   of them keeps its alignment. */
+.nav-control {
+  min-width: calc(2.25rem * var(--control-scale));
+  height: calc(2.25rem * var(--control-scale));
+  gap: calc(0.5rem * var(--control-scale));
+}
+
+/* The same control on a phone, where the 44px touch floor is the base rather
+   than an addition. */
+.nav-control--touch {
+  min-width: calc(2.75rem * var(--control-scale));
+  height: calc(2.75rem * var(--control-scale));
+}
+
+.nav-control__icon {
+  width: calc(1rem * var(--control-scale));
+  height: calc(1rem * var(--control-scale));
+}
+
+.nav-control__count {
+  font-size: calc(0.75rem * var(--control-scale));
+}
+
+/* How much of a wide screen the Pain Girl artwork is given, and by extension
+   where the spiral's half begins. Read by BackgroundVideo to paint the artwork
+   and by PainGirlSpiralSection to reserve the rest, so the boundary between
+   "her" and "the black the spiral travels on" is one number rather than two
+   that could disagree.
+
+   It steps down as the screen grows rather than holding one share: a share that
+   frames her well on a laptop starts cropping her on a television, because the
+   panel is wider but the subject inside the file is in the same place. Past
+   2560 the width is also capped in absolute terms, because the artwork is 1366
+   px wide and stretching it further buys no detail -- only softness. The rest of
+   the screen goes to the black, which is where the spiral is meant to be. */
+:root {
+  --pain-girl-art-width: 52%;
+  /* The share of the artwork's half that ramps into black at its right edge.
+     Unitless so it can be used twice: as a length for the ramp, and as a share
+     the stage's width is measured with. */
+  --pain-girl-fade: 0.14;
+  /* What is left for the stage. Not simply the rest of the screen: the artwork
+     has already faded to black before its panel ends, so the spiral may start
+     there without either of them giving anything up -- the last stretch of the
+     panel is black, so nothing of the picture is covered, and the frames are
+     not clipped against the artwork's edge. */
+  --pain-girl-stage-width: calc(
+    100% - var(--pain-girl-art-width) + var(--pain-girl-art-width) * var(--pain-girl-fade)
+  );
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --pain-girl-art-width: 48%;
+  }
+}
+
+@media (min-width: 2560px) {
+  :root {
+    --pain-girl-art-width: min(44%, 1500px);
+  }
+}
+
+/* The artwork's half of the screen. Fills the height and is cropped into, which
+   is what gives the panel a subject rather than a border: the picture is hung on
+   her (38% across, 22% down) rather than centred, so the crop keeps her rather
+   than the middle of the file. Past 2560 the crop stops and the whole picture is
+   fitted inside the panel instead: a 768px-tall file stretched over a 2160px
+   screen is 2.8x upscaled no matter how narrow the panel is, and the panel's own
+   surround is the same black the picture fades into, so the fitted picture sits
+   on the artwork's own background. The horizontal placement stays in the
+   component, which is where the file is measured; only the vertical placement
+   and the sizing are per-screen. */
+.hall-pain-art {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: var(--pain-girl-art-width);
+  background-repeat: no-repeat;
+  background-position: 38% 22%;
+  background-size: cover;
+  /* The fade is a mask on the panel's edge rather than a softened copy of the
+     file: the artwork is opaque, and softening it would mean an image edit on
+     every rebuild. It is what the stage's width is measured against, so the
+     two cannot drift apart. */
+  mask-image: linear-gradient(
+    to right,
+    #000 0,
+    #000 calc(100% - var(--pain-girl-fade) * 100%),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    #000 0,
+    #000 calc(100% - var(--pain-girl-fade) * 100%),
+    transparent 100%
+  );
+}
+
+@media (min-width: 2560px) {
+  .hall-pain-art {
+    background-size: contain;
+    background-position: 38% 50%;
+  }
+
+  /* Nothing is laid over the artwork once it is shown whole, so the scrim has
+     no legibility left to do -- and keeping it would leave the black inside the
+     artwork's panel a shade off the black of the stage beside it. */
+  .hall-pain-scrim {
+    display: none;
+  }
+}
+
+/* A modal never grows past the screen it is open on. 85dvh rather than 85vh:
+   on a phone the dynamic viewport is the part the browser is actually showing,
+   so the cap follows the keyboard and the collapsing URL bar instead of the
+   largest the screen has ever been. */
+.hall-modal-fit {
+  max-height: 85dvh;
+}
+
+/* The cart is a sheet, so it is capped against the screen it is open on rather
+   than allowed to be a full-height panel with one row at the top of it. 85dvh
+   leaves the backdrop visible above and below, which is what says "this closes
+   by clicking outside"; 62rem is where a full cart runs out of content, so on a
+   television the sheet stops at the content instead of at the screen. */
+.hall-cart-panel {
+  max-height: min(85dvh, 62rem);
+  margin-block: auto;
+}
+
+/* The room inside the cart and the checkout on a short screen. Padding and gaps
+   come off --display-scale, so a laptop holds more rows without any of the
+   type inside it being dialled down. */
+@media (max-height: 850px) and (max-width: 1440px) {
+  .hall-cart-head {
+    padding: calc(1.5rem * var(--display-scale));
+  }
+
+  .hall-cart-rows {
+    padding: calc(1.5rem * var(--display-scale));
+    gap: calc(0.75rem * var(--display-scale));
+  }
+
+  .hall-product-body {
+    padding: calc(1.25rem * var(--display-scale));
+    gap: calc(1.5rem * var(--display-scale));
+  }
+}
+
+/* A tall screen gets the opposite. The drawer stops being a full-height sheet
+   once the screen is taller than its content: on a 50-inch panel a cart with
+   one row in it was a row at the top and a screenful of empty drawer below.
+   62rem above already covers it. */
+
+/* The product card on a large panel. 35vw only reaches the 4xl width it used
+   to be pinned at from 2560 up, so this widens a card on a television and
+   leaves every screen below that exactly as it was. */
+@media (min-width: 2560px) {
+  .hall-product-card {
+    max-width: clamp(600px, 35vw, 900px);
+  }
 }
 
 /* Type scale for the hall surfaces. Each step is the Tailwind size of the

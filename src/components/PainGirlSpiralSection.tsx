@@ -32,6 +32,15 @@ const BUNDLE_NICOTINE: NicotineType[] = ['0mg', '3mg', '6mg'];
  * the subject on the left and the stage takes the right; on a phone there is no
  * width for the two side by side, so the artwork becomes a band across the top
  * and the spiral starts underneath it. Either way the two never overlap.
+ *
+ * The split between the two is a measured one. From tablet up the artwork is
+ * painted only across the left of the screen and faded to black where this
+ * section begins, rather than being laid over the whole screen and dimmed: the
+ * spiral has to read against pure black, and behind it there is now nothing but
+ * black. Both the artwork's share and the width reserved here are read from the
+ * same custom properties (--pain-girl-art-width, --pain-girl-stage-width), and
+ * the fade is part of the width rather than a separate number, so the artwork's
+ * edge and the stage's edge cannot drift apart.
  */
 export const PainGirlSpiralSection: React.FC = () => {
   const products = useAppStore((state) => state.products);
@@ -40,6 +49,13 @@ export const PainGirlSpiralSection: React.FC = () => {
 
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [selectedNicotine, setSelectedNicotine] = useState<NicotineType>('3mg');
+
+  // How much of the screen the stage is given, which is the same question as how
+  // much the artwork takes. Both come from CSS (--pain-girl-art-width and
+  // --pain-girl-stage-width): the background layer paints the artwork against
+  // those numbers, and two copies of a fraction in two files would be free to
+  // disagree about where the split falls.
+  const stageWidth = 'var(--pain-girl-stage-width)';
 
   // The frames double on a desktop, and so does the stage they travel through:
   // the component shrinks whatever does not fit, so leaving the stage at 650px
@@ -120,21 +136,26 @@ export const PainGirlSpiralSection: React.FC = () => {
         style={{ aspectRatio: `${PAIN_GIRL_ARTWORK.width} / ${PAIN_GIRL_ARTWORK.height}` }}
       />
 
-      {/* The stage gives up the left of the screen from md up. The artwork
-          behind it is anchored to the left edge, and the spiral sitting on top
-          of the subject is the thing this avoids. A phone has no width to spare
-          for the two, so there the artwork takes a band across the top and the
-          spiral fills what is left of the screen, full width and centred. */}
+      {/* The stage takes everything the artwork does not, from md up. The artwork
+          is painted only across the left of the screen and faded to black where
+          this begins, so the spiral reads against pure black with nothing of
+          the image behind it. A phone has no width to spare for the two, so
+          there the artwork takes a band across the top instead and the spiral
+          fills what is left of the screen, full width and centred. */}
       <div
-        className="relative w-full flex-1 min-h-[360px] md:flex-none md:min-h-0 overflow-hidden flex items-center justify-center touch-pan-y md:ml-auto md:w-[72%] lg:w-[64%] xl:w-[58%]"
-        style={isDesktop ? { height: 650 * growth } : undefined}
+        className="relative w-full flex-1 min-h-[360px] md:flex-none md:min-h-0 md:ml-auto overflow-hidden flex items-center justify-center touch-pan-y"
+        style={
+          isDesktop
+            ? { height: 650 * growth, width: stageWidth, maxWidth: stageWidth }
+            : undefined
+        }
       >
         <InfiniteSpiral
           items={spiralItems}
           animationMode="all"
           cardHeight={150 * growth}
           cardRadius={12 * growth}
-          cardWidth={120 * growth}
+          cardWidth={115 * growth}
           centerScale={1.25}
           direction="up"
           edgeBlur={5}
@@ -142,7 +163,13 @@ export const PainGirlSpiralSection: React.FC = () => {
           imageFit="cover"
           pauseOnHover
           perspective={1100 * growth}
-          radius={180 * growth}
+          // Measured against the stage, not chosen: the helix is as wide as its
+          // radius plus a card, and the stage is what is left of the screen once
+          // the artwork has taken its half. At the tightest desktop (1280x800,
+          // where the stage is a little over 600px) the radius and card width
+          // together put the outermost frames a few pixels past the stage, and
+          // the stage clips them -- so they are sized to fit it.
+          radius={168 * growth}
           speed={0.5}
           verticalSpacing={65 * growth}
         />
@@ -159,7 +186,7 @@ export const PainGirlSpiralSection: React.FC = () => {
 
       {isStoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-rise">
-          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl bg-[#111] border border-[#333] p-6 sm:p-8 text-white shadow-2xl">
+          <div className="relative w-full max-w-lg max-h-[85dvh] overflow-y-auto rounded-3xl bg-[#111] border border-[#333] p-6 sm:p-8 text-white shadow-2xl">
             <button
               onClick={() => setIsStoryModalOpen(false)}
               className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer transition-colors"

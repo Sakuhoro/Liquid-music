@@ -40,6 +40,9 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1200
   );
+  const [windowHeight, setWindowHeight] = useState<number>(
+    typeof window !== 'undefined' ? window.innerHeight : 900
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef<boolean>(false);
@@ -69,7 +72,10 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
 
   // Handle window resize for adaptive responsiveness
   useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+      setWindowHeight(window.innerHeight);
+    };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -78,20 +84,25 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
   const isMobile = windowWidth < 640;
   const isTablet = windowWidth < 1024;
 
+  const count = items.length;
+  const angleStep = count > 0 ? 360 / count : 0;
+
+  // The stage's perspective magnifies whichever card is at the front: a card
+  // pushed `radius` toward the viewer is drawn 1200/(1200-radius) times its
+  // real size. That factor is what actually has to fit the screen, so the card
+  // is sized against the magnified height rather than its own -- sizing it
+  // against its own is what put a 954px card inside a 720px stage on a 13-inch
+  // laptop, where it was clipped at the top and bottom.
+  const PERSPECTIVE = 1200;
+
   const effectiveCardWidth = useMemo(() => {
     if (isMobile) return Math.min(Math.round(windowWidth * 0.72), 260);
     if (isTablet) return 360;
-    return cardWidth; // 440px for desktop (2x scaled)
+    // Capped rather than left to grow: a 50-inch panel is not a reason for a
+    // card to become a billboard, and past this the type inside it stops
+    // keeping its proportion to the image.
+    return Math.min(cardWidth, 440);
   }, [isMobile, isTablet, windowWidth, cardWidth]);
-
-  const effectiveCardHeight = useMemo(() => {
-    if (isMobile) return Math.min(Math.round(windowWidth * 1.0), 380);
-    if (isTablet) return 500;
-    return 620; // Scaled height for 2x desktop cards
-  }, [isMobile, isTablet, windowWidth]);
-
-  const count = items.length;
-  const angleStep = count > 0 ? 360 / count : 0;
 
   // Calculate 3D Cylinder Radius based on card width and item count
   const radius = useMemo(() => {
@@ -100,6 +111,41 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
     const minRadius = isMobile ? 180 : isTablet ? 300 : 420;
     return Math.max(computedRadius, minRadius);
   }, [effectiveCardWidth, count, isMobile, isTablet]);
+
+  const effectiveCardHeight = useMemo(() => {
+    if (isMobile) return Math.min(Math.round(windowWidth * 1.0), 380);
+    if (isTablet) return 500;
+
+    // The room the wrapper leaves for the stage, with the stage's own padding
+    // taken off, and a little left over so the card is not touching the edge.
+    const available = windowHeight * 0.9 - 48;
+    const magnification = radius > 0 ? PERSPECTIVE / Math.max(1, PERSPECTIVE - radius) : 1;
+    const fitting = Math.floor(available / magnification);
+    return Math.max(360, Math.min(620, fitting));
+  }, [isMobile, isTablet, windowWidth, windowHeight, radius]);
+
+  // The card's internal scale, off its height rather than off the screen: the
+  // full-size card's own numbers, so a fitted-down card is the same picture
+  // smaller instead of a different layout. A phone keeps its own sizes, which
+  // were chosen against a phone.
+  const cardMetrics = useMemo(() => {
+    const ratio = effectiveCardHeight / 620;
+    const fit = (value: number, floor: number) =>
+      Math.round(value * Math.min(1, Math.max(floor, ratio)));
+    return {
+      padding: `${fit(40, 0.55)}px`,
+      titleSize: `${fit(36, 0.62)}px`,
+      bodySize: `${fit(12, 0.8)}px`,
+      gapPx: fit(20, 0.55),
+    };
+  }, [effectiveCardHeight]);
+
+  const { padding: cardPadding, titleSize: cardTitleSize, bodySize: cardBodySize } = cardMetrics;
+  const cardGap = cardMetrics.gapPx;
+  // Vertical padding on the button, kept in step with the gap above it so the
+  // space between the copy and the button matches the space the button's own
+  // text sits from its edges.
+  const cardButtonPad = `${Math.round(cardMetrics.gapPx * 1.4)}px`;
 
   // Autoplay handler
   useEffect(() => {
@@ -255,29 +301,50 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
 
                 {/* Top Badge */}
                 <div className="absolute top-3 sm:top-5 left-3 sm:left-5 right-3 sm:right-5 flex justify-between items-center gap-2 z-10 pointer-events-none">
-                  <span className="text-[10px] sm:text-xs font-mono uppercase tracking-wider font-bold px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full bg-black/75 backdrop-blur-md text-amber-300 border border-amber-400/30">
+                  <span
+                    className="font-mono uppercase tracking-wider font-bold px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full bg-black/75 backdrop-blur-md text-amber-300 border border-amber-400/30"
+                    style={{ fontSize: cardBodySize }}
+                  >
                     {badge}
                   </span>
                   <Disc
-                    className={`w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-amber-400 ${
-                      isActive ? 'animate-spin' : ''
-                    }`}
-                    style={{ animationDuration: '8s' }}
+                    className={`shrink-0 text-amber-400 ${isActive ? 'animate-spin' : ''}`}
+                    style={{
+                      width: Math.round(24 * Math.min(1, effectiveCardHeight / 620)),
+                      height: Math.round(24 * Math.min(1, effectiveCardHeight / 620)),
+                      animationDuration: '8s',
+                    }}
                   />
                 </div>
 
-                {/* Bottom Card Information */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8 lg:p-10 z-10 flex flex-col justify-end bg-gradient-to-t from-black via-black/85 to-transparent">
-                  <h3 className="font-serif text-xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
+                {/* Bottom Card Information. Padding and type ride the card's own
+                    size rather than the viewport's, so a card scaled down to fit
+                    a 13-inch screen keeps the same proportion between its
+                    padding, its title and its image as one left at full size on
+                    a 32-inch screen. */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 z-10 flex flex-col justify-end bg-gradient-to-t from-black via-black/85 to-transparent"
+                  style={{ padding: cardPadding }}
+                >
+                  <h3
+                    className="font-serif font-extrabold text-white tracking-tight leading-tight drop-shadow-md"
+                    style={{ fontSize: cardTitleSize }}
+                  >
                     {title}
                   </h3>
                   {subtitle && (
-                    <p className="text-[10px] sm:text-xs text-amber-300/90 font-mono mt-1 font-semibold line-clamp-1">
+                    <p
+                      className="text-amber-300/90 font-mono mt-1 font-semibold line-clamp-1"
+                      style={{ fontSize: cardBodySize }}
+                    >
                       {subtitle}
                     </p>
                   )}
                   {description && (
-                    <p className="text-[10px] sm:text-xs text-stone-300/90 font-sans mt-2 line-clamp-2 leading-relaxed font-normal">
+                    <p
+                      className="text-stone-300/90 font-sans mt-2 line-clamp-2 leading-relaxed font-normal"
+                      style={{ fontSize: cardBodySize }}
+                    >
                       {description}
                     </p>
                   )}
@@ -287,7 +354,8 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                       e.stopPropagation();
                       if (onSelectItem) onSelectItem(item.id, item);
                     }}
-                    className={`mt-3 sm:mt-5 w-full py-2.5 sm:py-3.5 rounded-xl text-xs sm:text-sm font-mono uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer min-h-[40px] sm:min-h-[44px] ${
+                    style={{ marginTop: cardGap, padding: `${cardButtonPad} 0`, fontSize: cardBodySize }}
+                    className={`w-full rounded-xl font-mono uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer min-h-[40px] ${
                       isActive
                         ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg shadow-amber-400/30'
                         : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
