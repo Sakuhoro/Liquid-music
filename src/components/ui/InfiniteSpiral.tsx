@@ -7,6 +7,12 @@ const smoothstep = (min: number, max: number, value: number) => {
   const x = clamp((value - min) / (max - min || 1), 0, 1);
   return x * x * (3 - 2 * x);
 };
+// How far the finger or the cursor may travel between press and release before
+// the gesture counts as a drag rather than a tap. Above it the root swallows the
+// click that ends the gesture (so a fling does not open a story); below it the
+// click goes through to the card. The gap is a real wrist's jitter (~2-4px) but
+// nowhere near the start of a deliberate drag.
+const TAP_DRAG_THRESHOLD = 8;
 
 export interface SpiralItem {
   src: string;
@@ -80,6 +86,10 @@ export function InfiniteSpiral({
   const visibleRef = useRef(true);
   const draggingRef = useRef(false);
   const lastPointerYRef = useRef(0);
+  // Where the pointer was when the press started, so a drag is measured from the
+  // press rather than between two moves: an absolute root means the threshold is
+  // cumulative, and a tap with a few stray pixels never crosses it.
+  const pressStartYRef = useRef(0);
   const dragMovedRef = useRef(false);
 
   const normalizedItems = useMemo(
@@ -262,23 +272,41 @@ export function InfiniteSpiral({
         draggingRef.current = true;
         dragMovedRef.current = false;
         lastPointerYRef.current = event.clientY;
+        pressStartYRef.current = event.clientY;
         targetProgressRef.current = progressRef.current;
-        try {
-          event.currentTarget.setPointerCapture(event.pointerId);
-        } catch {
-          /* capture is best effort */
-        }
         event.currentTarget.style.cursor = 'grabbing';
       }}
       onPointerMove={(event) => {
         if (!draggingRef.current) return;
         const pointerDelta = event.clientY - lastPointerYRef.current;
         lastPointerYRef.current = event.clientY;
-        if (Math.abs(pointerDelta) > 0.5) dragMovedRef.current = true;
+        if (Math.abs(event.clientY - pressStartYRef.current) > TAP_DRAG_THRESHOLD) {
+          dragMovedRef.current = true;
+          // The gesture is a drag, not a tap: take the pointer now so it keeps
+          // scrubbing even when it leaves the helix, and so the click that ends
+          // the gesture is aimed at this root and swallowed. A tap never captures,
+          // which is what lets its click reach the card -- pointer capture at
+          // press time retargets the whole gesture's click to the captured
+          // element, which is how a resting hand used to lose every story.
+          if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+            try {
+              event.currentTarget.setPointerCapture(event.pointerId);
+            } catch {
+              /* capture is best effort */
+            }
+          }
+        }
         targetProgressRef.current -= pointerDelta / Math.max(verticalSpacing, 1);
       }}
       onPointerUp={stopDragging}
-      onPointerCancel={stopDragging}
+      onPointerCancel={(event) => {
+        // A cancel (a touch scroll taking the gesture, say) is never followed by
+        // a click, so the click that would have reset the drag mark is not
+        // coming: clear it here rather than let the next tap be swallowed by
+        // somebody else's abandoned gesture.
+        stopDragging(event);
+        dragMovedRef.current = false;
+      }}
       onClickCapture={(event) => {
         if (!dragMovedRef.current) return;
         event.preventDefault();

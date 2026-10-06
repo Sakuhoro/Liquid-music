@@ -68,8 +68,11 @@ const COLLECTION_STILL: Partial<Record<CollectionName, StillBackground>> = {
     },
     split: {
       // Measured off the file: the subject sits left of the file's middle, with
-      // her head around 38% across and her body running down from there.
-      focal: '38%',
+      // her head around 38% across and her body running down from there. The
+      // 30px bias is a nudge leftwards, so a shrunken panel (the artwork now
+      // draws at 80% of its height) keeps her on her own three-fifths instead of
+      // drifting towards the stage.
+      focal: 'calc(38% - 30px)',
     },
   },
 };

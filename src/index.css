@@ -406,16 +406,20 @@
   }
 }
 
-/* The artwork's half of the screen. Fills the height and is cropped into, which
-   is what gives the panel a subject rather than a border: the picture is hung on
-   her (38% across, 22% down) rather than centred, so the crop keeps her rather
-   than the middle of the file. Past 2560 the crop stops and the whole picture is
-   fitted inside the panel instead: a 768px-tall file stretched over a 2160px
-   screen is 2.8x upscaled no matter how narrow the panel is, and the panel's own
-   surround is the same black the picture fades into, so the fitted picture sits
-   on the artwork's own background. The horizontal placement stays in the
-   component, which is where the file is measured; only the vertical placement
-   and the sizing are per-screen. */
+/* The artwork's half of the screen. Drawn at 80% of the panel's height rather
+   than filling it: a full-fill cover crop of a 1366x768 file on a 16:9 screen
+   throws away half the width and turns the subject into a zoomed head, while at
+   four fifths she stops short of the panel's top and bottom and reads as a
+   figure the panel frames -- her head still hung on the same focal, 38% across
+   and 22% down, and the panel's own black standing in for the surround around
+   her. The right edge still fades into the stage's black, so the shrunken
+   picture meets the spiral along the same seam as before. Past 2560 the crop
+   stops and the whole picture is fitted inside the panel instead: a 768px-tall
+   file stretched over a 2160px screen is 2.8x upscaled no matter how narrow the
+   panel is, and the panel's own surround is the same black the picture fades
+   into, so the fitted picture sits on the artwork's own background. The
+   horizontal placement stays in the component, which is where the file is
+   measured; only the vertical placement and the sizing are per-screen. */
 .hall-pain-art {
   position: absolute;
   inset-block: 0;
@@ -423,7 +427,7 @@
   width: var(--pain-girl-art-width);
   background-repeat: no-repeat;
   background-position: 38% 22%;
-  background-size: cover;
+  background-size: auto 80%;
   /* The fade is a mask on the panel's edge rather than a softened copy of the
      file: the artwork is opaque, and softening it would mean an image edit on
      every rebuild. It is what the stage's width is measured against, so the

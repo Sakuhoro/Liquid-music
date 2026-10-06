@@ -144,8 +144,10 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
   const cardGap = cardMetrics.gapPx;
   // Vertical padding on the button, kept in step with the gap above it so the
   // space between the copy and the button matches the space the button's own
-  // text sits from its edges.
-  const cardButtonPad = `${Math.round(cardMetrics.gapPx * 1.4)}px`;
+  // text sits from its edges. Shortened by 10px each side (20px off the button's
+  // height) against the earlier padding; the floor keeps the tap target sane on
+  // a phone.
+  const cardButtonPad = `${Math.max(10, Math.round(cardMetrics.gapPx * 1.4) - 10)}px`;
 
   // Autoplay handler
   useEffect(() => {
@@ -354,8 +356,8 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                       e.stopPropagation();
                       if (onSelectItem) onSelectItem(item.id, item);
                     }}
-                    style={{ marginTop: cardGap, padding: `${cardButtonPad} 0`, fontSize: cardBodySize }}
-                    className={`w-full rounded-xl font-mono uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer min-h-[40px] ${
+                    style={{ marginTop: cardGap, padding: `${cardButtonPad} 0`, fontSize: cardBodySize, width: 'calc(100% - 60px)' }}
+                    className={`mx-auto rounded-xl font-mono uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer min-h-[36px] ${
                       isActive
                         ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg shadow-amber-400/30'
                         : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
