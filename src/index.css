@@ -464,23 +464,76 @@
   max-height: 85dvh;
 }
 
-/* The buy control on the collection stage. The stage is deliberately taller than
-   the screen so the helix has room to travel, and the control used to sit at the
-   stage's foot -- which on a laptop put it most of a screen below the fold, so
-   arriving on the collection meant scrolling to discover that it could be bought
-   at all. From tablet up it is pinned near the foot of the first screenful
-   instead, which is where the customer is already looking, and kept clear of the
-   frames by hugging the stage's own edge. The 12.5rem is the room for the button
-   itself, its margin, and the header it has to start below: the control is
-   positioned inside the section, not inside the window, so the header's height is
-   part of the distance. On a phone the control is placed in the flow and this does
-   not apply: there the stage fits the screen anyway. */
-@media (min-width: 768px) {
-  #pain-girl-buy-btn {
-    top: calc(100dvh - 12.5rem);
-    bottom: auto;
+/* Pain Girl: the splash the phone gets on entry, the spiral arriving underneath
+   it, and the story modal's frame swap.
+
+   The splash holds at full opacity for three seconds and then wipes out over
+   600ms; the class carries the fade, so the CSS owns the duration the JS only
+   waits through. It is black behind the artwork because that is what is being
+   faded to: when the layer is gone the screen underneath is black anyway, so the
+   artwork appears to turn into the background rather than to be replaced by it.
+   While it is fading it no longer takes pointers, which is what lets the first
+   touch of the spiral land on the spiral instead of on a picture of nothing. */
+.pain-girl-splash--in {
+  opacity: 1;
+}
+
+.pain-girl-splash--out {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 600ms ease-out;
+}
+
+/* The spiral's entrance. Opacity and a scale only, so it runs off the compositor
+   and the stage underneath is never re-laid-out -- the box it occupies is the
+   same one the helix will keep travelling through. */
+.pain-girl-spiral-entry {
+  transition:
+    opacity 500ms ease-out,
+    transform 500ms ease-out;
+  transform-origin: center center;
+  will-change: opacity, transform;
+}
+
+.pain-girl-spiral-entry--in {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.pain-girl-spiral-entry--out {
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+}
+
+/* One frame's artwork and copy arriving where the previous pair left. Keyed to
+   the index in the modal, so the arrows restart it every time. */
+@keyframes pain-girl-frame-swap {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
+
+.pain-girl-frame-swap {
+  animation: pain-girl-frame-swap 260ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pain-girl-splash--out {
+    transition-duration: 1ms;
+  }
+
+  .pain-girl-spiral-entry {
+    transition: none;
+  }
+}
+
 /* The cart is a sheet, so it is capped against the screen it is open on rather
    than allowed to be a full-height panel with one row at the top of it. 85dvh
    leaves the backdrop visible above and below, which is what says "this closes

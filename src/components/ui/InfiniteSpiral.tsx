@@ -40,6 +40,12 @@ export interface InfiniteSpiralProps {
   imageFit?: 'cover' | 'contain';
   grayscale?: number;
   className?: string;
+  /**
+   * Called with the index of the tapped card. Left out, the cards are plain
+   * pictures: the root already swallows a click that ended a drag, so a handler
+   * here fires on a tap and not on the pointer-up of a fling.
+   */
+  onSelectItem?: (index: number) => void;
 }
 
 export function InfiniteSpiral({
@@ -62,7 +68,8 @@ export function InfiniteSpiral({
   pauseOnHover = true,
   imageFit = 'cover',
   grayscale = 0,
-  className = ''
+  className = '',
+  onSelectItem
 }: InfiniteSpiralProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Array<HTMLDivElement | HTMLAnchorElement | null>>([]);
@@ -282,18 +289,41 @@ export function InfiniteSpiral({
       <div className="infinite-spiral__stage" role="list" aria-label="Infinite spiral gallery">
         {normalizedItems.map((item, index) => {
           const Card = item.href ? 'a' : 'div';
+          // A card that opens something stops being a picture and starts being a
+          // control, so it takes the role, the tab stop and the pointer with it.
+          // A card that is still decoration is left exactly as it was.
+          const isSelectable = typeof onSelectItem === 'function' && !item.href;
           return (
             <Card
               key={item.id ?? `${item.src}-${index}`}
               ref={(node) => {
                 cardRefs.current[index] = node;
               }}
-              className="infinite-spiral__item"
+              className={`infinite-spiral__item${isSelectable ? ' infinite-spiral__item--selectable' : ''}`}
               style={{ width: cardWidth, height: cardHeight, borderRadius: cardRadius }}
               href={item.href}
               target={item.target}
               rel={item.target === '_blank' ? 'noreferrer' : undefined}
-              role="listitem"
+              role={isSelectable ? 'button' : 'listitem'}
+              tabIndex={isSelectable ? 0 : undefined}
+              data-spiral-index={isSelectable ? index : undefined}
+              onClick={
+                isSelectable
+                  ? (event: React.MouseEvent<HTMLElement>) => {
+                      event.stopPropagation();
+                      onSelectItem(index);
+                    }
+                  : undefined
+              }
+              onKeyDown={
+                isSelectable
+                  ? (event: React.KeyboardEvent<HTMLElement>) => {
+                      if (event.key !== 'Enter' && event.key !== ' ') return;
+                      event.preventDefault();
+                      onSelectItem(index);
+                    }
+                  : undefined
+              }
               aria-label={item.label ?? item.alt}
             >
               <img

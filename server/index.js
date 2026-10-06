@@ -23,6 +23,9 @@ import {
   getAllRecipes,
   setRecipe,
   deleteRecipe,
+  getAllPainGirlStories,
+  setPainGirlStory,
+  deletePainGirlStory,
   getAllFlavorPrices,
   setFlavorPrice,
   deleteFlavorPrice,
@@ -199,6 +202,66 @@ app.post('/api/recipes', (req, res) => {
 app.delete('/api/recipes/:productId', (req, res) => {
   try {
     const result = deleteRecipe(req.params.productId)
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Pain Girl Story Overrides
+// The story each frame shows is customer-facing copy, so reading it is as public
+// as reading the products. Writing it is what the studio is for, and that route
+// is the only one of the CMS writes that insists on an admin session: the
+// products, recipes and flavour prices endpoints below are open to anyone who
+// can reach the origin, and this one is not going to widen that.
+const painGirlStorySchema = z.object({
+  frameId: z.string().min(1, 'Не указан кадр.').max(300, 'Слишком длинный путь кадра.'),
+  storyText: z
+    .string()
+    .trim()
+    .min(1, 'Текст истории не может быть пустым.')
+    .max(4000, 'История длиннее 4000 символов.'),
+})
+
+app.get('/api/pain-girl/stories', (req, res) => {
+  try {
+    const stories = getAllPainGirlStories()
+    res.json(stories)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/pain-girl/stories', requireAuth, (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Недостаточно прав.' })
+  }
+  const parsed = painGirlStorySchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Некорректные данные' })
+  }
+  try {
+    const result = setPainGirlStory(parsed.data.frameId, parsed.data.storyText)
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Deleting the override is how a frame goes back to the copy it shipped with.
+// The frame id is a path -- /images/pain-girl/hot gum.png -- so it rides in the
+// query string: in the path it would be cut into segments by the router and no
+// row could ever be found.
+app.delete('/api/pain-girl/stories', requireAuth, (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Недостаточно прав.' })
+  }
+  const frameId = typeof req.query.frameId === 'string' ? req.query.frameId : ''
+  if (!frameId) {
+    return res.status(400).json({ error: 'Не указан кадр.' })
+  }
+  try {
+    const result = deletePainGirlStory(frameId)
     res.json(result)
   } catch (err) {
     res.status(500).json({ error: err.message })

@@ -41,6 +41,26 @@
   user-select: none;
 }
 
+/* A card that opens a story is a control rather than a picture, so it says so
+   with the pointer and with a focus ring that survives the 3D transform. The
+   ring sits on the frame and is drawn outside it, so it is not clipped by the
+   stage the way a default outline would be. */
+.infinite-spiral__item--selectable {
+  cursor: pointer;
+}
+
+.infinite-spiral__item--selectable:hover {
+  border-color: rgb(245 158 11 / 0.75);
+  box-shadow:
+    0 14px 38px rgb(8 6 18 / 0.2),
+    0 0 0 2px rgb(245 158 11 / 0.4);
+}
+
+.infinite-spiral__item--selectable:focus-visible {
+  outline: 2px solid rgb(245 158 11);
+  outline-offset: 3px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .infinite-spiral__item {
     transition: none;

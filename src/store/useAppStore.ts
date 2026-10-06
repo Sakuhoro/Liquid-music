@@ -12,6 +12,7 @@ import {
   CollectionVideosConfig,
   Recipe,
   FlavorPrice,
+  PainGirlStory,
   TelegramWidgetUser,
 } from '../types';
 import {
@@ -133,6 +134,12 @@ interface AppState {
   saveFlavorPrice: (vendor: string, name: string, pricePer10ml: number, currency?: string) => Promise<void>;
   deleteFlavorPrice: (key: string) => Promise<void>;
 
+  // Pain Girl Story Overrides
+  painGirlStories: PainGirlStory[];
+  fetchPainGirlStories: () => Promise<void>;
+  savePainGirlStory: (frameId: string, storyText: string) => Promise<void>;
+  deletePainGirlStory: (frameId: string) => Promise<void>;
+
   // Active inspected product modal
   inspectedProduct: ProductItem | null;
   setInspectedProduct: (prod: ProductItem | null) => void;
@@ -225,6 +232,82 @@ export const useAppStore = create<AppState>()(
       // Recipes & Flavor Prices
       recipes: [],
       flavorPrices: [],
+
+      // Only the frames an admin has edited are here. A frame with no row is
+      // not missing data, it is the shipped default from the gallery file, and
+      // the merge happens where the story modal reads it.
+      painGirlStories: [],
+
+      fetchPainGirlStories: async () => {
+        try {
+          const res = await fetch('/api/pain-girl/stories');
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              set({ painGirlStories: data });
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to fetch Pain Girl stories from backend API:', err);
+        }
+      },
+
+      savePainGirlStory: async (frameId, storyText) => {
+        const trimmed = storyText.trim();
+        const updatedAt = new Date().toISOString();
+        // Applied to the store before the request goes out, the same way
+        // saveRecipe does, so the story modal shows the new text the moment the
+        // studio's save button is pressed.
+        set((state) => {
+          const existingIndex = state.painGirlStories.findIndex((s) => s.frameId === frameId);
+          const next: PainGirlStory = { frameId, storyText: trimmed, updatedAt };
+          if (existingIndex < 0) {
+            return { painGirlStories: [...state.painGirlStories, next] };
+          }
+          const list = [...state.painGirlStories];
+          list[existingIndex] = next;
+          return { painGirlStories: list };
+        });
+
+        try {
+          const res = await fetch('/api/pain-girl/stories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ frameId, storyText: trimmed }),
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            console.error('Failed to save Pain Girl story:', data?.error || res.status);
+            return;
+          }
+          const saved = (await res.json()) as PainGirlStory;
+          set((state) => {
+            const existingIndex = state.painGirlStories.findIndex((s) => s.frameId === frameId);
+            if (existingIndex < 0) return state;
+            const list = [...state.painGirlStories];
+            list[existingIndex] = saved;
+            return { painGirlStories: list };
+          });
+        } catch (err) {
+          console.error('Failed to save Pain Girl story via API:', err);
+        }
+      },
+
+      deletePainGirlStory: async (frameId) => {
+        // Taken out of the store first, so the modal falls back to the shipped
+        // copy at once rather than waiting for the request to come back.
+        set((state) => ({
+          painGirlStories: state.painGirlStories.filter((story) => story.frameId !== frameId),
+        }));
+
+        try {
+          await fetch(`/api/pain-girl/stories?frameId=${encodeURIComponent(frameId)}`, {
+            method: 'DELETE',
+          });
+        } catch (err) {
+          console.error('Failed to reset Pain Girl story via API:', err);
+        }
+      },
 
       fetchRecipes: async () => {
         try {
@@ -959,6 +1042,7 @@ export const useAppStore = create<AppState>()(
         products: state.products,
         recipes: state.recipes,
         flavorPrices: state.flavorPrices,
+        painGirlStories: state.painGirlStories,
         isAdminLoggedIn: state.isAdminLoggedIn,
       }),
       version: 8,

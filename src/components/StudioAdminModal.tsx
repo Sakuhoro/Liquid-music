@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import { ProductItem, CollectionName, PlacedOrder, VolumeType, NicotineType, RecipeItem, isGalleryCollection } from '../types';
 import { ART_SCALE_MIN, ART_SCALE_MAX, ART_SCALE_DEFAULT, clampArtScale, getItemScale } from '../utils/vinylScale';
 import { parseRecipeText, formatRecipeText } from '../utils/recipeParser';
+import { PAIN_GIRL_GALLERY } from '../data/painGirlGallery';
 import {
   X,
   Sliders,
@@ -38,6 +39,7 @@ import {
   CheckCircle,
   Save,
   FileText,
+  Feather,
 } from 'lucide-react';
 
 const ALL_COLLECTIONS: CollectionName[] = [
@@ -97,6 +99,11 @@ export const StudioAdminModal: React.FC = () => {
   const recipes = useAppStore((state) => state.recipes);
   const saveRecipe = useAppStore((state) => state.saveRecipe);
 
+  const painGirlStories = useAppStore((state) => state.painGirlStories);
+  const fetchPainGirlStories = useAppStore((state) => state.fetchPainGirlStories);
+  const savePainGirlStory = useAppStore((state) => state.savePainGirlStory);
+  const deletePainGirlStory = useAppStore((state) => state.deletePainGirlStory);
+
   const flavorPrices = useAppStore((state) => state.flavorPrices);
   const saveFlavorPrice = useAppStore((state) => state.saveFlavorPrice);
 
@@ -126,6 +133,14 @@ export const StudioAdminModal: React.FC = () => {
   const [recipeNotice, setRecipeNotice] = useState<string | null>(null);
   const [recipeSearchQuery, setRecipeSearchQuery] = useState<string>('');
   const [editingRecipeItems, setEditingRecipeItems] = useState<RecipeItem[]>([]);
+
+  // Pain Girl Story Editor State. The drafts start as the shipped copy for every
+  // frame, so the field is never blank on first open, and a key already touched
+  // is not overwritten when the overrides finish loading -- a keystroke is worth
+  // more than a refresh. Clearing a draft happens explicitly, through reset.
+  const [storyDrafts, setStoryDrafts] = useState<Record<string, string>>({});
+  const [storyNotice, setStoryNotice] = useState<string | null>(null);
+  const [storySavingFrameId, setStorySavingFrameId] = useState<string | null>(null);
 
   // Sync recipeCollectionFilter to URL search params
   useEffect(() => {
@@ -172,8 +187,8 @@ export const StudioAdminModal: React.FC = () => {
   // Main Admin tabs: "Заказы" (orders) | "Товары" (products) | "Производство" (production) | "Медиа & БД" (media)
   const [mainTab, setMainTab] = useState<'orders' | 'products' | 'production' | 'media'>('orders');
 
-  // Production sub-tabs: "Сводка" | "Рецепты" | "Аромы"
-  const [prodSubTab, setProdSubTab] = useState<'summary' | 'recipes' | 'aromas'>('summary');
+  // Production sub-tabs: "Сводка" | "Рецепты" | "Аромы" | "Истории"
+  const [prodSubTab, setProdSubTab] = useState<'summary' | 'recipes' | 'aromas' | 'stories'>('summary');
 
   // Orders tab state
   const [inspectedOrder, setInspectedOrder] = useState<PlacedOrder | null>(null);
@@ -230,8 +245,58 @@ export const StudioAdminModal: React.FC = () => {
   }, [products]);
 
   useEffect(() => {
-    if (isStudioModalOpen) fetchAdminOrders();
-  }, [isStudioModalOpen, fetchAdminOrders]);
+    if (isStudioModalOpen) {
+      fetchAdminOrders();
+      fetchPainGirlStories();
+    }
+  }, [isStudioModalOpen, fetchAdminOrders, fetchPainGirlStories]);
+
+  // Seed the story drafts from the shipped copy, with any saved override on top
+  // of it. Frames already in the draft map keep their text, so this cannot drop
+  // what has just been typed while the fetch is still coming back.
+  useEffect(() => {
+    if (!isStudioModalOpen) return;
+    setStoryDrafts((previous) => {
+      let changed = false;
+      const next = { ...previous };
+      PAIN_GIRL_GALLERY.forEach((frame) => {
+        if (next[frame.src] !== undefined) return;
+        const override = painGirlStories.find((story) => story.frameId === frame.src);
+        next[frame.src] = override?.storyText ?? frame.storyText;
+        changed = true;
+      });
+      return changed ? next : previous;
+    });
+  }, [isStudioModalOpen, painGirlStories]);
+
+  const storyDraftFor = (frameId: string, fallback: string) => {
+    const draft = storyDrafts[frameId];
+    return draft === undefined ? fallback : draft;
+  };
+
+  const handleSaveStory = async (frameId: string, fallback: string) => {
+    const value = storyDraftFor(frameId, fallback).trim();
+    if (!value) {
+      setStoryNotice('Текст истории не может быть пустым.');
+      return;
+    }
+    setStorySavingFrameId(frameId);
+    setStoryNotice(null);
+    await savePainGirlStory(frameId, value);
+    setStorySavingFrameId(null);
+    setStoryNotice('История сохранена.');
+  };
+
+  // Removes the override rather than saving the default text over it, so the
+  // row disappears and the frame follows the data file again.
+  const handleResetStory = async (frameId: string, fallback: string) => {
+    setStorySavingFrameId(frameId);
+    setStoryNotice(null);
+    await deletePainGirlStory(frameId);
+    setStoryDrafts((previous) => ({ ...previous, [frameId]: fallback }));
+    setStorySavingFrameId(null);
+    setStoryNotice('Действует версия по умолчанию.');
+  };
 
   if (!isStudioModalOpen) return null;
 
@@ -448,6 +513,7 @@ export const StudioAdminModal: React.FC = () => {
         {/* Close Button */}
         <button
           onClick={() => setIsStudioModalOpen(false)}
+          aria-label="Закрыть панель"
           className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer z-20"
         >
           <X className="w-5 h-5" />
@@ -913,7 +979,7 @@ export const StudioAdminModal: React.FC = () => {
               {/* TAB 6.3: ПРОИЗВОДСТВО (PRODUCTION) */}
               {mainTab === 'production' && (
                 <div className="space-y-6">
-                  {/* Sub-tabs for Production: "Сводка" | "Рецепты" | "Аромы" */}
+                  {/* Sub-tabs for Production: "Сводка" | "Рецепты" | "Аромы" | "Истории" */}
                   <div className="flex items-center gap-2 border-b border-white/10 pb-3">
                     <button
                       onClick={() => setProdSubTab('summary')}
@@ -950,7 +1016,124 @@ export const StudioAdminModal: React.FC = () => {
                       <Droplets className="w-3.5 h-3.5 inline mr-1.5" />
                       Аромы
                     </button>
+
+                    <button
+                      onClick={() => setProdSubTab('stories')}
+                      className={`px-4 py-2 rounded-xl text-xs font-sans font-extrabold cursor-pointer transition-all ${
+                        prodSubTab === 'stories'
+                          ? 'bg-amber-400 text-slate-950 shadow-md'
+                          : 'bg-white/5 text-stone-300 hover:bg-white/10'
+                      }`}
+                    >
+                      <Feather className="w-3.5 h-3.5 inline mr-1.5" />
+                      Истории
+                    </button>
                   </div>
+
+                  {/* SUB-TAB 6.3.4: ИСТОРИИ (PAIN GIRL STORY EDITOR) */}
+                  {prodSubTab === 'stories' && (
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white/5 border border-white/10">
+                        <div>
+                          <h3 className="text-base font-sans font-extrabold text-white">
+                            Истории кадров коллекции Pain Girl
+                          </h3>
+                          <p className="text-xs text-stone-300 mt-0.5">
+                            Текст под названием кадра в карточке-истории. Сброс возвращает
+                            версию из файлов проекта.
+                          </p>
+                        </div>
+                        {storyNotice && (
+                          <span className="px-3 py-1.5 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 text-xs font-sans font-bold">
+                            {storyNotice}
+                          </span>
+                        )}
+                      </div>
+
+                      {PAIN_GIRL_GALLERY.map((frame, index) => {
+                        const override = painGirlStories.find(
+                          (story) => story.frameId === frame.src
+                        );
+                        const draft = storyDraftFor(frame.src, frame.storyText);
+                        const isSaved =
+                          draft.trim() !== frame.storyText &&
+                          draft.trim() === (override?.storyText ?? '');
+                        const isSaving = storySavingFrameId === frame.src;
+                        return (
+                          <div
+                            key={frame.src}
+                            data-story-card={frame.src}
+                            className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3"
+                          >
+                            <div className="flex items-start gap-3">
+                              <img
+                                src={frame.src}
+                                alt=""
+                                className="w-14 h-14 shrink-0 rounded-xl object-cover border border-white/10"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-mono text-xs font-bold text-amber-400">
+                                    {String(index + 1).padStart(2, '0')}
+                                  </span>
+                                  <h4 className="font-serif text-sm font-extrabold text-white truncate">
+                                    {frame.title}
+                                  </h4>
+                                  {override && (
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-400/15 border border-emerald-400/30 text-emerald-300 font-mono text-[10px] font-bold uppercase">
+                                      изменено
+                                    </span>
+                                  )}
+                                </div>
+                                <textarea
+                                  value={draft}
+                                  onChange={(event) =>
+                                    setStoryDrafts((previous) => ({
+                                      ...previous,
+                                      [frame.src]: event.target.value,
+                                    }))
+                                  }
+                                  rows={4}
+                                  maxLength={4000}
+                                  placeholder="История кадра..."
+                                  className="mt-2 w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-sm text-stone-200 font-sans leading-relaxed resize-y focus:outline-none focus:border-amber-400/60"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-[11px] font-mono text-stone-500">
+                                {override
+                                  ? `Сохранено ${new Date(override.updatedAt || Date.now()).toLocaleString('ru-RU')}`
+                                  : 'Действует версия по умолчанию'}
+                                {isSaved && ' · без изменений'}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetStory(frame.src, frame.storyText)}
+                                  disabled={!override || isSaving}
+                                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-sans font-bold bg-white/5 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed text-stone-300 transition-all cursor-pointer"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  Сбросить
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveStory(frame.src, frame.storyText)}
+                                  disabled={isSaving || !draft.trim()}
+                                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-sans font-extrabold bg-amber-400 hover:bg-amber-300 text-slate-950 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md"
+                                >
+                                  <Save className="w-3.5 h-3.5" />
+                                  Сохранить
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* SUB-TAB 6.3.1: СВОДКА (DYNAMIC PIVOT TABLE MATRIX) */}
                   {prodSubTab === 'summary' && (

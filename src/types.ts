@@ -166,3 +166,15 @@ export interface FlavorPrice {
   currency?: string;
   updatedAt?: string;
 }
+
+/**
+ * A studio edit to one frame's story paragraph, keyed on the frame's image path.
+ * Only frames an admin has actually saved are returned by the API, so the merge
+ * with GalleryItem.storyText can tell "no override" from "an override that clears
+ * the text" by the row's presence rather than by its contents.
+ */
+export interface PainGirlStory {
+  frameId: string;
+  storyText: string;
+  updatedAt?: string;
+}

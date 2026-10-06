@@ -51,6 +51,15 @@ db.exec(`
     updatedAt TEXT
   );
 
+  -- One row per Pain Girl frame an admin has actually edited. The shipped copy
+  -- lives in the client data file, so this table only ever holds overrides and
+  -- a frame with no row here still reads its own default.
+  CREATE TABLE IF NOT EXISTS pain_girl_stories (
+    frameId TEXT PRIMARY KEY,
+    storyText TEXT NOT NULL,
+    updatedAt TEXT
+  );
+
   CREATE TABLE IF NOT EXISTS flavor_prices (
     key TEXT PRIMARY KEY,
     vendor TEXT NOT NULL,
@@ -1750,6 +1759,41 @@ export function deleteRecipe(productId) {
   });
   runTx();
   return { productId };
+}
+
+// Pain Girl story overrides
+export function getAllPainGirlStories() {
+  const rows = db.prepare('SELECT * FROM pain_girl_stories').all();
+  return rows.map((row) => ({
+    frameId: row.frameId,
+    storyText: row.storyText,
+    updatedAt: row.updatedAt,
+  }));
+}
+
+export function setPainGirlStory(frameId, storyText) {
+  const stmt = db.prepare(`
+    INSERT INTO pain_girl_stories (frameId, storyText, updatedAt) VALUES (?, ?, ?)
+    ON CONFLICT(frameId) DO UPDATE SET storyText = excluded.storyText, updatedAt = excluded.updatedAt
+  `);
+  const now = new Date().toISOString();
+  const runTx = db.transaction(() => {
+    stmt.run(frameId, storyText, now);
+  });
+  runTx();
+  return { frameId, storyText, updatedAt: now };
+}
+
+// Drops the override, which is how a frame goes back to the copy it shipped
+// with: there is no "default" row to restore because the default lives in the
+// data file and this table only ever holds edits.
+export function deletePainGirlStory(frameId) {
+  const stmt = db.prepare('DELETE FROM pain_girl_stories WHERE frameId = ?');
+  const runTx = db.transaction(() => {
+    stmt.run(frameId);
+  });
+  runTx();
+  return { frameId };
 }
 
 // Flavor Price operations

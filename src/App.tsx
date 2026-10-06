@@ -22,6 +22,7 @@ export default function App() {
   const fetchAudioSettings = useAppStore((state) => state.fetchAudioSettings);
   const fetchRecipes = useAppStore((state) => state.fetchRecipes);
   const fetchFlavorPrices = useAppStore((state) => state.fetchFlavorPrices);
+  const fetchPainGirlStories = useAppStore((state) => state.fetchPainGirlStories);
   const hydrateSession = useAppStore((state) => state.hydrateSession);
   const setIsStudioModalOpen = useAppStore((state) => state.setIsStudioModalOpen);
 
@@ -42,12 +43,13 @@ export default function App() {
     fetchAudioSettings();
     fetchRecipes();
     fetchFlavorPrices();
+    fetchPainGirlStories();
     hydrateSession();
 
     if (window.location.pathname.toLowerCase().includes('/admin')) {
       setIsStudioModalOpen(true);
     }
-  }, [fetchProducts, fetchAudioSettings, fetchRecipes, fetchFlavorPrices, setIsStudioModalOpen]);
+  }, [fetchProducts, fetchAudioSettings, fetchRecipes, fetchFlavorPrices, fetchPainGirlStories, setIsStudioModalOpen]);
 
   // Sync document class for dark/light mode
   useEffect(() => {
