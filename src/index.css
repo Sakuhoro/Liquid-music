@@ -451,11 +451,26 @@
   );
 }
 
-/* On a desktop the painted figure hangs 80px lower and a further 40px to the
-   left than the shared cropped framing puts it. Only the paint moves inside the
-   panel -- the panel keeps its width and its fade, so the seam with the stage is
-   untouched. The horizontal half of the placement still comes from the file's
-   own measurement in the component (calc(38% - 70px)); the vertical half lives
+/* On a phone the artwork belongs to the entry splash alone: the section's own
+   stage is the whole screen below the header and the spiral is the only thing
+   on it. The background layer's painters are off by default (the `hidden` they
+   carry in the component) and come back exactly where the phone layout ends --
+   769px, one pixel past the splash's own max-width: 768px -- so the two
+   boundaries can never disagree and a copy of the picture can never linger
+   after the splash. */
+@media (min-width: 769px) {
+  .hall-pain-art,
+  .hall-pain-scrim,
+  [data-testid='collection-still-surround-wide'] {
+    display: block;
+  }
+}
+
+/* On a desktop the painted figure hangs 80px lower than the shared cropped
+   framing puts it. Only the paint moves inside the panel -- the panel keeps its
+   width and its fade, so the seam with the stage is untouched. The horizontal
+   half of the placement comes from the file's own measurement in the component
+   (38% of the span, the figure's measured anchor); the vertical half lives
    here, next to the sizing it belongs with. */
 @media (min-width: 769px) {
   .hall-pain-art {

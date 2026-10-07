@@ -97,12 +97,18 @@ export const PainGirlSpiralSection: React.FC = () => {
   // The frames double on a desktop, and so does the stage they travel through:
   // the component shrinks whatever does not fit, so leaving the stage at 650px
   // would have quietly scaled the growth straight back out again.
+  //
+  // The desktop here starts one pixel past the phone layout's upper bound: a
+  // 768px screen still runs the phone's splash sequence, so it must also keep
+  // the phone's stage -- full width, the spiral at home size, centred in the
+  // screen. Neither the splash nor the desktop can own 768 without the other
+  // leaking in.
   const [isDesktop, setIsDesktop] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 769px)').matches
   );
 
   useEffect(() => {
-    const query = window.matchMedia('(min-width: 768px)');
+    const query = window.matchMedia('(min-width: 769px)');
     const onChange = () => setIsDesktop(query.matches);
     query.addEventListener('change', onChange);
     return () => query.removeEventListener('change', onChange);
@@ -234,7 +240,7 @@ export const PainGirlSpiralSection: React.FC = () => {
           just this stage on its own black -- the artwork band that used to
           linger there was the ghost this section is cleared of. */}
       <div
-        className="relative w-full flex-1 min-h-[360px] md:flex-none md:min-h-0 md:ml-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black"
+        className="relative w-full flex-1 min-h-[360px] min-[769px]:flex-none min-[769px]:min-h-0 min-[769px]:ml-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black"
         style={
           isDesktop
             ? { height: 650 * growth, width: stageWidth, maxWidth: stageWidth }

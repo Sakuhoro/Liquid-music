@@ -122,7 +122,7 @@ export const BackgroundVideo: React.FC = () => {
           {still.split ? (
             <div
               data-testid="collection-still-surround-wide"
-              className="absolute inset-0 z-0 hidden md:block"
+              className="absolute inset-0 z-0 hidden"
               style={{ backgroundColor: '#000000' }}
             />
           ) : null}
@@ -138,7 +138,7 @@ export const BackgroundVideo: React.FC = () => {
           {still.split ? (
             <div
               data-testid="collection-still-split"
-              className="hall-pain-art z-0 hidden md:block"
+              className="hall-pain-art z-0 hidden"
               style={{
                 // Only the horizontal placement is set here: the panel's size,
                 // where it is cropped or fitted, and the fade into the stage are
@@ -168,7 +168,7 @@ export const BackgroundVideo: React.FC = () => {
             // Only while the artwork is cropped into its panel. Past 2560 it is
             // shown whole and nothing is laid over it, so darkening it would
             // leave the black inside the panel a shade off the black outside it.
-            <div className="hall-pain-scrim hall-pain-art z-1 hidden md:block pointer-events-none bg-black/25" />
+            <div className="hall-pain-scrim hall-pain-art z-1 hidden pointer-events-none bg-black/25" />
           ) : (
             <div className="absolute inset-0 z-1 pointer-events-none bg-black/25" />
           )}
