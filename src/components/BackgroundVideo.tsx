@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { CollectionName } from '../types';
 import { PAIN_GIRL_ARTWORK } from '../data/painGirlGallery';
@@ -21,18 +21,6 @@ interface StillBackground {
   image: string;
   /** Where the subject sits when the artwork fills the screen. */
   position: string;
-  /**
-   * Set when a narrow screen cannot put the artwork and the content side by side.
-   * The artwork then goes across the screen at its own proportions, sitting just
-   * under the header, and the content starts where the artwork ends, so the
-   * composition is neither cropped nor covered.
-   */
-  band?: {
-    /** Kept in step with the room the screen leaves for it. */
-    aspectRatio: string;
-    /** Measured off the file: what the artwork fades out into at its edges. */
-    surround: string;
-  };
   /**
    * Set when the artwork can be given its own half of a wide screen instead of
    * being laid across all of it. The file is 1366x768, so on a 16:9 screen a
@@ -62,17 +50,16 @@ const COLLECTION_STILL: Partial<Record<CollectionName, StillBackground>> = {
   'Pain Girl': {
     image: PAIN_GIRL_ARTWORK.src,
     position: 'left center',
-    band: {
-      aspectRatio: `${PAIN_GIRL_ARTWORK.width} / ${PAIN_GIRL_ARTWORK.height}`,
-      surround: '#0a0a0a',
-    },
     split: {
       // Measured off the file: the subject sits left of the file's middle, with
       // her head around 38% across and her body running down from there. The
-      // 30px bias is a nudge leftwards, so a shrunken panel (the artwork now
-      // draws at 80% of its height) keeps her on her own three-fifths instead of
-      // drifting towards the stage.
-      focal: 'calc(38% - 30px)',
+      // panel is drawn large enough (80% of the screen's height) that 38% keeps
+      // her whole figure in frame; pushing the anchor further left would slide
+      // her out of the panel a few dozen pixels at a time, so the horizontal is
+      // left at the anchor and the vertical calibration (80px straight down)
+      // lives in the CSS (background-position-y on a desktop), next to the
+      // sizing.
+      focal: '38%',
     },
   },
 };
@@ -102,23 +89,8 @@ export const BackgroundVideo: React.FC = () => {
       ? HERO_VIDEO_DARK
       : HERO_VIDEO_LIGHT;
 
-  // The header belongs to the page rather than to this layer, but on a narrow
-  // screen the artwork has to start below it. Measured rather than assumed: its
-  // height depends on how the links wrap, which changes with the width.
-  const [chromeTop, setChromeTop] = useState(0);
-
+  // Nothing to play when the collection brings its own artwork.
   useEffect(() => {
-    const header = document.getElementById('main-app-nav');
-    if (!header) return;
-    const read = () => setChromeTop(Math.round(header.getBoundingClientRect().height));
-    read();
-    const observer = new ResizeObserver(read);
-    observer.observe(header);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    // Nothing to play when the collection brings its own artwork.
     if (still) return;
     const playSafe = async () => {
       if (videoRef.current) {
@@ -140,41 +112,18 @@ export const BackgroundVideo: React.FC = () => {
     >
       {still ? (
         <>
-          {/*
-            A phone gets the whole composition at its own proportions, sitting just
-            under the header, with the screen's content starting where the artwork
-            ends. A portrait crop of a landscape illustration would show nothing
-            but its dark margins, which is why the artwork is laid out whole here
-            instead of being covered to fit. Tablet and up get it full-screen with
-            the content laid out beside it. Either way this is one layer behind
-            the header and the content, which is what keeps them reading as a
-            single canvas.
-          */}
-          {still.band ? (
-            <div
-              data-testid="collection-still-band"
-              className="absolute inset-0 z-0 bg-no-repeat md:hidden"
-              style={{
-                // The artwork's own surround, so the parts of the screen it does
-                // not reach are the same flat black rather than the page's grey.
-                // Nothing stops on an edge: the file fades into this colour.
-                backgroundColor: still.band.surround,
-                backgroundImage: `url('${still.image}')`,
-                backgroundSize: '100% auto',
-                backgroundPosition: `left ${chromeTop}px`,
-              }}
-            />
-          ) : null}
-          {/* The artwork's own black, filling whatever the artwork does not. On
-              a phone that is the screen above and below the band, already the
-              band's own background; from tablet up it is the whole of the
-              content's half, so the spiral reads against pure black with no
-              image behind it. */}
+          {/* The artwork's own black, filling everything the artwork does not.
+              From tablet up that is the whole of the content's half, so the
+              spiral reads against pure black with no image behind it. A phone
+              gets no artwork at all behind the spiral: the splash owns its entry
+              and the stage paints its own black after it, so there is nothing
+              for this layer to hold -- the ghost of the entry artwork that used
+              to stay as a band across the top is gone with the band. */}
           {still.split ? (
             <div
               data-testid="collection-still-surround-wide"
               className="absolute inset-0 z-0 hidden md:block"
-              style={{ backgroundColor: '#0a0a0a' }}
+              style={{ backgroundColor: '#000000' }}
             />
           ) : null}
           {/*
@@ -219,7 +168,7 @@ export const BackgroundVideo: React.FC = () => {
             // Only while the artwork is cropped into its panel. Past 2560 it is
             // shown whole and nothing is laid over it, so darkening it would
             // leave the black inside the panel a shade off the black outside it.
-            <div className="hall-pain-scrim hall-pain-art z-1 pointer-events-none bg-black/25" />
+            <div className="hall-pain-scrim hall-pain-art z-1 hidden md:block pointer-events-none bg-black/25" />
           ) : (
             <div className="absolute inset-0 z-1 pointer-events-none bg-black/25" />
           )}

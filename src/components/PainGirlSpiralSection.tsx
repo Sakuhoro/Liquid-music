@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
@@ -31,8 +31,9 @@ const BUNDLE_NICOTINE: NicotineType[] = ['0mg', '3mg', '6mg'];
  * The key art behind the screen is painted by the background layer, not here, so
  * it sits under the header as well. From tablet up it fills the screen with the
  * subject on the left and the stage takes the right; on a phone there is no width
- * for the two side by side, so the artwork becomes a band across the top and the
- * spiral starts underneath it. Either way the two never overlap.
+ * for the two side by side, so the artwork never shows once the section is up --
+ * the gallery still in the header stays, and the stage fills the whole width,
+ * which is how a phone reads the collection as a helix against pure black.
  *
  * The split between the two is a measured one. From tablet up the artwork is
  * painted only across the left of the screen and faded to black where this
@@ -43,10 +44,10 @@ const BUNDLE_NICOTINE: NicotineType[] = ['0mg', '3mg', '6mg'];
  * the fade is part of the width rather than a separate number, so the artwork's
  * edge and the stage's edge cannot drift apart.
  *
- * On a phone the section opens itself: the artwork covers the screen for three
- * seconds and then fades away, and the spiral is what is underneath it. The
- * sequence runs once per entry into the collection, which is to say once per
- * mount -- leaving the collection and coming back plays it again.
+ * On a phone the section opens itself: the artwork covers the screen for a second
+ * and a half, then dissolves in an 800ms fade, and the spiral is what is
+ * underneath it. The sequence runs once per entry into the collection, which is
+ * to say once per mount -- leaving the collection and coming back plays it again.
  */
 export const PainGirlSpiralSection: React.FC = () => {
   const products = useAppStore((state) => state.products);
@@ -61,14 +62,30 @@ export const PainGirlSpiralSection: React.FC = () => {
   const [activeFrameIndex, setActiveFrameIndex] = useState<number | null>(null);
   const [selectedNicotine, setSelectedNicotine] = useState<NicotineType>('3mg');
 
-  // 'hold' keeps the splash up for three seconds, 'fade' runs the 600ms wipe,
-  // null means it is out of the tree entirely and cannot take a touch. Starting
-  // at null on a desktop means the splash is never built there at all.
+  // 'hold' keeps the splash up for a second and a half, 'fade' runs the 800ms
+  // dissolve, null means it is out of the tree entirely and cannot take a touch.
+  // Starting at null on a desktop means the splash is never built there at all.
   const [splashPhase, setSplashPhase] = useState<'hold' | 'fade' | null>(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
       ? 'hold'
       : null
   );
+
+  // How far the site header reaches down on the phone. The splash's artwork is
+  // centred in the space below it rather than in the whole viewport, so the
+  // figure never slides under the bar. Measured because the header's height
+  // depends on how its links wrap.
+  const [navTop, setNavTop] = useState(0);
+
+  useLayoutEffect(() => {
+    const header = document.getElementById('main-app-nav');
+    if (!header) return;
+    const read = () => setNavTop(Math.round(header.getBoundingClientRect().height));
+    read();
+    const observer = new ResizeObserver(read);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
 
   // How much of the screen the stage is given, which is the same question as how
   // much the artwork takes. Both come from CSS (--pain-girl-art-width and
@@ -96,13 +113,13 @@ export const PainGirlSpiralSection: React.FC = () => {
   // styled with rather than a number the JS has to keep in step with the CSS.
   useEffect(() => {
     if (splashPhase !== 'hold') return undefined;
-    const timer = window.setTimeout(() => setSplashPhase('fade'), 3000);
+    const timer = window.setTimeout(() => setSplashPhase('fade'), 1500);
     return () => window.clearTimeout(timer);
   }, [splashPhase]);
 
   useEffect(() => {
     if (splashPhase !== 'fade') return undefined;
-    const timer = window.setTimeout(() => setSplashPhase(null), 600);
+    const timer = window.setTimeout(() => setSplashPhase(null), 800);
     return () => window.clearTimeout(timer);
   }, [splashPhase]);
 
@@ -209,24 +226,13 @@ export const PainGirlSpiralSection: React.FC = () => {
         spiral would swallow every scroll that starts on it and the sections
         below would be unreachable on a phone.
       */}
-      {/*
-        Room for the artwork band on a phone. It is the same aspect ratio the
-        background layer paints the artwork at, and the same width, so the spiral
-        begins exactly where the artwork ends.
-      */}
-      <div
-        aria-hidden
-        className="w-full shrink-0 md:hidden"
-        style={{ aspectRatio: `${PAIN_GIRL_ARTWORK.width} / ${PAIN_GIRL_ARTWORK.height}` }}
-      />
-
       {/* The stage takes everything the artwork does not, from md up. The artwork
           is painted only across the left of the screen and faded to black where
           this begins, so the spiral reads against pure black with nothing of
-          the image behind it. A phone has no width to spare for the two, so there
-          the artwork takes a band across the top instead and the spiral fills what
-          is left of the screen, full width and centred -- and the stage paints its
-          own black, so the helix never has a photograph showing through it. */}
+          the image behind it. A phone, by contrast, has no artwork of its own at
+          all: the splash owns its entry and then leaves, and what is left is
+          just this stage on its own black -- the artwork band that used to
+          linger there was the ghost this section is cleared of. */}
       <div
         className="relative w-full flex-1 min-h-[360px] md:flex-none md:min-h-0 md:ml-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black"
         style={
@@ -283,12 +289,20 @@ export const PainGirlSpiralSection: React.FC = () => {
             aria-hidden
             className={`fixed inset-0 z-10 bg-black overflow-hidden ${splashPhase === 'fade' ? 'pain-girl-splash--out' : 'pain-girl-splash--in'}`}
           >
-            <img
-              src={PAIN_GIRL_ARTWORK.src}
-              alt=""
-              className="w-full h-full object-cover"
-              draggable={false}
-            />
+            {/* The artwork sits in a box that starts below the header, so the
+                scaled figure is centred in the visible space without ever
+                sliding under the bar. */}
+            <div
+              className="pain-girl-splash-stage absolute inset-x-0 bottom-0"
+              style={{ top: navTop }}
+            >
+              <img
+                src={PAIN_GIRL_ARTWORK.src}
+                alt=""
+                className="pain-girl-splash-img w-full h-full object-cover"
+                draggable={false}
+              />
+            </div>
           </div>,
           document.body
         )}
@@ -317,10 +331,15 @@ export const PainGirlSpiralSection: React.FC = () => {
               <span className="font-mono text-xs uppercase tracking-wider font-bold text-amber-400 pt-2">
                 {String(activeFrameIndex + 1).padStart(2, '0')} / {String(PAIN_GIRL_GALLERY.length).padStart(2, '0')}
               </span>
+              {/* The "back to the collections" control. On a desktop it stays up
+                  here in the corner; on a phone it moves to the bottom of the
+                  modal, into the footer action stack, so the thumb does not have
+                  to reach for the top of the sheet. The two copies never show
+                  together: each is hidden where the other is shown. */}
               <button
                 type="button"
                 onClick={backToAllCollections}
-                className="group flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#181818] hover:bg-amber-400 border border-[#333] hover:border-amber-300 text-stone-200 hover:text-slate-950 font-mono text-[11px] sm:text-xs uppercase tracking-wider font-bold transition-all duration-300 cursor-pointer"
+                className="group hidden md:flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#181818] hover:bg-amber-400 border border-[#333] hover:border-amber-300 text-stone-200 hover:text-slate-950 font-mono text-[11px] sm:text-xs uppercase tracking-wider font-bold transition-all duration-300 cursor-pointer"
               >
                 Вернуться ко всем коллекциям
                 <ChevronRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -334,7 +353,7 @@ export const PainGirlSpiralSection: React.FC = () => {
                   loading cannot resize the panel under the reader's cursor. */}
               <div
                 key={`art-${activeFrameIndex}`}
-                className="pain-girl-frame-swap relative w-full aspect-square md:aspect-auto md:min-h-[42vh] rounded-2xl overflow-hidden border border-[#2a2a2a] bg-black"
+                className="pain-girl-frame-swap relative w-full max-w-[70%] mx-auto aspect-square rounded-2xl overflow-hidden border border-[#2a2a2a] bg-black md:max-w-none md:mx-0 md:aspect-auto md:min-h-[42vh]"
               >
                 <img
                   src={activeFrame.src}
@@ -363,7 +382,13 @@ export const PainGirlSpiralSection: React.FC = () => {
             </div>
 
             {/* Footer: arrows to walk the set, then the strength the set is bought
-                at, then the button that buys it. */}
+                at beside the button that buys it. The two sit on one horizontal
+                line on a desktop -- the strength options left, the CTA right of
+                them, both vertically centred -- and stack on a phone. The price
+                is not laid out as a line of its own anywhere: the button's label
+                is the price, which is the only copy that needs it. At the very
+                bottom of the sheet a phone gets the return control, duplicated
+                from the corner that a desktop keeps it in. */}
             <div className="mt-6 pt-5 border-t border-[#222] space-y-5">
               <div className="flex items-center justify-between gap-3">
                 <button
@@ -376,12 +401,6 @@ export const PainGirlSpiralSection: React.FC = () => {
                   Назад
                 </button>
 
-                <div className="flex-1 hidden sm:flex items-center justify-center">
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-stone-500">
-                    {activeFrame.title}
-                  </span>
-                </div>
-
                 <button
                   type="button"
                   onClick={() => stepStory(1)}
@@ -393,54 +412,56 @@ export const PainGirlSpiralSection: React.FC = () => {
                 </button>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <label className="block text-xs font-mono uppercase font-bold text-amber-400">
-                    Выберите крепость никотина:
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {BUNDLE_NICOTINE.map((nic) => {
-                      const label = nic === '0mg' ? '0 мг' : nic === '3mg' ? '3 мг' : '6 мг';
-                      const isSelected = selectedNicotine === nic;
-                      return (
-                        <button
-                          type="button"
-                          key={nic}
-                          onClick={() => setSelectedNicotine(nic)}
-                          aria-pressed={isSelected}
-                          className={`py-3 min-h-[44px] rounded-xl text-xs font-mono font-bold border transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md font-extrabold'
-                              : 'bg-[#181818] text-stone-300 border-[#333] hover:border-[#555]'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="flex flex-col justify-end gap-3">
-                  <div className="flex items-center justify-between sm:justify-end gap-3">
-                    <span className="text-xs font-mono uppercase text-stone-400 font-bold">
-                      Итоговая цена:
-                    </span>
-                    <span className="font-serif text-3xl font-extrabold text-amber-400">
-                      {bundlePrice} руб.
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleAddBundleToCart}
-                    className="w-full min-h-[52px] py-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-mono font-extrabold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-lg shadow-amber-400/20"
-                  >
-                    Добавить истории в плейлист ({bundlePrice} руб.)
-                  </button>
+              <div className="flex flex-col gap-5 md:flex-row md:items-center md:gap-6">
+                <div className="space-y-2 md:flex-1">
+                <label className="block text-xs font-mono uppercase font-bold text-amber-400">
+                  Выберите крепость никотина:
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {BUNDLE_NICOTINE.map((nic) => {
+                    const label = nic === '0mg' ? '0 мг' : nic === '3mg' ? '3 мг' : '6 мг';
+                    const isSelected = selectedNicotine === nic;
+                    return (
+                      <button
+                        type="button"
+                        key={nic}
+                        onClick={() => setSelectedNicotine(nic)}
+                        aria-pressed={isSelected}
+                        className={`py-3 min-h-[44px] rounded-xl text-xs font-mono font-bold border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md font-extrabold'
+                            : 'bg-[#181818] text-stone-300 border-[#333] hover:border-[#555]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={handleAddBundleToCart}
+                className="w-full min-h-[52px] py-4 px-6 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-mono font-extrabold text-xs sm:text-sm md:text-base uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-lg shadow-amber-400/20 md:w-auto md:min-w-[320px] md:justify-center"
+              >
+                Добавить истории в плейлист ({bundlePrice} руб.)
+              </button>
             </div>
+
+            {/* The mobile copy of the return control, at the bottom of the action
+                stack. Hidden on a desktop, where the corner copy shows instead. */}
+            <div className="md:hidden">
+              <button
+                type="button"
+                onClick={backToAllCollections}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-[#181818] hover:bg-amber-400 border border-[#333] hover:border-amber-300 text-stone-200 hover:text-slate-950 font-mono text-[11px] uppercase tracking-wider font-bold transition-all duration-300 cursor-pointer"
+              >
+                Вернуться ко всем коллекциям
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
           </div>
           </div>,
           document.body

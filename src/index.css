@@ -428,6 +428,11 @@
   background-repeat: no-repeat;
   background-position: 38% 22%;
   background-size: auto 80%;
+  /* The panel is its own flat black, so the surround around the painted figure
+     is the same black the stage and the content half use -- nothing of the
+     page's own grey shows through behind the artwork, and the split meets the
+     stage on one colour. */
+  background-color: #000;
   /* The fade is a mask on the panel's edge rather than a softened copy of the
      file: the artwork is opaque, and softening it would mean an image edit on
      every rebuild. It is what the stage's width is measured against, so the
@@ -444,6 +449,18 @@
     #000 calc(100% - var(--pain-girl-fade) * 100%),
     transparent 100%
   );
+}
+
+/* On a desktop the painted figure hangs 80px lower and a further 40px to the
+   left than the shared cropped framing puts it. Only the paint moves inside the
+   panel -- the panel keeps its width and its fade, so the seam with the stage is
+   untouched. The horizontal half of the placement still comes from the file's
+   own measurement in the component (calc(38% - 70px)); the vertical half lives
+   here, next to the sizing it belongs with. */
+@media (min-width: 769px) {
+  .hall-pain-art {
+    background-position-y: calc(22% + 80px);
+  }
 }
 
 @media (min-width: 2560px) {
@@ -471,21 +488,37 @@
 /* Pain Girl: the splash the phone gets on entry, the spiral arriving underneath
    it, and the story modal's frame swap.
 
-   The splash holds at full opacity for three seconds and then wipes out over
-   600ms; the class carries the fade, so the CSS owns the duration the JS only
+   The splash holds at full opacity for a second and a half and then dissolves
+   out; the class carries the exit, so the CSS owns the duration the JS only
    waits through. It is black behind the artwork because that is what is being
-   faded to: when the layer is gone the screen underneath is black anyway, so the
-   artwork appears to turn into the background rather than to be replaced by it.
-   While it is fading it no longer takes pointers, which is what lets the first
-   touch of the spiral land on the spiral instead of on a picture of nothing. */
+   dissolved to: when the layer is gone the screen underneath is black anyway, so
+   the artwork appears to turn into the background rather than to be replaced by
+   it. While it is fading it no longer takes pointers, which is what lets the
+   first touch of the spiral land on the spiral instead of on a picture of
+   nothing. The exit runs on the sheet itself -- opacity, blur and scale together,
+   off the compositor, the stage underneath never re-laid-out. */
 .pain-girl-splash--in {
   opacity: 1;
 }
 
 .pain-girl-splash--out {
   opacity: 0;
+  filter: blur(8px);
+  transform: scale(0.95);
   pointer-events: none;
-  transition: opacity 600ms ease-out;
+  transition:
+    opacity 800ms cubic-bezier(0.4, 0, 0.2, 1),
+    filter 800ms ease-out,
+    transform 800ms ease-out;
+  will-change: opacity, filter, transform;
+}
+
+/* The artwork drawn at 80% of the sheet, hung off a stage box that starts below
+   the header, so the figure neither fills the screen nor slides under the bar. */
+.pain-girl-splash-img {
+  transform: scale(0.8);
+  transform-origin: center center;
+  will-change: transform;
 }
 
 /* The spiral's entrance. Opacity and a scale only, so it runs off the compositor
@@ -531,6 +564,10 @@
 @media (prefers-reduced-motion: reduce) {
   .pain-girl-splash--out {
     transition-duration: 1ms;
+  }
+
+  .pain-girl-splash-img {
+    transition: none;
   }
 
   .pain-girl-spiral-entry {
