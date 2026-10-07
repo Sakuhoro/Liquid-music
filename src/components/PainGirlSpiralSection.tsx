@@ -1,4 +1,8 @@
-import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+
+// The collection's own ambient bed, served from the public audio folder next to
+// the other collections' tracks. Played while the collection is on screen.
+const PAIN_GIRL_MUSIC_URL = '/audio/pain-girl.mp3';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
@@ -129,6 +133,33 @@ export const PainGirlSpiralSection: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [splashPhase]);
 
+  // The collection's ambient track starts the moment it is on screen and stops
+  // when it unmounts. The first play attempt rides the tap that opened the
+  // collection; an early rejection just means the browser wants a gesture for
+  // unattended sound, so the next pointer or key retries until the gate opens --
+  // the same retry shape the site-wide bed in App.tsx already uses.
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = musicRef.current;
+    if (!audio) return undefined;
+    audio.volume = 0.4;
+    const tryPlay = () => {
+      const started = audio.play();
+      if (started && typeof started.catch === 'function') started.catch(() => {});
+    };
+    tryPlay();
+    const retry = () => tryPlay();
+    window.addEventListener('pointerdown', retry);
+    window.addEventListener('keydown', retry);
+    return () => {
+      window.removeEventListener('pointerdown', retry);
+      window.removeEventListener('keydown', retry);
+      audio.pause();
+      audio.currentTime = 0;
+    };
+  }, []);
+
   const growth = isDesktop ? 2 : 1;
   const isSplashUp = splashPhase !== null;
   // On a phone the spiral waits for the splash to finish, and only its entrance
@@ -240,7 +271,7 @@ export const PainGirlSpiralSection: React.FC = () => {
           just this stage on its own black -- the artwork band that used to
           linger there was the ghost this section is cleared of. */}
       <div
-        className="relative w-full flex-1 min-h-[360px] min-[769px]:flex-none min-[769px]:min-h-0 min-[769px]:ml-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black"
+        className="relative w-full flex-1 min-h-[360px] min-[769px]:flex-none min-[769px]:min-h-0 min-[769px]:ml-auto min-[769px]:items-center overflow-hidden flex items-start justify-center touch-pan-y bg-black"
         style={
           isDesktop
             ? { height: 650 * growth, width: stageWidth, maxWidth: stageWidth }
@@ -278,6 +309,18 @@ export const PainGirlSpiralSection: React.FC = () => {
           onSelectItem={openStory}
         />
       </div>
+
+      {/* The collection's ambient bed, rendered so the browser can fetch it from
+          the tap that opened the collection and so a probe can read whether it
+          plays. `hidden` keeps it out of layout; loop and the volume live on
+          the element, the play/retry logic in the effect above. */}
+      <audio
+        ref={musicRef}
+        src={PAIN_GIRL_MUSIC_URL}
+        loop
+        preload="auto"
+        hidden
+      />
 
       {/* The splash itself. Full-bleed, black behind the art so the fade lands on
           black, and it is the overlay that owns the phone's first three seconds.
