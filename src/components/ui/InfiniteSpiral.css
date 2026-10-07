@@ -1,7 +1,15 @@
 .infinite-spiral {
   position: relative;
   width: 100%;
-  height: 100%;
+  /* The helix fills whatever band it is given by stretching as a flex item
+     rather than by resolving a percentage height. The stage that hosts it is a
+     flex container whose own height comes from flex-grow on a phone, which is
+     not a definite length, so height:100% quietly fell back to the 320px floor
+     and the bottom arc of the ring was clipped off the screen. align-self
+     stretch fills the band the same way it does when the host carries an
+     explicit height on a desktop. */
+  height: auto;
+  align-self: stretch;
   min-height: 320px;
   overflow: hidden;
   isolation: isolate;

@@ -271,7 +271,7 @@ export const PainGirlSpiralSection: React.FC = () => {
           just this stage on its own black -- the artwork band that used to
           linger there was the ghost this section is cleared of. */}
       <div
-        className="relative w-full flex-1 min-h-[360px] min-[769px]:flex-none min-[769px]:min-h-0 min-[769px]:ml-auto min-[769px]:items-center overflow-hidden flex items-start justify-center touch-pan-y bg-black"
+        className="relative w-full flex-1 min-h-[360px] min-[769px]:flex-none min-[769px]:min-h-0 min-[769px]:ml-auto overflow-hidden flex items-stretch justify-center touch-pan-y bg-black"
         style={
           isDesktop
             ? { height: 650 * growth, width: stageWidth, maxWidth: stageWidth }

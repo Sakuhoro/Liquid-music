@@ -1,27 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { X, User, Phone, Send, Calendar, LogOut, Disc3, ShieldCheck, Sparkles, ChevronDown, Loader2, Check } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
-import {
-  X,
-  User,
-  Phone,
-  Send,
-  Calendar,
-  LogOut,
-  Disc3,
-  ShieldCheck,
-  Sparkles,
-  ChevronDown,
-  Loader2,
-  Check,
-} from 'lucide-react';
 
-const formatRub = (value: number) =>
-  new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(value);
-
-// Shown verbatim in the cabinet so the scheme needs no interpretation:
-// the threshold is a strict "more than", and the rate it unlocks applies
-// to the following order, not the one that crossed it. These are discount
-// steps, not a tier ladder: the member's status reads as one name.
+/** The two rungs of the scheme. A member reads these as "5% after 20 000 ₽"
+ *  and "10% after 30 000 ₽"; the running bar shows which one is in reach. */
 const LOYALTY_RULES = [
   { threshold: 20000, pct: 5 },
   { threshold: 30000, pct: 10 },
@@ -29,25 +11,29 @@ const LOYALTY_RULES = [
 
 const STATUS_LABEL: Record<string, string> = {
   'Pending Verification': 'Ожидает подтверждения',
-  Confirmed: 'Подтверждён',
+  'Confirmed': 'Подтверждён',
+  'Fulfilled': 'Получен',
+  'Cancelled': 'Отменён',
 };
 
 const STATUS_TONE: Record<string, string> = {
   'Pending Verification': 'var(--hall-varnish)',
-  Confirmed: 'var(--hall-varnish)',
+  'Confirmed': 'var(--hall-varnish)',
+  'Fulfilled': 'var(--hall-varnish)',
+  'Cancelled': 'var(--hall-varnish)',
 };
 
-// Progress toward the next tier, as a percentage. A member with no next
-// threshold is shown a full bar rather than an empty one.
-function loyaltyProgress(spend: number, nextThreshold: number | null) {
+const formatRub = (n: number) => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(n);
+
+function loyaltyProgress(spend: number, nextThreshold: number | null): number {
   if (!nextThreshold) return 100;
-  const previous = nextThreshold === 20000 ? 0 : 20000;
-  const span = nextThreshold - previous;
-  if (span <= 0) return 100;
-  return Math.max(0, Math.min(100, ((spend - previous) / span) * 100));
+  const prev = LOYALTY_RULES.reduce((max, r) => (r.threshold < nextThreshold ? r.threshold : max), 0);
+  const denom = nextThreshold - prev;
+  if (denom <= 0) return 0;
+  return Math.max(0, Math.min(100, ((spend - prev) / denom) * 100));
 }
 
-export const AccountModal: React.FC = () => {
+export function AccountModal() {
   const isAccountModalOpen = useAppStore((state) => state.isAccountModalOpen);
   const setIsAccountModalOpen = useAppStore((state) => state.setIsAccountModalOpen);
   const currentUser = useAppStore((state) => state.currentUser);
@@ -101,153 +87,161 @@ export const AccountModal: React.FC = () => {
           boxShadow: 'var(--hall-shadow)',
         }}
       >
-        {/* Header */}
-        <div className="relative p-4 sm:p-8 overflow-hidden">
-          <button
-            onClick={() => setIsAccountModalOpen(false)}
-            aria-label="Закрыть кабинет"
-            className="absolute top-4 right-4 sm:top-5 sm:right-5 hall-focusable w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
-            style={{ background: 'var(--hall-border)' }}
+        {/* One panel for the member: identity, the details of the account and
+            the loyalty standing all live in the same bordered block, so the
+            cabinet reads as two panels -- the person, and their orders. The
+            old three-block layout sat inside an overflow-hidden header, and on
+            a phone the loyalty card was cut at the fold. This block clips
+            nothing; the modal itself scrolls. */}
+        <div className="p-4 sm:p-8 pb-4 sm:pb-5">
+          <div
+            className="hall-list-in rounded-2xl overflow-visible"
+            style={{ background: 'var(--hall-surface-raised)', border: '1px solid var(--hall-border)' }}
           >
-            <X className="w-4 h-4" />
-          </button>
-
-          <div className="relative flex items-center gap-3 sm:gap-3.5">
-            <div
-              className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0"
-              style={{ background: 'var(--hall-varnish-soft)', border: '1px solid var(--hall-border-strong)', color: 'var(--hall-varnish)' }}
-            >
-              <User className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div className="min-w-0">
-              <div className="inline-flex items-center gap-1.5 hall-text-2xs font-mono" style={{ color: 'var(--hall-loyalty)' }}>
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Авторизованный слушатель</span>
-              </div>
-              {/* Wraps rather than clips. At the old 45px this cut a
-                  27-character name down to its first few words. */}
-              <h2 className="font-serif hall-text-3xl font-normal leading-tight break-words">
-                {currentUser.name}
-              </h2>
-            </div>
-          </div>
-
-          {/* Loyalty programme */}
-          {loyalty && (
-            <div
-              className="relative mt-4 sm:mt-6 p-3 sm:p-4 rounded-2xl hall-list-in"
-              style={{ background: 'var(--hall-surface-raised)', border: '1px solid var(--hall-border)' }}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="hall-text-2xs font-mono uppercase tracking-wider" style={{ color: 'var(--hall-text-faint)' }}>
-                    Программа лояльности
-                  </div>
-                  {/* One status name, not a ladder of them. The member's standing
-                      is a single thing; which discount step it has reached is
-                      what the bar and the rates below are for. */}
-                  <div className="font-serif hall-text-xl mt-0.5" style={{ color: 'var(--hall-varnish)' }}>
-                    Постоянный слушатель
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="font-serif hall-text-3xl font-bold" style={{ color: 'var(--hall-varnish)' }}>
-                    {loyalty.discountPct}%
-                  </div>
-                  <div className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
-                    на следующий заказ
-                  </div>
-                </div>
-              </div>
-
+            {/* Identity, with the close control riding its row so nothing is
+                ever masked by a floating button on a narrow screen. */}
+            <div className="p-3 sm:p-4 flex items-center gap-3 sm:gap-3.5">
               <div
-                className="mt-2 sm:mt-3 h-1 sm:h-1.5 rounded-full overflow-hidden"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0"
+                style={{ background: 'var(--hall-varnish-soft)', border: '1px solid var(--hall-border-strong)', color: 'var(--hall-varnish)' }}
+              >
+                <User className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="inline-flex items-center gap-1.5 hall-text-2xs font-mono" style={{ color: 'var(--hall-loyalty)' }}>
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Авторизованный слушатель</span>
+                </div>
+                {/* Wraps rather than clips. At the old 45px this cut a
+                    27-character name down to its first few words. */}
+                <h2 className="font-serif hall-text-3xl font-normal leading-tight break-words">
+                  {currentUser.name}
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsAccountModalOpen(false)}
+                aria-label="Закрыть кабинет"
+                className="hall-focusable w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 style={{ background: 'var(--hall-border)' }}
-                role="progressbar"
-                aria-valuenow={Math.round(progress)}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label="Прогресс до следующей скидки"
               >
-                <div
-                  className="h-full rounded-full transition-[width] duration-500"
-                  style={{
-                    width: `${progress}%`,
-                    background: 'var(--hall-varnish)',
-                    transitionTimingFunction: 'var(--motion-ease-out)',
-                  }}
-                />
-              </div>
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-              <div className="mt-2 hall-text-2xs font-mono" style={{ color: 'var(--hall-text-muted)' }}>
-                {nextThreshold ? (
-                  <>
-                    <span style={{ color: 'var(--hall-text)' }}>{formatRub(spend)} ₽</span>
-                    {' из '}
-                    {formatRub(nextThreshold)} ₽ — ещё {formatRub(remaining)} ₽
-                  </>
-                ) : (
-                  <>
-                    <span style={{ color: 'var(--hall-text)' }}>{formatRub(spend)} ₽</span>
-                    {' — максимальная скидка'}
-                  </>
-                )}
-              </div>
+            {/* The account's details: Telegram, phone, and the date of joining. */}
+            <div
+              className="hall-account-details px-3 sm:px-4 py-3 space-y-2.5 sm:space-y-3 hall-text-base font-mono"
+              style={{ borderTop: '1px solid var(--hall-border)' }}
+            >
+              {[
+                { Icon: Send, label: 'Telegram', value: currentUser.telegram, tone: 'var(--hall-varnish)' },
+                { Icon: Phone, label: 'Телефон', value: currentUser.phone, tone: 'var(--hall-text-muted)' },
+                { Icon: Calendar, label: 'В студии с', value: currentUser.registeredAt, tone: 'var(--hall-varnish)' },
+              ].map(({ Icon, label, value, tone }) => (
+                <div key={label} className="flex items-center justify-between gap-2 sm:gap-3">
+                  <span className="flex items-center gap-2 shrink-0" style={{ color: 'var(--hall-text-muted)' }}>
+                    <Icon className="w-3.5 h-3.5" style={{ color: tone }} />
+                    {label}
+                  </span>
+                  {/* Wraps instead of truncating, so a long handle is never cut
+                      off without the member being able to see what was cut. */}
+                  <span className="min-w-0 text-right break-words" style={{ color: label === 'Telegram' ? 'var(--hall-varnish)' : undefined }}>
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
 
-              {/* The two thresholds spelled out, so the scheme is readable
-                  without inferring it from the progress bar. A row lights up
-                  once the spend has passed it. */}
-              <div
-                className="mt-3 pt-3 grid grid-cols-2 gap-2"
-                style={{ borderTop: '1px solid var(--hall-border)' }}
-              >
-                {LOYALTY_RULES.map((rule) => {
-                  const unlocked = spend > rule.threshold;
-                  return (
-                    <div
-                      key={rule.threshold}
-                      className="hall-text-2xs font-mono flex items-center gap-1.5"
-                      style={{ color: unlocked ? 'var(--hall-text)' : 'var(--hall-text-faint)' }}
-                    >
-                      {unlocked ? (
-                        <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--hall-varnish)' }} />
-                      ) : (
-                        <span
-                          className="w-4 h-4 rounded-full shrink-0"
-                          style={{ border: '1px solid var(--hall-border-strong)' }}
-                        />
-                      )}
-                      <span>{rule.pct}% после {formatRub(rule.threshold)} ₽</span>
+            {/* Loyalty standing, folded into the same block. */}
+            {loyalty && (
+              <div className="p-3 sm:p-4" style={{ borderTop: '1px solid var(--hall-border)' }}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="hall-text-2xs font-mono uppercase tracking-wider" style={{ color: 'var(--hall-text-faint)' }}>
+                      Программа лояльности
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+                    {/* One status name, not a ladder of them. The member's standing
+                        is a single thing; which discount step it has reached is
+                        what the bar and the rates below are for. */}
+                    <div className="font-serif hall-text-xl mt-0.5" style={{ color: 'var(--hall-varnish)' }}>
+                      Постоянный слушатель
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-serif hall-text-3xl font-bold" style={{ color: 'var(--hall-varnish)' }}>
+                      {loyalty.discountPct}%
+                    </div>
+                    <div className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
+                      на следующий заказ
+                    </div>
+                  </div>
+                </div>
 
-        {/* Details */}
-        <div
-          className="hall-account-details mx-4 sm:mx-8 p-3 sm:p-4 rounded-2xl space-y-2.5 sm:space-y-3 hall-text-base font-mono"
-          style={{ background: 'var(--hall-surface-raised)', border: '1px solid var(--hall-border)' }}
-        >
-          {[
-            { Icon: Send, label: 'Telegram', value: currentUser.telegram, tone: 'var(--hall-varnish)' },
-            { Icon: Phone, label: 'Телефон', value: currentUser.phone, tone: 'var(--hall-text-muted)' },
-            { Icon: Calendar, label: 'В студии с', value: currentUser.registeredAt, tone: 'var(--hall-varnish)' },
-          ].map(({ Icon, label, value, tone }) => (
-            <div key={label} className="flex items-center justify-between gap-2 sm:gap-3">
-              <span className="flex items-center gap-2 shrink-0" style={{ color: 'var(--hall-text-muted)' }}>
-                <Icon className="w-3.5 h-3.5" style={{ color: tone }} />
-                {label}
-              </span>
-              {/* Wraps instead of truncating, so a long handle is never cut
-                  off without the member being able to see what was cut. */}
-              <span className="min-w-0 text-right break-words" style={{ color: label === 'Telegram' ? 'var(--hall-varnish)' : undefined }}>
-                {value}
-              </span>
-            </div>
-          ))}
+                <div
+                  className="mt-2 sm:mt-3 h-1 sm:h-1.5 rounded-full overflow-hidden"
+                  style={{ background: 'var(--hall-border)' }}
+                  role="progressbar"
+                  aria-valuenow={Math.round(progress)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Прогресс до следующей скидки"
+                >
+                  <div
+                    className="h-full rounded-full transition-[width] duration-500"
+                    style={{
+                      width: `${progress}%`,
+                      background: 'var(--hall-varnish)',
+                      transitionTimingFunction: 'var(--motion-ease-out)',
+                    }}
+                  />
+                </div>
+
+                <div className="mt-2 hall-text-2xs font-mono" style={{ color: 'var(--hall-text-muted)' }}>
+                  {nextThreshold ? (
+                    <>
+                      <span style={{ color: 'var(--hall-text)' }}>{formatRub(spend)} ₽</span>
+                      {' из '}
+                      {formatRub(nextThreshold)} ₽ — ещё {formatRub(remaining)} ₽
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ color: 'var(--hall-text)' }}>{formatRub(spend)} ₽</span>
+                      {' — максимальная скидка'}
+                    </>
+                  )}
+                </div>
+
+                {/* The two thresholds spelled out, so the scheme is readable
+                    without inferring it from the progress bar. A row lights up
+                    once the spend has passed it. */}
+                <div
+                  className="mt-3 pt-3 grid grid-cols-2 gap-2"
+                  style={{ borderTop: '1px solid var(--hall-border)' }}
+                >
+                  {LOYALTY_RULES.map((rule) => {
+                    const unlocked = spend > rule.threshold;
+                    return (
+                      <div
+                        key={rule.threshold}
+                        className="hall-text-2xs font-mono flex items-center gap-1.5"
+                        style={{ color: unlocked ? 'var(--hall-text)' : 'var(--hall-text-faint)' }}
+                      >
+                        {unlocked ? (
+                          <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--hall-varnish)' }} />
+                        ) : (
+                          <span
+                            className="w-4 h-4 rounded-full shrink-0"
+                            style={{ border: '1px solid var(--hall-border-strong)' }}
+                          />
+                        )}
+                        <span>{rule.pct}% после {formatRub(rule.threshold)} ₽</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Order history. This is the part that grows, so it is the part that
