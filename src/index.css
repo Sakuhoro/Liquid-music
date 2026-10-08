@@ -528,10 +528,9 @@
   will-change: opacity, filter, transform;
 }
 
-/* The artwork drawn at 80% of the sheet, hung off a stage box that starts below
-   the header, so the figure neither fills the screen nor slides under the bar. */
+/* The splash background artwork stretches to fill the entire screen */
 .pain-girl-splash-img {
-  transform: scale(0.8);
+  transform: scale(1);
   transform-origin: center center;
   will-change: transform;
 }
@@ -706,6 +705,56 @@
   .hall-cart-footer {
     --hall-type-scale: 1;
   }
+}
+
+/* Account modal font size increased by 4pt (+4px / +0.25rem) across all text elements */
+.hall-account-modal {
+  font-size: calc(1rem + 4px);
+}
+
+.hall-account-modal .text-\[10px\] {
+  font-size: calc(10px + 4px) !important;
+  line-height: 1.4 !important;
+}
+
+.hall-account-modal .text-\[11px\] {
+  font-size: calc(11px + 4px) !important;
+  line-height: 1.4 !important;
+}
+
+.hall-account-modal .text-xs {
+  font-size: calc(0.75rem + 4px) !important;
+  line-height: 1.4 !important;
+}
+
+.hall-account-modal .text-sm {
+  font-size: calc(0.875rem + 4px) !important;
+  line-height: 1.4 !important;
+}
+
+.hall-account-modal .text-base {
+  font-size: calc(1rem + 4px) !important;
+  line-height: 1.4 !important;
+}
+
+.hall-account-modal .text-lg {
+  font-size: calc(1.125rem + 4px) !important;
+  line-height: 1.4 !important;
+}
+
+.hall-account-modal .text-xl {
+  font-size: calc(1.25rem + 4px) !important;
+  line-height: 1.4 !important;
+}
+
+.hall-account-modal .text-2xl {
+  font-size: calc(1.5rem + 4px) !important;
+  line-height: 1.4 !important;
+}
+
+.hall-account-modal .text-3xl {
+  font-size: calc(1.875rem + 4px) !important;
+  line-height: 1.4 !important;
 }
 
 /* The cabinet on a phone. It inherits the root scale of 1.5, which put the
