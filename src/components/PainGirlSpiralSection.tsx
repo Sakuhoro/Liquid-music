@@ -258,16 +258,16 @@ export const PainGirlSpiralSection: React.FC = () => {
           just this stage on its own black -- the artwork band that used to
           linger there was the ghost this section is cleared of. */}
       <div
-        className="relative w-full flex-1 min-h-[480px] min-[769px]:flex-none min-[769px]:min-h-0 mx-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black pb-[30vh] min-[769px]:pb-0 min-[769px]:pt-[30vh]"
+        className="relative w-full flex-1 min-h-[480px] min-[769px]:flex-none min-[769px]:min-h-0 mx-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black pt-[10px] min-[769px]:pt-0"
         style={
           isDesktop
             ? { height: 1232, width: '100%', maxWidth: '100%' }
             : undefined
         }
       >
-        {/* On a phone the helix starts flush under the header and fills the band above
-            the bottom padding; from md up it is centered and held 30vh down from
-            the header. */}
+        {/* A phone hangs the helix 10px under the header and spreads its rows until
+            the column fills the whole stage down to the last pixel; from md up
+            there is no lead-in at all and the helix starts at the header. */}
         <InfiniteSpiral
           className={`pain-girl-spiral-entry ${spiralInteractive ? 'pain-girl-spiral-entry--in' : 'pain-girl-spiral-entry--out'}`}
           items={spiralItems}
@@ -284,7 +284,7 @@ export const PainGirlSpiralSection: React.FC = () => {
           perspective={isDesktop ? 3528 : 1540}
           radius={isDesktop ? 588 : 235}
           speed={0.5}
-          verticalSpacing={isDesktop ? 216 : 91}
+          verticalSpacing={isDesktop ? 235 : 220}
           onSelectItem={openStory}
         />
       </div>
