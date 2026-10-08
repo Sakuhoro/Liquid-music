@@ -257,13 +257,13 @@ export const CartDrawer: React.FC = () => {
 
                       <div className="text-right">
                         <span
-                          className="font-serif hall-text-base font-bold"
+                          className="font-sans tabular-nums hall-text-base font-bold"
                           style={{ color: 'var(--hall-varnish)' }}
                         >
                           {formatRub(item.totalUnitPrice * item.quantity)} ₽
                         </span>
                         {item.quantity > 1 && (
-                          <div className="hall-text-2xs font-mono" style={{ color: 'var(--hall-text-faint)' }}>
+                          <div className="hall-text-2xs font-sans tabular-nums font-medium" style={{ color: 'var(--hall-text-faint)' }}>
                             {formatRub(item.totalUnitPrice)} ₽ / шт
                           </div>
                         )}
@@ -282,10 +282,10 @@ export const CartDrawer: React.FC = () => {
             className="hall-cart-footer p-3 sm:p-6 space-y-2.5 sm:space-y-4"
             style={{ borderTop: '1px solid var(--hall-border)' }}
           >
-            <div className="space-y-1.5 hall-text-base font-mono">
+            <div className="space-y-1.5 hall-text-base font-sans font-medium">
               <div className="flex items-baseline justify-between" style={{ color: 'var(--hall-text-muted)' }}>
                 <span>Стоимость</span>
-                <span>{formatRub(subtotal)} ₽</span>
+                <span className="tabular-nums">{formatRub(subtotal)} ₽</span>
               </div>
 
               {discountPct > 0 && (
@@ -297,7 +297,7 @@ export const CartDrawer: React.FC = () => {
                     <Sparkles className="w-3.5 h-3.5" />
                     Постоянный слушатель · {discountPct}%
                   </span>
-                  <span>−{formatRub(discountAmount)} ₽</span>
+                  <span className="tabular-nums">−{formatRub(discountAmount)} ₽</span>
                 </div>
               )}
 
@@ -305,10 +305,10 @@ export const CartDrawer: React.FC = () => {
                 className="flex items-baseline justify-between pt-2 mt-1"
                 style={{ borderTop: '1px solid var(--hall-border)' }}
               >
-                <span className="hall-text-sm uppercase tracking-wider" style={{ color: 'var(--hall-text-muted)' }}>
+                <span className="hall-text-sm uppercase tracking-wider font-semibold" style={{ color: 'var(--hall-text-muted)' }}>
                   К оплате
                 </span>
-                <span className="font-serif hall-text-3xl font-bold" style={{ color: 'var(--hall-varnish)' }}>
+                <span className="font-sans tabular-nums hall-text-3xl font-extrabold" style={{ color: 'var(--hall-varnish)' }}>
                   {formatRub(animatedTotal)} ₽
                 </span>
               </div>

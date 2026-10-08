@@ -93,7 +93,7 @@ export const AccountModal: React.FC = () => {
           role="dialog"
           aria-modal="true"
           aria-label="Личный кабинет"
-          className="relative w-full max-w-2xl rounded-3xl overflow-hidden border my-auto text-stone-100 transition-all duration-300"
+          className="hall-account-modal relative w-full max-w-2xl rounded-3xl overflow-hidden border my-auto text-stone-100 transition-all duration-300"
           style={{
             background: '#0a0a0a',
             borderColor: 'rgba(255, 255, 255, 0.08)',
@@ -274,15 +274,7 @@ export const AccountModal: React.FC = () => {
               {/* Sub-Modal Header */}
               <div className="p-6 sm:p-8 border-b border-white/[0.08] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setIsOrderHistorySubModalOpen(false)}
-                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-stone-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 font-mono text-xs"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Назад</span>
-                  </button>
-                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-white flex items-center gap-2 ml-2">
-                    <Disc3 className="w-5 h-5 text-amber-400" />
+                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
                     <span>История заказов</span>
                   </h3>
                 </div>

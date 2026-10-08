@@ -258,31 +258,31 @@ export const PainGirlSpiralSection: React.FC = () => {
           just this stage on its own black -- the artwork band that used to
           linger there was the ghost this section is cleared of. */}
       <div
-        className="relative w-full flex-1 min-h-[360px] min-[769px]:flex-none min-[769px]:min-h-0 mx-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black"
+        className="relative w-full flex-1 min-h-[480px] min-[769px]:flex-none min-[769px]:min-h-0 mx-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black pt-[30vh]"
         style={
           isDesktop
-            ? { height: 720, width: '100%', maxWidth: '100%' }
+            ? { height: 880, width: '100%', maxWidth: '100%' }
             : undefined
         }
       >
-        {/* The spiral is centered on the screen and scaled large */}
+        {/* The spiral is centered on the screen, shifted down 30% from the header, and increased in size by 40% */}
         <InfiniteSpiral
           className={`pain-girl-spiral-entry ${spiralInteractive ? 'pain-girl-spiral-entry--in' : 'pain-girl-spiral-entry--out'}`}
           items={spiralItems}
           animationMode="all"
-          cardHeight={isDesktop ? 260 : 150}
-          cardRadius={isDesktop ? 20 : 12}
-          cardWidth={isDesktop ? 200 : 115}
+          cardHeight={isDesktop ? 364 : 210}
+          cardRadius={isDesktop ? 28 : 17}
+          cardWidth={isDesktop ? 280 : 161}
           centerScale={1.3}
           direction="up"
           edgeBlur={5}
           edgeFade={0.35}
           imageFit="cover"
           pauseOnHover
-          perspective={isDesktop ? 1800 : 1100}
-          radius={isDesktop ? 300 : 168}
+          perspective={isDesktop ? 2520 : 1540}
+          radius={isDesktop ? 420 : 235}
           speed={0.5}
-          verticalSpacing={isDesktop ? 110 : 65}
+          verticalSpacing={isDesktop ? 154 : 91}
           onSelectItem={openStory}
         />
       </div>
@@ -307,13 +307,8 @@ export const PainGirlSpiralSection: React.FC = () => {
             aria-hidden
             className={`fixed inset-0 z-10 bg-black overflow-hidden ${splashPhase === 'fade' ? 'pain-girl-splash--out' : 'pain-girl-splash--in'}`}
           >
-            {/* The artwork sits in a box that starts below the header, so the
-                scaled figure is centred in the visible space without ever
-                sliding under the bar. */}
-            <div
-              className="pain-girl-splash-stage absolute inset-x-0 bottom-0"
-              style={{ top: navTop }}
-            >
+            {/* The splash background artwork fills the entire screen on both desktop monitors and smartphones */}
+            <div className="pain-girl-splash-stage absolute inset-0 w-full h-full">
               <img
                 src={PAIN_GIRL_ARTWORK.src}
                 alt=""
