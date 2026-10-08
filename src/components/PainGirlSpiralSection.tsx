@@ -261,7 +261,7 @@ export const PainGirlSpiralSection: React.FC = () => {
         className="relative w-full flex-1 min-h-[480px] min-[769px]:flex-none min-[769px]:min-h-0 mx-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black pb-[30vh] min-[769px]:pb-0 min-[769px]:pt-[30vh]"
         style={
           isDesktop
-            ? { height: 880, width: '100%', maxWidth: '100%' }
+            ? { height: 1232, width: '100%', maxWidth: '100%' }
             : undefined
         }
       >
@@ -272,19 +272,19 @@ export const PainGirlSpiralSection: React.FC = () => {
           className={`pain-girl-spiral-entry ${spiralInteractive ? 'pain-girl-spiral-entry--in' : 'pain-girl-spiral-entry--out'}`}
           items={spiralItems}
           animationMode="all"
-          cardHeight={isDesktop ? 364 : 210}
-          cardRadius={isDesktop ? 28 : 17}
-          cardWidth={isDesktop ? 280 : 161}
+          cardHeight={isDesktop ? 510 : 210}
+          cardRadius={isDesktop ? 39 : 17}
+          cardWidth={isDesktop ? 392 : 161}
           centerScale={1.3}
           direction="up"
           edgeBlur={5}
           edgeFade={0.35}
           imageFit="cover"
           pauseOnHover
-          perspective={isDesktop ? 2520 : 1540}
-          radius={isDesktop ? 420 : 235}
+          perspective={isDesktop ? 3528 : 1540}
+          radius={isDesktop ? 588 : 235}
           speed={0.5}
-          verticalSpacing={isDesktop ? 154 : 91}
+          verticalSpacing={isDesktop ? 216 : 91}
           onSelectItem={openStory}
         />
       </div>
