@@ -39,7 +39,7 @@ export const PAIN_GIRL_ARTWORK = {
  */
 export const PAIN_GIRL_GALLERY: GalleryItem[] = [
   {
-    src: '/images/pain-girl/out-in-the-garden.jpg',
+    src: '/images/pain-girl/Out%20in%20the%20Garden.png',
     alt: 'Out in the Garden',
     title: 'Out in the Garden',
     subtitle: 'Сезонная коллекция',
@@ -80,8 +80,8 @@ export const PAIN_GIRL_GALLERY: GalleryItem[] = [
   },
   {
     src: '/images/pain-girl/hot-gum.png',
-    alt: 'hot gum',
-    title: 'hot gum',
+    alt: 'Hot Gum',
+    title: 'Hot Gum',
     subtitle: 'Сезонная коллекция',
     storyText:
       'Сладкое, тянущееся, чуть обжигающее — как жвачка, которая не поддаётся с первого раза. ' +
