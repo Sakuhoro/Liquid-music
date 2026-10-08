@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 're
 
 // The collection's own ambient bed, served from the public audio folder next to
 // the other collections' tracks. Played while the collection is on screen.
-const PAIN_GIRL_MUSIC_URL = '/audio/pain-girl.mp3';
+const PAIN_GIRL_MUSIC_URL = '/audio/Pain%20Girl.mp3';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
