@@ -3,9 +3,6 @@ import { useAppStore } from '../store/useAppStore';
 import {
   X,
   User,
-  Phone,
-  Send,
-  Calendar,
   LogOut,
   Disc3,
   Sparkles,
@@ -122,12 +119,11 @@ export const AccountModal: React.FC = () => {
                     <User className="w-6 h-6" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    {/* Balanced, refined ФИО header without oversized footprint and NO "Авторизованный слушатель" badge */}
                     <h2
                       className="font-serif font-semibold leading-snug break-words text-white tracking-wide"
                       style={{ fontSize: 'clamp(1.25rem, 2vw, 1.75rem)' }}
                     >
-                      {currentUser.name}
+                      {currentUser.telegram.startsWith('@') ? currentUser.telegram : `@${currentUser.telegram}`}
                     </h2>
                   </div>
                 </div>
@@ -210,36 +206,15 @@ export const AccountModal: React.FC = () => {
                 )}
               </div>
 
-              {/* User Account Contact Info Details */}
+              {/* User Account Action Area */}
               <div className="p-6 sm:p-8 space-y-3 font-mono text-xs">
-                <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] space-y-3">
-                  {[
-                    { Icon: Send, label: 'Telegram', value: currentUser.telegram, tone: '#38bdf8' },
-                    { Icon: Phone, label: 'Телефон', value: currentUser.phone, tone: '#a855f7' },
-                    { Icon: Calendar, label: 'В студии с', value: currentUser.registeredAt, tone: '#fb923c' },
-                  ].map(({ Icon, label, value, tone }) => (
-                    <div key={label} className="flex items-center justify-between gap-3">
-                      <span className="flex items-center gap-2 text-stone-400 shrink-0">
-                        <Icon className="w-3.5 h-3.5" style={{ color: tone }} />
-                        {label}
-                      </span>
-                      <span className="min-w-0 text-right break-words font-semibold text-stone-200">
-                        {value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
                 {/* Refined Order History Sub-Modal Action Trigger Button */}
-                <div className="pt-2">
+                <div>
                   <button
                     onClick={() => setIsOrderHistorySubModalOpen(true)}
                     className="w-full py-4 px-5 rounded-2xl border border-white/10 hover:border-amber-400/40 bg-white/[0.04] hover:bg-white/[0.08] text-white font-mono text-xs uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-between cursor-pointer group shadow-lg"
                   >
-                    <span className="flex items-center gap-3">
-                      <Disc3 className="w-4 h-4 text-amber-400 group-hover:rotate-90 transition-transform duration-500" />
-                      <span>История заказов</span>
-                    </span>
+                    <span>История заказов</span>
                     <span className="text-amber-400 font-bold bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20 text-[11px]">
                       {ordersHistory.length} {ordersHistory.length === 1 ? 'заказ' : 'заказов'} →
                     </span>
