@@ -429,7 +429,7 @@ export const PainGirlSpiralSection: React.FC = () => {
 
               <div className="flex flex-col gap-5 md:flex-row md:items-center md:gap-6">
                 <div className="space-y-2 md:flex-1">
-                <label className="block text-xs font-mono uppercase font-bold text-amber-400">
+                <label className="block text-xs md:text-sm font-mono uppercase font-bold text-amber-400">
                   Выберите крепость никотина:
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -442,7 +442,7 @@ export const PainGirlSpiralSection: React.FC = () => {
                         key={nic}
                         onClick={() => setSelectedNicotine(nic)}
                         aria-pressed={isSelected}
-                        className={`py-3 min-h-[44px] rounded-xl text-xs font-mono font-bold border transition-all cursor-pointer ${
+                        className={`py-3 min-h-[44px] rounded-xl text-xs md:text-sm font-mono font-bold border transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md font-extrabold'
                             : 'bg-[#181818] text-stone-300 border-[#333] hover:border-[#555]'
