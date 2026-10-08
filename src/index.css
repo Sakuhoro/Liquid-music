@@ -559,17 +559,6 @@
   pointer-events: none;
 }
 
-/* On a phone the helix hangs straight off the header: the stage is full-width
-   and top-aligned, and 480px of stage is exactly the ring plus a hair, so the
-   topmost frame lands a few pixels below the bar instead of floating at the
-   screen's dead centre. The splash has already put the artwork up there, so
-   this simply hands the same space over to the spiral when the splash leaves. */
-@media (max-width: 768px) {
-  #pain-girl-gallery .infinite-spiral {
-    height: 480px;
-  }
-}
-
 /* One frame's artwork and copy arriving where the previous pair left. Keyed to
    the index in the modal, so the arrows restart it every time. */
 @keyframes pain-girl-frame-swap {
