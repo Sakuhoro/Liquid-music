@@ -258,14 +258,16 @@ export const PainGirlSpiralSection: React.FC = () => {
           just this stage on its own black -- the artwork band that used to
           linger there was the ghost this section is cleared of. */}
       <div
-        className="relative w-full flex-1 min-h-[480px] min-[769px]:flex-none min-[769px]:min-h-0 mx-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black pt-[30vh]"
+        className="relative w-full flex-1 min-h-[480px] min-[769px]:flex-none min-[769px]:min-h-0 mx-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black pb-[30vh] min-[769px]:pb-0 min-[769px]:pt-[30vh]"
         style={
           isDesktop
             ? { height: 880, width: '100%', maxWidth: '100%' }
             : undefined
         }
       >
-        {/* The spiral is centered on the screen, shifted down 30% from the header, and increased in size by 40% */}
+        {/* On a phone the helix starts flush under the header and fills the band above
+            the bottom padding; from md up it is centered and held 30vh down from
+            the header. */}
         <InfiniteSpiral
           className={`pain-girl-spiral-entry ${spiralInteractive ? 'pain-girl-spiral-entry--in' : 'pain-girl-spiral-entry--out'}`}
           items={spiralItems}
