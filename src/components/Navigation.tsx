@@ -102,44 +102,47 @@ export const Navigation: React.FC = () => {
         </div>
       </div>
 
-      {/* Center Links: Admin Cabinet, Collections, Account - Horizontal Scroll for Mobile */}
-      <nav className="flex items-center gap-3 sm:gap-6 md:gap-8 text-xs sm:text-sm font-medium overflow-x-auto max-w-full pb-1 sm:pb-0 scrollbar-none touch-pan-x">
-        {/* Only visible when authenticated as ADMIN */}
-        {isAdmin && (
-          <button
-            id="nav-link-studio"
-            onClick={() => {
-              try {
-                window.history.pushState({}, '', '/Liquidmusic/admin');
-              } catch (_) {}
-              setIsStudioModalOpen(true);
-            }}
-            className={`shrink-0 min-h-[44px] px-2 hover:opacity-100 transition-all flex items-center gap-1.5 cursor-pointer font-bold text-amber-400 ${
-              isDark ? 'hover:text-amber-300' : 'hover:text-amber-600'
-            }`}
-          >
-            <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="whitespace-nowrap">Кабинет администратора</span>
-          </button>
-        )}
+      {/* Center Links: Admin Cabinet, Collections, Account */}
+      <nav className="flex flex-col md:flex-row items-center gap-2 sm:gap-6 md:gap-8 text-xs sm:text-sm font-medium max-w-full pb-1 sm:pb-0">
+        <div className="flex items-center gap-3 sm:gap-6 justify-center">
+          {/* Only visible when authenticated as ADMIN */}
+          {isAdmin && (
+            <button
+              id="nav-link-studio"
+              onClick={() => {
+                try {
+                  window.history.pushState({}, '', '/Liquidmusic/admin');
+                } catch (_) {}
+                setIsStudioModalOpen(true);
+              }}
+              className={`shrink-0 min-h-[44px] px-2 hover:opacity-100 transition-all flex items-center gap-1.5 cursor-pointer font-bold text-amber-400 ${
+                isDark ? 'hover:text-amber-300' : 'hover:text-amber-600'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="whitespace-nowrap">Кабинет администратора</span>
+            </button>
+          )}
 
-        <button
-          id="nav-link-collections"
-          onClick={() => setViewMode('catalog')}
-          className={`shrink-0 min-h-[44px] px-2 hover:opacity-100 transition-all flex items-center gap-1.5 cursor-pointer ${
-            viewMode === 'catalog'
-              ? 'font-bold border-b-2 border-amber-400 pb-0.5'
-              : 'opacity-80'
-          } ${isDark ? 'text-stone-300 hover:text-white' : 'text-stone-700 hover:text-stone-950'}`}
-        >
-          <Music className="w-4 h-4 opacity-70 shrink-0" />
-          <span className="whitespace-nowrap">Коллекции</span>
-        </button>
+          <button
+            id="nav-link-collections"
+            onClick={() => setViewMode('catalog')}
+            className={`shrink-0 min-h-[44px] px-2 hover:opacity-100 transition-all flex items-center gap-1.5 cursor-pointer ${
+              viewMode === 'catalog'
+                ? 'font-bold border-b-2 border-amber-400 pb-0.5'
+                : 'opacity-80'
+            } ${isDark ? 'text-stone-300 hover:text-white' : 'text-stone-700 hover:text-stone-950'}`}
+          >
+            <Music className="w-4 h-4 opacity-70 shrink-0" />
+            <span className="whitespace-nowrap">Коллекции</span>
+          </button>
+        </div>
 
         <button
           id="nav-link-account"
           onClick={handleAccountClick}
-          className={`shrink-0 min-h-[44px] px-2 hover:opacity-100 transition-all flex items-center gap-1.5 cursor-pointer ${
+          style={{ display: 'flex', justifyContent: 'center', marginInline: 'auto', width: 'fit-content' }}
+          className={`shrink-0 min-h-[44px] px-2 hover:opacity-100 transition-all items-center gap-1.5 cursor-pointer ${
             isDark ? 'text-stone-300 hover:text-white' : 'text-stone-700 hover:text-stone-950'
           }`}
         >

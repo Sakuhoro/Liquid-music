@@ -197,7 +197,7 @@ export const SkewedCarousel: React.FC<SkewedCarouselProps> = ({
         <div className="w-full max-w-7xl px-4 flex items-center justify-center relative">
 
           {/* Card Container: 1.5x Height Scaling (68vh / 75vh / 80vh max-h-[820px]) and 0-y container skew */}
-          <div className="relative w-full h-[68vh] sm:h-[75vh] lg:h-[80vh] max-h-[820px] flex items-center justify-center transform-gpu transition-transform duration-500">
+          <div className="relative w-full h-[68vh] sm:h-[75vh] lg:h-[80vh] max-h-[820px] flex items-center justify-center transform-gpu transition-transform duration-500 scale-[0.85] md:scale-100">
             {items.map((item, index) => {
               const diff = index - renderPos;
               const absDiff = Math.abs(diff);

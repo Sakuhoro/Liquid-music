@@ -338,6 +338,7 @@ export const useAppStore = create<AppState>()(
         Autumn: false,
         'Permanent 1': false,
         'Permanent 2': false,
+        'Pain Girl': false,
       },
       toggleArchiveCollection: (col) =>
         set((state) => ({
@@ -354,6 +355,7 @@ export const useAppStore = create<AppState>()(
             Autumn: archived,
             'Permanent 1': archived,
             'Permanent 2': archived,
+            'Pain Girl': archived,
           },
         }),
       isCollectionArchived: (col) => {
@@ -885,16 +887,32 @@ export const useAppStore = create<AppState>()(
         try {
           // Only the choices go up. Prices, the loyalty discount and the total
           // are all decided on the server.
-          const res = await fetch('/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              items: cart.map((item) => ({
+          const expandedItems: Array<{ productId: string; volume: VolumeType; nicotine: NicotineType; quantity: number }> = [];
+          for (const item of cart) {
+            if (item.product.id === 'pain-girl-bundle' || item.id.includes('pain-girl-bundle')) {
+              for (let i = 1; i <= 6; i++) {
+                expandedItems.push({
+                  productId: `pain-girl-${i}`,
+                  volume: '60ml',
+                  nicotine: item.nicotine,
+                  quantity: item.quantity,
+                });
+              }
+            } else {
+              expandedItems.push({
                 productId: item.product.id,
                 volume: item.volume,
                 nicotine: item.nicotine,
                 quantity: item.quantity,
-              })),
+              });
+            }
+          }
+
+          const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              items: expandedItems,
             }),
           });
 
