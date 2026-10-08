@@ -23,6 +23,7 @@ export default function App() {
   const fetchRecipes = useAppStore((state) => state.fetchRecipes);
   const fetchFlavorPrices = useAppStore((state) => state.fetchFlavorPrices);
   const fetchPainGirlStories = useAppStore((state) => state.fetchPainGirlStories);
+  const activeCollection = useAppStore((state) => state.activeCollection);
   const hydrateSession = useAppStore((state) => state.hydrateSession);
   const setIsStudioModalOpen = useAppStore((state) => state.setIsStudioModalOpen);
 
@@ -114,7 +115,7 @@ export default function App() {
   useEffect(() => {
     if (!audioRef.current) return;
 
-    if (!isBgMusicPlaying) {
+    if (!isBgMusicPlaying || activeCollection === 'Pain Girl') {
       audioRef.current.pause();
       return;
     }
@@ -137,7 +138,7 @@ export default function App() {
         isAutoplayBlockedRef.current = true;
       });
     }
-  }, [isBgMusicPlaying, currentMusicSrc]);
+  }, [isBgMusicPlaying, currentMusicSrc, activeCollection]);
 
   // Duck the ambient bed while a product card is previewing its own track. The
   // level is lowered rather than the element paused so playback keeps its place
