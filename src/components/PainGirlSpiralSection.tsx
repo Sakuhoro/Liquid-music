@@ -59,6 +59,7 @@ export const PainGirlSpiralSection: React.FC = () => {
   const setIsCartOpen = useAppStore((state) => state.setIsCartOpen);
   const setActiveCollection = useAppStore((state) => state.setActiveCollection);
   const painGirlStories = useAppStore((state) => state.painGirlStories);
+  const isBgMusicPlaying = useAppStore((state) => state.isBgMusicPlaying);
 
   // The frame whose story is open. null keeps the modal out of the tree; the
   // number is the index into the gallery, so opening frame 0 is not ambiguous
@@ -68,12 +69,8 @@ export const PainGirlSpiralSection: React.FC = () => {
 
   // 'hold' keeps the splash up for a second and a half, 'fade' runs the 800ms
   // dissolve, null means it is out of the tree entirely and cannot take a touch.
-  // Starting at null on a desktop means the splash is never built there at all.
-  const [splashPhase, setSplashPhase] = useState<'hold' | 'fade' | null>(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
-      ? 'hold'
-      : null
-  );
+  // The splash sequence runs on entry for both desktop and mobile layouts.
+  const [splashPhase, setSplashPhase] = useState<'hold' | 'fade' | null>('hold');
 
   // How far the site header reaches down on the phone. The splash's artwork is
   // centred in the space below it rather than in the whole viewport, so the
@@ -91,22 +88,7 @@ export const PainGirlSpiralSection: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
-  // How much of the screen the stage is given, which is the same question as how
-  // much the artwork takes. Both come from CSS (--pain-girl-art-width and
-  // --pain-girl-stage-width): the background layer paints the artwork against
-  // those numbers, and two copies of a fraction in two files would be free to
-  // disagree about where the split falls.
-  const stageWidth = 'var(--pain-girl-stage-width)';
-
-  // The frames double on a desktop, and so does the stage they travel through:
-  // the component shrinks whatever does not fit, so leaving the stage at 650px
-  // would have quietly scaled the growth straight back out again.
-  //
-  // The desktop here starts one pixel past the phone layout's upper bound: a
-  // 768px screen still runs the phone's splash sequence, so it must also keep
-  // the phone's stage -- full width, the spiral at home size, centred in the
-  // screen. Neither the splash nor the desktop can own 768 without the other
-  // leaking in.
+  // The spiral stage occupies full width and is centered on both desktop and mobile.
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 769px)').matches
   );
@@ -144,6 +126,12 @@ export const PainGirlSpiralSection: React.FC = () => {
     const audio = musicRef.current;
     if (!audio) return undefined;
     audio.volume = 0.4;
+
+    if (!isBgMusicPlaying) {
+      audio.pause();
+      return undefined;
+    }
+
     const tryPlay = () => {
       const started = audio.play();
       if (started && typeof started.catch === 'function') started.catch(() => {});
@@ -156,9 +144,8 @@ export const PainGirlSpiralSection: React.FC = () => {
       window.removeEventListener('pointerdown', retry);
       window.removeEventListener('keydown', retry);
       audio.pause();
-      audio.currentTime = 0;
     };
-  }, []);
+  }, [isBgMusicPlaying]);
 
   const growth = isDesktop ? 2 : 1;
   const isSplashUp = splashPhase !== null;
@@ -271,41 +258,31 @@ export const PainGirlSpiralSection: React.FC = () => {
           just this stage on its own black -- the artwork band that used to
           linger there was the ghost this section is cleared of. */}
       <div
-        className="relative w-full flex-1 min-h-[360px] min-[769px]:flex-none min-[769px]:min-h-0 min-[769px]:ml-auto overflow-hidden flex items-stretch justify-center touch-pan-y bg-black"
+        className="relative w-full flex-1 min-h-[360px] min-[769px]:flex-none min-[769px]:min-h-0 mx-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black"
         style={
           isDesktop
-            ? { height: 650 * growth, width: stageWidth, maxWidth: stageWidth }
+            ? { height: 720, width: '100%', maxWidth: '100%' }
             : undefined
         }
       >
-        {/* The spiral waits behind the splash on a phone, and comes in on the
-            black rather than popping onto it. The entrance is a transform and an
-            opacity, so it costs no layout: the stage is the same box throughout.
-            It also takes the pointer while it is waiting, so the first tap of the
-            session cannot reach a card the customer has not seen yet. */}
+        {/* The spiral is centered on the screen and scaled large */}
         <InfiniteSpiral
           className={`pain-girl-spiral-entry ${spiralInteractive ? 'pain-girl-spiral-entry--in' : 'pain-girl-spiral-entry--out'}`}
           items={spiralItems}
           animationMode="all"
-          cardHeight={150 * growth}
-          cardRadius={12 * growth}
-          cardWidth={115 * growth}
-          centerScale={1.25}
+          cardHeight={isDesktop ? 260 : 150}
+          cardRadius={isDesktop ? 20 : 12}
+          cardWidth={isDesktop ? 200 : 115}
+          centerScale={1.3}
           direction="up"
           edgeBlur={5}
           edgeFade={0.35}
           imageFit="cover"
           pauseOnHover
-          perspective={1100 * growth}
-          // Measured against the stage, not chosen: the helix is as wide as its
-          // radius plus a card, and the stage is what is left of the screen once
-          // the artwork has taken its half. At the tightest desktop (1280x800,
-          // where the stage is a little over 600px) the radius and card width
-          // together put the outermost frames a few pixels past the stage, and
-          // the stage clips them -- so they are sized to fit it.
-          radius={168 * growth}
+          perspective={isDesktop ? 1800 : 1100}
+          radius={isDesktop ? 300 : 168}
           speed={0.5}
-          verticalSpacing={65 * growth}
+          verticalSpacing={isDesktop ? 110 : 65}
           onSelectItem={openStory}
         />
       </div>
@@ -321,14 +298,6 @@ export const PainGirlSpiralSection: React.FC = () => {
         preload="auto"
         hidden
       />
-
-      {/* The splash itself. Full-bleed, black behind the art so the fade lands on
-          black, and it is the overlay that owns the phone's first three seconds.
-          While it is fading it no longer takes pointers, and once the second
-          timer runs it is out of the tree, so nothing underneath can be blocked
-          by a layer that is no longer there. It lives in a portal because the
-          section's entrance keeps a transformed ancestor in the tree, and a
-          transformed ancestor would put the fixed overlay behind the screen. */}
       </div>
 
       {isSplashUp &&

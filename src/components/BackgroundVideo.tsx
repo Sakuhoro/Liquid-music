@@ -91,7 +91,7 @@ export const BackgroundVideo: React.FC = () => {
 
   // Nothing to play when the collection brings its own artwork.
   useEffect(() => {
-    if (still) return;
+    if (still || activeCollection === 'Pain Girl') return;
     const playSafe = async () => {
       if (videoRef.current) {
         try {
@@ -103,7 +103,16 @@ export const BackgroundVideo: React.FC = () => {
       }
     };
     playSafe();
-  }, [currentVideoSrc, still]);
+  }, [currentVideoSrc, still, activeCollection]);
+
+  if (activeCollection === 'Pain Girl') {
+    return (
+      <div
+        id="cinematic-video-stage"
+        className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0 select-none bg-black"
+      />
+    );
+  }
 
   return (
     <div
