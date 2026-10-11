@@ -213,12 +213,9 @@ export const AccountModal: React.FC = () => {
                 <div>
                   <button
                     onClick={() => setIsOrderHistorySubModalOpen(true)}
-                    className="w-full py-4 px-5 rounded-2xl border border-white/10 hover:border-amber-400/40 bg-white/[0.04] hover:bg-white/[0.08] text-white font-mono text-xs uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-between cursor-pointer group shadow-lg"
+                    className="w-full py-4 px-5 rounded-2xl border border-white/10 hover:border-amber-400/40 bg-white/[0.04] hover:bg-white/[0.08] text-white font-mono text-xs uppercase tracking-wider font-bold transition-all duration-300 flex items-center justify-center cursor-pointer group shadow-lg"
                   >
-                    <span>История заказов</span>
-                    <span className="text-amber-400 font-bold bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20 text-[11px]">
-                      {ordersHistory.length} {ordersHistory.length === 1 ? 'заказ' : 'заказов'} →
-                    </span>
+                    История заказов
                   </button>
                 </div>
               </div>
