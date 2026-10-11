@@ -132,8 +132,8 @@ export const AccountModal: React.FC = () => {
                 {/* Loyalty Program Section */}
                 {loyalty && (
                   <div className="mt-6 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
+                    <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+                      <div className="min-w-0">
                         <div className="text-[10px] font-mono uppercase tracking-widest text-stone-400">
                           Постоянный слушатель
                         </div>
@@ -143,11 +143,11 @@ export const AccountModal: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className="font-serif text-3xl font-extrabold text-amber-400">
+                      <div className="text-right ml-auto min-w-0">
+                        <div className="font-serif text-3xl font-extrabold text-amber-400 leading-none">
                           {loyalty.discountPct}%
                         </div>
-                        <div className="text-[10px] font-mono text-stone-400">
+                        <div className="text-[10px] font-mono text-stone-400 leading-tight mt-0.5">
                           на следующий заказ
                         </div>
                       </div>
@@ -183,7 +183,7 @@ export const AccountModal: React.FC = () => {
                     </div>
 
                     {/* Loyalty Rules Thresholds */}
-                    <div className="pt-3 border-t border-white/[0.08] grid grid-cols-2 gap-2 text-[10px] font-mono">
+                    <div className="pt-3 border-t border-white/[0.08] grid grid-cols-1 min-[420px]:grid-cols-2 gap-2 text-[10px] font-mono">
                       {LOYALTY_RULES.map((rule) => {
                         const unlocked = spend > rule.threshold;
                         return (
