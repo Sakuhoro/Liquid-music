@@ -54,15 +54,16 @@ export const AccountModal: React.FC = () => {
   const loyalty = useAppStore((state) => state.loyalty);
   const fetchOrders = useAppStore((state) => state.fetchOrders);
   const isLoading = useAppStore((state) => state.isLoadingOrders);
+  // The nested order-history screen is a navigable layer, so it lives in the
+  // store where the browser-history hook can step out of it on a back gesture.
+  const isOrderHistorySubModalOpen = useAppStore((state) => state.isOrderHistorySubModalOpen);
+  const setIsOrderHistorySubModalOpen = useAppStore((state) => state.setIsOrderHistorySubModalOpen);
 
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-  const [isOrderHistorySubModalOpen, setIsOrderHistorySubModalOpen] = useState(false);
 
   useEffect(() => {
     if (isAccountModalOpen) {
       fetchOrders();
-    } else {
-      setIsOrderHistorySubModalOpen(false);
     }
   }, [isAccountModalOpen, fetchOrders]);
 

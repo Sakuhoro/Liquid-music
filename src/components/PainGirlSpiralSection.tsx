@@ -61,10 +61,13 @@ export const PainGirlSpiralSection: React.FC = () => {
   const painGirlStories = useAppStore((state) => state.painGirlStories);
   const isBgMusicPlaying = useAppStore((state) => state.isBgMusicPlaying);
 
-  // The frame whose story is open. null keeps the modal out of the tree; the
-  // number is the index into the gallery, so opening frame 0 is not ambiguous
-  // with "no frame" the way a boolean would be.
-  const [activeFrameIndex, setActiveFrameIndex] = useState<number | null>(null);
+  // The frame whose story is open. It lives in the store rather than here so
+  // the browser's back button can close the modal like any other screen; null
+  // keeps it out of the tree, and the number is the index into the gallery, so
+  // opening frame 0 is not ambiguous with "no frame" the way a boolean is.
+  const activeStoryFrame = useAppStore((state) => state.activeStoryFrame);
+  const openStoryFrame = useAppStore((state) => state.openStory);
+  const closeStoryFrame = useAppStore((state) => state.closeStory);
   const [selectedNicotine, setSelectedNicotine] = useState<NicotineType>('3mg');
 
   // 'hold' keeps the splash up for a second and a half, 'fade' runs the 800ms
@@ -172,36 +175,32 @@ export const PainGirlSpiralSection: React.FC = () => {
   // The frame on screen, with an admin's edit sitting on top of the shipped copy.
   // A frame with no override falls back to the data file, which is why only
   // edited frames are ever fetched.
-  const activeFrame = activeFrameIndex === null ? null : PAIN_GIRL_GALLERY[activeFrameIndex];
+  const activeFrame = activeStoryFrame === null ? null : PAIN_GIRL_GALLERY[activeStoryFrame];
   const activeStoryText = useMemo(() => {
     if (!activeFrame) return '';
     const override = painGirlStories.find((story) => story.frameId === activeFrame.src);
     return override?.storyText ?? activeFrame.storyText;
   }, [activeFrame, painGirlStories]);
 
-  const openStory = (index: number) => setActiveFrameIndex(index);
-  const closeStory = () => setActiveFrameIndex(null);
   const stepStory = (delta: number) => {
-    setActiveFrameIndex((current) => {
-      if (current === null) return current;
-      const count = PAIN_GIRL_GALLERY.length;
-      return (current + delta + count) % count;
-    });
+    if (activeStoryFrame === null) return;
+    const count = PAIN_GIRL_GALLERY.length;
+    openStoryFrame((activeStoryFrame + delta + count) % count);
   };
 
   // Esc is the close that does not take you back to the overview: the back button
   // in the corner does that on purpose, but a key press should just put the modal
   // away and leave the collection where it was.
   useEffect(() => {
-    if (activeFrameIndex === null) return undefined;
+    if (activeStoryFrame === null) return undefined;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeStory();
+      if (event.key === 'Escape') closeStoryFrame();
       if (event.key === 'ArrowLeft') stepStory(-1);
       if (event.key === 'ArrowRight') stepStory(1);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [activeFrameIndex]);
+  }, [activeStoryFrame]);
 
   // This is the same handler the collection has always checked out with: the
   // bundle product, the set pricing the server charges for the six singles, and
@@ -228,14 +227,14 @@ export const PainGirlSpiralSection: React.FC = () => {
       accentColor: '#181818',
     };
     addToCart(bundleProduct, '60ml', selectedNicotine);
-    closeStory();
+    closeStoryFrame();
     setIsCartOpen(true);
   };
 
   // Back to the selector: the modal closes and the collection clears, which is
   // what renders the carousel again.
   const backToAllCollections = () => {
-    closeStory();
+    closeStoryFrame();
     setActiveCollection('All');
   };
 
@@ -285,7 +284,7 @@ export const PainGirlSpiralSection: React.FC = () => {
           radius={isDesktop ? 588 : 235}
           speed={0.5}
           verticalSpacing={isDesktop ? 235 : 220}
-          onSelectItem={openStory}
+          onSelectItem={openStoryFrame}
         />
       </div>
 
@@ -322,7 +321,7 @@ export const PainGirlSpiralSection: React.FC = () => {
           document.body
         )}
 
-      {activeFrameIndex !== null &&
+      {activeStoryFrame !== null &&
         activeFrame &&
         createPortal(
           <div
@@ -334,7 +333,7 @@ export const PainGirlSpiralSection: React.FC = () => {
           <button
             type="button"
             aria-label="Закрыть"
-            onClick={closeStory}
+            onClick={closeStoryFrame}
             className="absolute inset-0 cursor-default"
           />
 
@@ -344,7 +343,7 @@ export const PainGirlSpiralSection: React.FC = () => {
           <div className="relative w-full max-w-6xl max-h-[85dvh] overflow-y-auto rounded-3xl bg-[#111] border border-[#333] p-4 sm:p-6 lg:p-8 text-white shadow-2xl">
             <div className="flex items-start justify-between gap-3 pb-4">
               <span className="font-mono text-xs uppercase tracking-wider font-bold text-amber-400 pt-2">
-                {String(activeFrameIndex + 1).padStart(2, '0')} / {String(PAIN_GIRL_GALLERY.length).padStart(2, '0')}
+                {String(activeStoryFrame + 1).padStart(2, '0')} / {String(PAIN_GIRL_GALLERY.length).padStart(2, '0')}
               </span>
               {/* The "back to the collections" control. On a desktop it stays up
                   here in the corner; on a phone it moves to the bottom of the
@@ -367,7 +366,7 @@ export const PainGirlSpiralSection: React.FC = () => {
                   height from CSS rather than from the image, so a frame still
                   loading cannot resize the panel under the reader's cursor. */}
               <div
-                key={`art-${activeFrameIndex}`}
+                key={`art-${activeStoryFrame}`}
                 className="pain-girl-frame-swap relative w-full max-w-[70%] mx-auto aspect-square rounded-2xl overflow-hidden border border-[#2a2a2a] bg-black md:max-w-none md:mx-0 md:aspect-auto md:min-h-[42vh]"
               >
                 <img
@@ -379,7 +378,7 @@ export const PainGirlSpiralSection: React.FC = () => {
               </div>
 
               <div
-                key={`copy-${activeFrameIndex}`}
+                key={`copy-${activeStoryFrame}`}
                 className="pain-girl-frame-swap min-w-0 flex flex-col gap-3"
               >
                 <div>

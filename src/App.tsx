@@ -11,8 +11,14 @@ import { PlaylistToast } from './components/PlaylistToast';
 import { OrderSuccessModal } from './components/OrderSuccessModal';
 import { StudioAdminModal } from './components/StudioAdminModal';
 import { AccountModal } from './components/AccountModal';
+import { useNavigationHistory } from './hooks/useNavigationHistory';
 
 export default function App() {
+  // Keeps the browser's back button and swipe gesture pointed at the site's own
+  // screens (catalogue, collection, modals) instead of leaving for the page
+  // that was open before the site.
+  useNavigationHistory();
+
   const theme = useAppStore((state) => state.theme);
   const viewMode = useAppStore((state) => state.viewMode);
   const darkMusicUrl = useAppStore((state) => state.darkMusicUrl);

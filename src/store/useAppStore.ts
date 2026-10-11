@@ -144,6 +144,14 @@ interface AppState {
   inspectedProduct: ProductItem | null;
   setInspectedProduct: (prod: ProductItem | null) => void;
 
+  // The gallery frame whose story modal is open, or null when it is closed.
+  // It lives in the store rather than inside the spiral so the browser's back
+  // button can close the story the same way it closes every other surface: the
+  // history layer reads this to know a "story" screen is on top of the stack.
+  activeStoryFrame: number | null;
+  openStory: (index: number) => void;
+  closeStory: () => void;
+
   // Cart
   cart: CartItem[];
   isCartOpen: boolean;
@@ -195,6 +203,11 @@ interface AppState {
   // Modals & Account
   isAccountModalOpen: boolean;
   setIsAccountModalOpen: (open: boolean) => void;
+  // The nested "order history" screen inside the account modal. In the store
+  // for the same reason as the story modal: it is a navigable layer, so a back
+  // gesture has to be able to step out of it before it closes the account.
+  isOrderHistorySubModalOpen: boolean;
+  setIsOrderHistorySubModalOpen: (open: boolean) => void;
 
   // Checkout & Orders
   isSuccessModalOpen: boolean;
@@ -410,7 +423,10 @@ export const useAppStore = create<AppState>()(
 
       // Active collection & Archive status
       activeCollection: 'All',
-      setActiveCollection: (activeCollection) => set({ activeCollection }),
+      // Switching collections is also a screen change: a story left open under
+      // the gallery must not survive into the next collection.
+      setActiveCollection: (activeCollection) =>
+        set({ activeCollection, activeStoryFrame: null }),
       archivedCollections: {
         Spring: false,
         Summer: false,
@@ -612,6 +628,11 @@ export const useAppStore = create<AppState>()(
       // Inspected product
       inspectedProduct: null,
       setInspectedProduct: (inspectedProduct) => set({ inspectedProduct }),
+
+      // Pain Girl story modal
+      activeStoryFrame: null,
+      openStory: (activeStoryFrame) => set({ activeStoryFrame }),
+      closeStory: () => set({ activeStoryFrame: null }),
 
       // Cart
       cart: [],
@@ -864,7 +885,18 @@ export const useAppStore = create<AppState>()(
 
       // Account modal
       isAccountModalOpen: false,
-      setIsAccountModalOpen: (isAccountModalOpen) => set({ isAccountModalOpen }),
+      // Closing the account also drops its nested order-history screen, so the
+      // next open starts on the profile rather than wherever the last visit
+      // ended -- and so the history layer sees both layers leave at once.
+      setIsAccountModalOpen: (isAccountModalOpen) =>
+        set(
+          isAccountModalOpen
+            ? { isAccountModalOpen }
+            : { isAccountModalOpen, isOrderHistorySubModalOpen: false }
+        ),
+      isOrderHistorySubModalOpen: false,
+      setIsOrderHistorySubModalOpen: (isOrderHistorySubModalOpen) =>
+        set({ isOrderHistorySubModalOpen }),
 
       // Checkout
       isSuccessModalOpen: false,

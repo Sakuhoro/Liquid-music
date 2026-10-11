@@ -96,12 +96,7 @@ export const Navigation: React.FC = () => {
           {isAdmin && (
             <button
               id="nav-link-studio"
-              onClick={() => {
-                try {
-                  window.history.pushState({}, '', '/Liquidmusic/admin');
-                } catch (_) {}
-                setIsStudioModalOpen(true);
-              }}
+              onClick={() => setIsStudioModalOpen(true)}
               className={`shrink-0 min-h-[44px] px-2 hover:opacity-100 transition-all flex items-center gap-1.5 cursor-pointer font-bold text-amber-400 ${
                 isDark ? 'hover:text-amber-300' : 'hover:text-amber-600'
               }`}
