@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import {
   X,
-  User,
   LogOut,
   Disc3,
   Sparkles,
@@ -105,20 +104,7 @@ export const AccountModal: React.FC = () => {
             <div className="flex flex-col">
               {/* Header Section */}
               <div className="relative p-6 sm:p-8 border-b border-white/[0.08]">
-                <button
-                  onClick={() => setIsAccountModalOpen(false)}
-                  aria-label="Закрыть кабинет"
-                  className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors cursor-pointer z-10 text-stone-300 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-
                 <div className="flex items-center gap-4">
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border border-amber-400/20 bg-amber-400/10 text-amber-400 shadow-inner"
-                  >
-                    <User className="w-6 h-6" />
-                  </div>
                   <div className="min-w-0 flex-1">
                     <h2
                       className="font-serif font-semibold leading-snug break-words text-white tracking-wide"
@@ -230,7 +216,7 @@ export const AccountModal: React.FC = () => {
                   className="px-4 py-2.5 rounded-xl font-mono text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors flex items-center gap-2 cursor-pointer font-bold"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Выйти</span>
+                  <span>Выйти из кабинета</span>
                 </button>
 
                 <button
