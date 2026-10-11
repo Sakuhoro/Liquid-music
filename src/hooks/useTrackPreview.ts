@@ -56,6 +56,15 @@ export function useTrackPreview(audioFile?: string | null): TrackPreview {
     };
   }, []);
 
+  // Prime the element as soon as the flavour opens so the first tap already has
+  // a buffered track. iOS Safari refuses play() on an element that has never
+  // started loading, which is why a plain tap used to leave mobile silent.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !audioFile) return;
+    audio.load();
+  }, [audioFile]);
+
   const safeSet = useCallback((next: TrackPreviewStatus) => {
     if (mountedRef.current) setStatus(next);
   }, []);
@@ -68,7 +77,13 @@ export function useTrackPreview(audioFile?: string | null): TrackPreview {
       // Resumes in place when paused mid-track; a finished element restarts.
       const started = audio.play();
       if (started && typeof started.catch === 'function') {
-        started.catch(() => safeSet('error'));
+        started.catch(() => {
+          // A real media error keeps the error state so the caller can fall
+          // back to the chord. A policy rejection (iOS blocks the first play()
+          // on a fresh element) stays retryable instead of latching "error",
+          // which would turn the button into a permanent silent chord.
+          safeSet(audio.error ? 'error' : 'idle');
+        });
       }
     } else {
       audio.pause();

@@ -177,11 +177,13 @@ export const ProductDetailModal: React.FC = () => {
               </button>
             </div>
 
-            {/* Backing audio for the button above. preload="none" keeps the 24
-                catalogue files from downloading until a flavour is actually
-                opened; unmounting this element stops the track. */}
+            {/* Backing audio for the button above. Opening a flavour starts the
+                fetch (only this one file, never the whole catalogue), so the
+                first tap plays immediately instead of racing a cold load.
+                iOS Safari refuses play() on an element that has not loaded yet.
+                Unmounting this element stops the track. */}
             {hasTrack && (
-              <audio ref={audioRef} src={audioFile ?? undefined} preload="none" {...handlers} />
+              <audio ref={audioRef} src={audioFile ?? undefined} preload="auto" {...handlers} />
             )}
           </div>
 
