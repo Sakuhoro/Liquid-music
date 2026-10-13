@@ -103,6 +103,33 @@ export const PainGirlSpiralSection: React.FC = () => {
     return () => query.removeEventListener('change', onChange);
   }, []);
 
+  // The desktop helix below is authored against a 27-inch 2560x1440 panel, the
+  // size it was tuned on: its card, its radii, its row spacing and the stage
+  // under it are one set of numbers picked to look right there. Held as fixed
+  // pixels they only look right there -- a 24-inch 1080p screen, whose pixels
+  // are denser, draws the same numbers as cards a quarter larger than they read
+  // on the 27-inch one. Reading the viewport and shrinking the whole helix by
+  // its share of that reference keeps a card the same size relative to the
+  // screen across panels. Capped at 1 so a larger desktop keeps the tuned size
+  // rather than inflating it, and floored so a small laptop still gets a
+  // legible helix instead of a postage stamp.
+  const [viewportSize, setViewportSize] = useState(() => ({
+    width: typeof window !== 'undefined' ? window.innerWidth : 2560,
+    height: typeof window !== 'undefined' ? window.innerHeight : 1440,
+  }));
+
+  useEffect(() => {
+    const onResize = () =>
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const desktopScale = useMemo(() => {
+    const raw = Math.min(viewportSize.width / 2560, viewportSize.height / 1440);
+    return Math.max(0.62, Math.min(1, raw));
+  }, [viewportSize.width, viewportSize.height]);
+
   // The splash holds, then fades, then leaves. Two effects rather than one
   // timeout carrying both phases, so the fade's duration is the class it is
   // styled with rather than a number the JS has to keep in step with the CSS.
@@ -260,7 +287,7 @@ export const PainGirlSpiralSection: React.FC = () => {
         className="relative w-full flex-1 min-h-[480px] min-[769px]:flex-none min-[769px]:min-h-0 mx-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black pt-[10px] min-[769px]:pt-0"
         style={
           isDesktop
-            ? { height: 1232, width: '100%', maxWidth: '100%' }
+            ? { height: Math.round(1232 * desktopScale), width: '100%', maxWidth: '100%' }
             : undefined
         }
       >
@@ -271,19 +298,19 @@ export const PainGirlSpiralSection: React.FC = () => {
           className={`pain-girl-spiral-entry ${spiralInteractive ? 'pain-girl-spiral-entry--in' : 'pain-girl-spiral-entry--out'}`}
           items={spiralItems}
           animationMode="all"
-          cardHeight={isDesktop ? 510 : 210}
-          cardRadius={isDesktop ? 39 : 17}
-          cardWidth={isDesktop ? 392 : 161}
+          cardHeight={isDesktop ? Math.round(510 * desktopScale) : 210}
+          cardRadius={isDesktop ? Math.round(39 * desktopScale) : 17}
+          cardWidth={isDesktop ? Math.round(392 * desktopScale) : 161}
           centerScale={1.3}
           direction="up"
           edgeBlur={5}
           edgeFade={0.35}
           imageFit="cover"
           pauseOnHover
-          perspective={isDesktop ? 3528 : 1540}
-          radius={isDesktop ? 588 : 235}
+          perspective={isDesktop ? Math.round(3528 * desktopScale) : 1540}
+          radius={isDesktop ? Math.round(588 * desktopScale) : 235}
           speed={0.5}
-          verticalSpacing={isDesktop ? 235 : 220}
+          verticalSpacing={isDesktop ? Math.round(235 * desktopScale) : 220}
           onSelectItem={openStoryFrame}
         />
       </div>
