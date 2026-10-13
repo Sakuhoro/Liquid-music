@@ -283,13 +283,14 @@ export const PainGirlSpiralSection: React.FC = () => {
           all: the splash owns its entry and then leaves, and what is left is
           just this stage on its own black -- the artwork band that used to
           linger there was the ghost this section is cleared of. */}
+      {/* The stage fills the section on every size rather than sitting at a
+          fixed height on a desktop. Held at 1232px it stopped short of the
+          bottom of the section -- which is itself a viewport tall -- and the
+          band of black left under it read as a margin pushing the helix up
+          toward the header. Growing with the section keeps the helix centred on
+          the screen it is shown on. */}
       <div
-        className="relative w-full flex-1 min-h-[480px] min-[769px]:flex-none min-[769px]:min-h-0 mx-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black pt-[10px] min-[769px]:pt-0"
-        style={
-          isDesktop
-            ? { height: Math.round(1232 * desktopScale), width: '100%', maxWidth: '100%' }
-            : undefined
-        }
+        className="relative w-full flex-1 min-h-[480px] min-[769px]:min-h-0 mx-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black pt-[10px] min-[769px]:pt-0"
       >
         {/* A phone hangs the helix 10px under the header and spreads its rows until
             the column fills the whole stage down to the last pixel; from md up
