@@ -97,15 +97,22 @@ export default function App() {
   // Tab Visibility Handler (Task 3: Action 3)
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!audioRef.current) return;
       if (document.hidden) {
-        audioRef.current.pause();
-      } else {
-        if (isBgMusicPlayingRef.current) {
-          audioRef.current.play().catch(() => {
-            isAutoplayBlockedRef.current = true;
-          });
-        }
+        if (audioRef.current) audioRef.current.pause();
+        return;
+      }
+
+      // Re-sync the catalogue whenever the tab comes back to the foreground. The
+      // product list is persisted to localStorage, so a tab that was open before
+      // a server-side edit (e.g. a product gaining its audioFile) would otherwise
+      // keep showing stale data — and the "Аккорды" button would fall back to the
+      // generic chord instead of the track — until a full manual reload.
+      useAppStore.getState().fetchProducts();
+
+      if (audioRef.current && isBgMusicPlayingRef.current) {
+        audioRef.current.play().catch(() => {
+          isAutoplayBlockedRef.current = true;
+        });
       }
     };
 

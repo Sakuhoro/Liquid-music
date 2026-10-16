@@ -50,7 +50,16 @@ export const ProductDetailModal: React.FC = () => {
   const [selectedNicotine, setSelectedNicotine] = useState<NicotineType>('0mg');
   const [isAdded, setIsAdded] = useState(false);
 
-  const audioFile = inspectedProduct?.audioFile ?? null;
+  // Resolve the backing file from the live catalogue rather than the snapshot
+  // captured when the card was opened. This way a background re-sync (which can
+  // attach an audioFile to a product after the fact) is reflected by an
+  // already-open card, instead of it staying stuck on the fallback chord.
+  const audioFile = useAppStore((state) => {
+    const inspected = state.inspectedProduct;
+    if (!inspected) return null;
+    const live = state.products.find((p) => p.id === inspected.id);
+    return (live ?? inspected).audioFile ?? null;
+  });
   const { audioRef, status, isPlaying, hasTrack, toggle, handlers } = useTrackPreview(audioFile);
   const setIsTrackPreviewPlaying = useAppStore((state) => state.setIsTrackPreviewPlaying);
 
