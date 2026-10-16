@@ -37,7 +37,7 @@ export function sanitizeTitle(title: string): string {
     .trim();
 }
 
-import { CollectionName } from '../types';
+import { CollectionName, getCollectionTitle } from '../types';
 
 export const ProductDetailModal: React.FC = () => {
   const inspectedProduct = useAppStore((state) => state.inspectedProduct);
@@ -202,7 +202,7 @@ export const ProductDetailModal: React.FC = () => {
             {/* Header with High-Contrast Typography & tracking-tight */}
             <div>
               <div className="text-xs font-mono uppercase tracking-widest text-amber-400 font-bold mb-2">
-                {inspectedProduct.category}
+                {inspectedProduct.category === 'Autumn' ? 'Зимняя' : getCollectionTitle(inspectedProduct.category as CollectionName)}
                 {inspectedProduct.opusNumber && sanitizeTitle(inspectedProduct.opusNumber)
                   ? ` • ${sanitizeTitle(inspectedProduct.opusNumber)}`
                   : ''}
