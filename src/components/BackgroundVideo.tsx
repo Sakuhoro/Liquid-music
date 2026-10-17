@@ -15,6 +15,7 @@ const COLLECTION_VIDEOS: Partial<Record<CollectionName, { light: string; dark: s
   Summer: { light: '/videos/summer-lite.mp4', dark: '/videos/summer-dark.mp4' },
   Autumn: { light: '/videos/autumn-lite.mp4', dark: '/videos/autumn-dark.mp4' },
   'Permanent 1': { light: '/videos/bones.mp4', dark: '/videos/bones.mp4' },
+  'Permanent 2': { light: '/videos/velvet-distortion.mp4', dark: '/videos/velvet-distortion.mp4' },
 };
 
 interface StillBackground {
