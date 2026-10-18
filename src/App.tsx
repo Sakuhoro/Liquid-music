@@ -13,6 +13,12 @@ import { StudioAdminModal } from './components/StudioAdminModal';
 import { AccountModal } from './components/AccountModal';
 import { useNavigationHistory } from './hooks/useNavigationHistory';
 
+// Ambient beds that belong to a single collection. When that collection is open
+// its track replaces the theme melody; the theme melody resumes on leaving.
+const COLLECTION_MUSIC: Record<string, string> = {
+  'Permanent 2': '/audio/velvet-distortion.mp3',
+};
+
 export default function App() {
   // Keeps the browser's back button and swipe gesture pointed at the site's own
   // screens (catalogue, collection, modals) instead of leaving for the page
@@ -122,8 +128,9 @@ export default function App() {
     };
   }, []);
 
-  // Sync background ambient audio
-  const currentMusicSrc = theme === 'dark' ? darkMusicUrl : lightMusicUrl;
+  // Sync background ambient audio: a collection bed wins over the theme melody.
+  const collectionMusicSrc = activeCollection !== 'All' ? COLLECTION_MUSIC[activeCollection] : undefined;
+  const currentMusicSrc = collectionMusicSrc || (theme === 'dark' ? darkMusicUrl : lightMusicUrl);
 
   useEffect(() => {
     if (!audioRef.current) return;
