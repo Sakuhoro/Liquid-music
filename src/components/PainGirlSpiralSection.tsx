@@ -290,30 +290,50 @@ export const PainGirlSpiralSection: React.FC = () => {
           toward the header. Growing with the section keeps the helix centred on
           the screen it is shown on. */}
       <div
-        className="relative w-full flex-1 min-h-[480px] min-[769px]:min-h-0 mx-auto overflow-hidden flex items-center justify-center touch-pan-y bg-black pt-[10px] min-[769px]:pt-0"
+        className="relative w-full flex-1 min-h-[480px] min-[769px]:min-h-0 mx-auto overflow-hidden flex flex-col touch-pan-y bg-black"
       >
-        {/* A phone hangs the helix 10px under the header and spreads its rows until
-            the column fills the whole stage down to the last pixel; from md up
-            there is no lead-in at all and the helix starts at the header. */}
-        <InfiniteSpiral
-          className={`pain-girl-spiral-entry ${spiralInteractive ? 'pain-girl-spiral-entry--in' : 'pain-girl-spiral-entry--out'}`}
-          items={spiralItems}
-          animationMode="all"
-          cardHeight={isDesktop ? Math.round(510 * desktopScale) : 210}
-          cardRadius={isDesktop ? Math.round(39 * desktopScale) : 17}
-          cardWidth={isDesktop ? Math.round(392 * desktopScale) : 161}
-          centerScale={1.3}
-          direction="up"
-          edgeBlur={5}
-          edgeFade={0.35}
-          imageFit="cover"
-          pauseOnHover
-          perspective={isDesktop ? Math.round(3528 * desktopScale) : 1540}
-          radius={isDesktop ? Math.round(588 * desktopScale) : 235}
-          speed={0.5}
-          verticalSpacing={isDesktop ? Math.round(235 * desktopScale) : 220}
-          onSelectItem={openStoryFrame}
-        />
+        {/* The collection's own way back, held in a reserved row across the top
+            rather than floated over the helix. The frames travel the full width
+            of the stage, so on a phone an overlay would sooner or later sit on
+            top of a picture; giving the control its own height instead keeps the
+            spiral clear on every screen. It sits right so it reads as the same
+            corner control the other collections carry. */}
+        <div className="relative z-30 w-full flex justify-end px-4 sm:px-8 pt-2 min-[769px]:pt-3">
+          <button
+            type="button"
+            onClick={backToAllCollections}
+            className="group inline-flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-full bg-white/5 hover:bg-amber-400 border border-amber-400/40 hover:border-amber-300 text-amber-300 hover:text-slate-950 backdrop-blur-md font-mono text-[11px] sm:text-xs uppercase tracking-wider font-bold transition-all duration-300 cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-0.5" />
+            Вернуться ко всем коллекциям
+          </button>
+        </div>
+
+        {/* The stage the helix travels through, taking everything the row above
+            leaves so the spiral still fills the section under the control. A
+            phone used to hang the helix 10px under the header; the row now
+            stands in that gap. */}
+        <div className="relative flex-1 min-h-0 flex items-center justify-center">
+          <InfiniteSpiral
+            className={`pain-girl-spiral-entry ${spiralInteractive ? 'pain-girl-spiral-entry--in' : 'pain-girl-spiral-entry--out'}`}
+            items={spiralItems}
+            animationMode="all"
+            cardHeight={isDesktop ? Math.round(510 * desktopScale) : 210}
+            cardRadius={isDesktop ? Math.round(39 * desktopScale) : 17}
+            cardWidth={isDesktop ? Math.round(392 * desktopScale) : 161}
+            centerScale={1.3}
+            direction="up"
+            edgeBlur={5}
+            edgeFade={0.35}
+            imageFit="cover"
+            pauseOnHover
+            perspective={isDesktop ? Math.round(3528 * desktopScale) : 1540}
+            radius={isDesktop ? Math.round(588 * desktopScale) : 235}
+            speed={0.5}
+            verticalSpacing={isDesktop ? Math.round(235 * desktopScale) : 220}
+            onSelectItem={openStoryFrame}
+          />
+        </div>
       </div>
 
       {/* The collection's ambient bed, rendered so the browser can fetch it from

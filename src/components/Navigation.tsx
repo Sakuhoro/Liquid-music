@@ -49,7 +49,14 @@ export const Navigation: React.FC = () => {
         {/* Brand Logo: Plain text "Liquid Music" */}
         <button
           id="nav-logo-btn"
-          onClick={() => setViewMode('hero')}
+          // The logo is the way home, so it also drops whatever collection is
+          // open. Without clearing it the state survived the trip: the hero
+          // showed, but the next "Начать путешествие" walked straight back into
+          // the collection that was left behind.
+          onClick={() => {
+            setActiveCollection('All');
+            setViewMode('hero');
+          }}
           className="group focus:outline-none text-left cursor-pointer min-h-[44px] flex items-center"
         >
           <span className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal tracking-tight transition-opacity duration-300 hover:opacity-85 whitespace-nowrap">
