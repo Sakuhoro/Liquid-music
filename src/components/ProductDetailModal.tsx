@@ -8,11 +8,11 @@ import {
   Volume2,
   Pause,
   Play,
-  Check,
+  Minus,
+  Plus,
 } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
 import { useTrackPreview } from '../hooks/useTrackPreview';
-import { MusicalQuantityControl } from './ui/MusicalQuantityControl';
 
 /**
  * Module 3: Premium Grade Apple/Stripe Design Refactoring
@@ -44,12 +44,13 @@ export const ProductDetailModal: React.FC = () => {
   const inspectedProduct = useAppStore((state) => state.inspectedProduct);
   const setInspectedProduct = useAppStore((state) => state.setInspectedProduct);
   const addToCart = useAppStore((state) => state.addToCart);
+  const updateCartQuantity = useAppStore((state) => state.updateCartQuantity);
+  const cart = useAppStore((state) => state.cart);
   const isCollectionArchived = useAppStore((state) => state.isCollectionArchived);
   const theme = useAppStore((state) => state.theme);
 
   const [selectedVolume, setSelectedVolume] = useState<VolumeType>('30ml');
   const [selectedNicotine, setSelectedNicotine] = useState<NicotineType>('0mg');
-  const [isAdded, setIsAdded] = useState(false);
 
   // Resolve the backing file from the live catalogue rather than the snapshot
   // captured when the card was opened. This way a background re-sync (which can
@@ -67,7 +68,6 @@ export const ProductDetailModal: React.FC = () => {
   useEffect(() => {
     setSelectedVolume('30ml');
     setSelectedNicotine('0mg');
-    setIsAdded(false);
   }, [inspectedProduct]);
 
   // Keep the ambient music ducked for exactly as long as the preview is audible.
@@ -85,17 +85,29 @@ export const ProductDetailModal: React.FC = () => {
   const totalPrice = calculatePrice(selectedVolume, selectedNicotine);
   const isArchived = isCollectionArchived(inspectedProduct.category as CollectionName);
 
-  const handleAdd = () => {
+  // How many of this flavour are already in the order. The stepper on the order
+  // button shows this in place of its label, so the count has to come from the
+  // cart rather than a flag of this modal's own.
+  const productCartItems = cart.filter((item) => item.product.id === inspectedProduct.id);
+  const productQuantity = productCartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const handleIncrement = () => {
     if (isArchived) return;
+    // Adds the volume and nicotine currently picked above, so the "+" and the
+    // segmented controls agree on what is being ordered.
     addToCart(inspectedProduct, selectedVolume, selectedNicotine);
-    // No confirmation tone here: adding to the satchel is a quiet, frequent
-    // action and a beep on each one got irritating. The button already flips
-    // to its added state, and the chord preview still has its own sound.
-    setIsAdded(true);
-    setTimeout(() => {
-      setIsAdded(false);
-      setInspectedProduct(null);
-    }, 1000);
+  };
+
+  const handleDecrement = () => {
+    if (isArchived || productCartItems.length === 0) return;
+    // Prefers the line that matches the current pick; falls back to the last one
+    // added for this flavour when the volume has been changed since.
+    const target =
+      [...productCartItems]
+        .reverse()
+        .find((item) => item.volume === selectedVolume && item.nicotine === selectedNicotine) ??
+      productCartItems[productCartItems.length - 1];
+    updateCartQuantity(target.id, -1);
   };
 
   const handlePlayChord = () => {
@@ -285,7 +297,7 @@ export const ProductDetailModal: React.FC = () => {
 
             </div>
 
-            {/* CTA Footer Row: Premium Typography Price Display & Clean Minimalist Order Button */}
+            {/* CTA Footer Row: Premium Typography Price Display & the Playlist Button */}
             <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               <div className="flex items-center justify-between sm:justify-start gap-4">
                 <div>
@@ -298,42 +310,65 @@ export const ProductDetailModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* The quantity counter sits under the order button rather than
-                  beside the price, so the two share one column: the total keeps
-                  the whole left half of the row and the control never competes
-                  with it. On a phone the column is the full width of the sheet,
-                  on a desktop it is a fixed 240px, and the counter fills both. */}
-              <div className="flex flex-col gap-2.5 sm:min-w-[240px]">
-                {/* Clean Order Button: strictly NO plus icon (+) and NO price display inside button */}
-                <button
-                  onClick={handleAdd}
-                  disabled={isArchived}
-                  className={`w-full px-8 py-4 rounded-2xl font-extrabold text-base tracking-wide font-sans antialiased flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 shadow-xl min-h-[52px] ${
+              {/* The order button and the counter are one control now: a single
+                  bar with a stepper at each end and the state in the middle.
+                  Empty it reads "В плейлист"; the first "+" turns that label
+                  into the number of this flavour in the order, so there is no
+                  second counter to line up beside it. On a phone the column is
+                  the full width of the sheet, on a desktop a fixed 260px, and
+                  the steppers stay a 48px target at both sizes. */}
+              <div className="flex flex-col gap-2.5 sm:min-w-[260px]">
+                <div
+                  className={`w-full flex items-stretch rounded-2xl overflow-hidden border shadow-xl transition-all duration-300 ${
                     isArchived
-                      ? 'bg-stone-700/60 text-stone-400 cursor-not-allowed border border-white/10 shadow-none'
-                      : isAdded
-                      ? 'bg-emerald-500 text-slate-950 shadow-emerald-500/30 scale-[1.02]'
-                      : 'bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 hover:shadow-2xl hover:shadow-amber-400/30 hover:scale-[1.02] active:scale-[0.98]'
+                      ? 'border-white/10 bg-stone-700/60 shadow-none'
+                      : 'border-amber-300/40 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 shadow-amber-400/20'
                   }`}
                 >
-                  {isArchived ? (
-                    <span>Коллекция в архиве</span>
-                  ) : isAdded ? (
-                    <>
-                      <Check className="w-5 h-5 stroke-[2.5]" />
-                      <span>В плейлисте</span>
-                    </>
-                  ) : (
-                    <span>В плейлист</span>
-                  )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleDecrement}
+                    disabled={isArchived || productQuantity === 0}
+                    aria-label="Уменьшить количество"
+                    className={`flex items-center justify-center w-14 sm:w-12 shrink-0 min-h-[52px] transition-all duration-200 ${
+                      isArchived || productQuantity === 0
+                        ? 'opacity-30 cursor-not-allowed text-stone-400'
+                        : 'text-slate-950 hover:bg-black/10 active:scale-95 cursor-pointer'
+                    }`}
+                  >
+                    <Minus className="w-5 h-5 stroke-[2.5]" />
+                  </button>
 
-                {/* Musical Quantity Counter Control */}
-                <MusicalQuantityControl
-                  product={inspectedProduct}
-                  size="md"
-                  className="w-full"
-                />
+                  <button
+                    type="button"
+                    onClick={handleIncrement}
+                    disabled={isArchived}
+                    aria-label={
+                      productQuantity > 0 ? `В плейлисте: ${productQuantity}` : 'Добавить в плейлист'
+                    }
+                    className={`flex-1 flex items-center justify-center min-h-[52px] px-3 font-extrabold text-base tracking-wide font-sans antialiased select-none tabular-nums transition-all duration-200 ${
+                      isArchived
+                        ? 'text-stone-400 cursor-not-allowed'
+                        : 'text-slate-950 hover:bg-black/10 cursor-pointer'
+                    }`}
+                  >
+                    {isArchived ? 'Коллекция в архиве' : productQuantity > 0 ? productQuantity : 'В плейлист'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleIncrement}
+                    disabled={isArchived}
+                    aria-label="Увеличить количество"
+                    className={`flex items-center justify-center w-14 sm:w-12 shrink-0 min-h-[52px] transition-all duration-200 ${
+                      isArchived
+                        ? 'opacity-30 cursor-not-allowed text-stone-400'
+                        : 'text-slate-950 hover:bg-black/10 active:scale-95 cursor-pointer'
+                    }`}
+                  >
+                    <Plus className="w-5 h-5 stroke-[2.5]" />
+                  </button>
+                </div>
               </div>
             </div>
 
