@@ -156,8 +156,8 @@ export const AccountModal: React.FC = () => {
                         </>
                       ) : (
                         <>
+                          Общая сумма всех песен в плейлисте{' '}
                           <span className="text-stone-200 font-bold">{formatRub(spend)} ₽</span>
-                          {' — максимальная скидка'}
                         </>
                       )}
                     </div>
