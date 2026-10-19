@@ -3,8 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Disc, Sparkles } from 'lucide-react';
 import { getItemScale } from '../../utils/vinylScale';
 import { sanitizeRussianText } from '../../utils/sanitizeText';
-import { CollectionName, getCollectionTitle, ProductItem } from '../../types';
-import { MusicalQuantityControl } from './MusicalQuantityControl';
+import { CollectionName, getCollectionTitle } from '../../types';
 
 // Public collection name ("Bones of what you Believe" / "Velvet Distortion") instead of the internal "Permanent 1"/"Permanent 2" key
 const getDollyItemCollectionTitle = (category?: unknown): string =>
@@ -421,11 +420,6 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                         {sanitizeRussianText(item.description, false)}
                       </p>
                     )}
-
-                    {/* Musical Quantity Counter Control */}
-                    <div className="mt-3 pointer-events-auto">
-                      <MusicalQuantityControl product={item as ProductItem} size="md" />
-                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -467,9 +461,6 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
               <span className="text-[11px] font-sans text-amber-400 font-bold">
                 Нажмите, чтобы открыть →
               </span>
-              <div onClick={(e) => e.stopPropagation()}>
-                <MusicalQuantityControl product={activeItem as ProductItem} size="sm" />
-              </div>
             </div>
           </motion.div>
         )}

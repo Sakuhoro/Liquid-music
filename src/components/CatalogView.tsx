@@ -15,7 +15,6 @@ import {
 import CollectionCarousel, { CollectionCarouselItem } from './ui/CollectionCarousel';
 import DollyGallery from './ui/DollyGallery';
 import PainGirlSpiralSection from './PainGirlSpiralSection';
-import { MusicalQuantityControl } from './ui/MusicalQuantityControl';
 import { sanitizeRussianText } from '../utils/sanitizeText';
 
 // Metadata for Collection Cards
@@ -282,10 +281,6 @@ export const CatalogView: React.FC = () => {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
                         <span className="text-xs font-bold font-sans tracking-wide text-amber-300 antialiased">Подробнее</span>
-                      </div>
-                      {/* Musical Quantity Counter Pill */}
-                      <div className="absolute bottom-2.5 right-2.5 z-30">
-                        <MusicalQuantityControl product={product} size="sm" />
                       </div>
                     </div>
                     <h4 className={`font-sans text-lg font-extrabold tracking-tight antialiased transition-colors line-clamp-1 ${

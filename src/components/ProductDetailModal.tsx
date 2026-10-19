@@ -296,35 +296,45 @@ export const ProductDetailModal: React.FC = () => {
                     {totalPrice} ₽
                   </div>
                 </div>
-                {/* Musical Quantity Counter Control */}
-                <div className="sm:ml-2">
-                  <MusicalQuantityControl product={inspectedProduct} size="md" />
-                </div>
               </div>
 
-              {/* Clean Order Button: strictly NO plus icon (+) and NO price display inside button */}
-              <button
-                onClick={handleAdd}
-                disabled={isArchived}
-                className={`w-full sm:w-auto px-8 py-4 rounded-2xl font-extrabold text-base tracking-wide font-sans antialiased flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 shadow-xl min-h-[52px] ${
-                  isArchived
-                    ? 'bg-stone-700/60 text-stone-400 cursor-not-allowed border border-white/10 shadow-none'
-                    : isAdded
-                    ? 'bg-emerald-500 text-slate-950 shadow-emerald-500/30 scale-[1.02]'
-                    : 'bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 hover:shadow-2xl hover:shadow-amber-400/30 hover:scale-[1.02] active:scale-[0.98]'
-                }`}
-              >
-                {isArchived ? (
-                  <span>Коллекция в архиве</span>
-                ) : isAdded ? (
-                  <>
-                    <Check className="w-5 h-5 stroke-[2.5]" />
-                    <span>В плейлисте</span>
-                  </>
-                ) : (
-                  <span>В плейлист</span>
-                )}
-              </button>
+              {/* The quantity counter sits under the order button rather than
+                  beside the price, so the two share one column: the total keeps
+                  the whole left half of the row and the control never competes
+                  with it. On a phone the column is the full width of the sheet,
+                  on a desktop it is a fixed 240px, and the counter fills both. */}
+              <div className="flex flex-col gap-2.5 sm:min-w-[240px]">
+                {/* Clean Order Button: strictly NO plus icon (+) and NO price display inside button */}
+                <button
+                  onClick={handleAdd}
+                  disabled={isArchived}
+                  className={`w-full px-8 py-4 rounded-2xl font-extrabold text-base tracking-wide font-sans antialiased flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 shadow-xl min-h-[52px] ${
+                    isArchived
+                      ? 'bg-stone-700/60 text-stone-400 cursor-not-allowed border border-white/10 shadow-none'
+                      : isAdded
+                      ? 'bg-emerald-500 text-slate-950 shadow-emerald-500/30 scale-[1.02]'
+                      : 'bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 hover:shadow-2xl hover:shadow-amber-400/30 hover:scale-[1.02] active:scale-[0.98]'
+                  }`}
+                >
+                  {isArchived ? (
+                    <span>Коллекция в архиве</span>
+                  ) : isAdded ? (
+                    <>
+                      <Check className="w-5 h-5 stroke-[2.5]" />
+                      <span>В плейлисте</span>
+                    </>
+                  ) : (
+                    <span>В плейлист</span>
+                  )}
+                </button>
+
+                {/* Musical Quantity Counter Control */}
+                <MusicalQuantityControl
+                  product={inspectedProduct}
+                  size="md"
+                  className="w-full"
+                />
+              </div>
             </div>
 
           </div>
