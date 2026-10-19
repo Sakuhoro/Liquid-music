@@ -445,18 +445,14 @@ async function callTelegram(method, payload) {
   }
 }
 
-// The buyer's Telegram handle, or their name and id when the handle we stored is
-// not a handle at all: a person who registered with a phone number still has to
-// be recognisable in the chat.
+// The buyer's Telegram @username. The studio writes to people by handle, so the
+// notification shows the handle rather than the full name; the name is only a
+// fallback for an account whose stored contact is not a handle at all.
 function describeBuyer(user) {
   const raw = String(user?.telegramId || '').trim()
-  if (raw.startsWith('@')) return raw
+  if (raw) return raw.startsWith('@') ? raw : `@${raw}`
   const name = String(user?.fullName || '').trim()
-  if (raw && /^@?\d{4,}$/.test(raw)) {
-    const handle = raw.startsWith('@') ? raw : `@${raw}`
-    return name ? `${name} ${handle}` : handle
-  }
-  return name || raw || 'без контакта'
+  return name || 'без контакта'
 }
 
 function orderMessageText(order, user) {
