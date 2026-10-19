@@ -15,9 +15,8 @@ const formatRub = (value: number) =>
   new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(value);
 
 const TIER_LABEL: Record<string, string> = {
-  BASE: 'Первое слушание',
-  SILVER: 'Серебряный слушатель',
-  GOLD: 'Золотой слушатель',
+  SILVER: 'Периодический слушатель',
+  GOLD: 'Постоянный слушатель',
 };
 
 const LOYALTY_RULES = [
@@ -120,13 +119,8 @@ export const AccountModal: React.FC = () => {
                   <div className="mt-6 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] space-y-3">
                     <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
                       <div className="min-w-0">
-                        <div className="text-[10px] font-mono uppercase tracking-widest text-stone-400">
-                          Постоянный слушатель
-                        </div>
                         {loyalty.tier !== 'BASE' && (
-                          <div className="font-serif text-lg text-amber-300 mt-0.5">
-                            {TIER_LABEL[loyalty.tier] ?? loyalty.tier}
-                          </div>
+                          <div className="font-serif text-lg text-amber-300">{TIER_LABEL[loyalty.tier] ?? loyalty.tier}</div>
                         )}
                       </div>
                       <div className="text-right ml-auto min-w-0">

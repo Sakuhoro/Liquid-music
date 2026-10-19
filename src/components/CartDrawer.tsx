@@ -61,6 +61,13 @@ function useCountUp(value: number) {
 const formatRub = (value: number) =>
   new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(value);
 
+// The loyalty tier reaches the cart as a discount percentage; map it back to the
+// same tier names the account card uses so the two never disagree.
+const LOYALTY_TIER_LABEL: Record<number, string> = {
+  5: 'Периодический слушатель',
+  10: 'Постоянный слушатель',
+};
+
 export const CartDrawer: React.FC = () => {
   const isCartOpen = useAppStore((state) => state.isCartOpen);
   const setIsCartOpen = useAppStore((state) => state.setIsCartOpen);
@@ -299,7 +306,7 @@ export const CartDrawer: React.FC = () => {
                 >
                   <span className="flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" />
-                    Постоянный слушатель · {discountPct}%
+                    {LOYALTY_TIER_LABEL[discountPct] ?? 'Слушатель'} · {discountPct}%
                   </span>
                   <span className="tabular-nums">−{formatRub(discountAmount)} ₽</span>
                 </div>
