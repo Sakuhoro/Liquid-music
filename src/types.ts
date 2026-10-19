@@ -1,6 +1,21 @@
 export type VolumeType = '30ml' | '60ml' | '120ml';
 export type NicotineType = '0mg' | '1.5mg' | '3mg' | '6mg';
 
+// PG/VG ratio of a bottle. The value travels to the server with a slash; the
+// label renders it with a backslash, the way the studio writes it.
+export type RatioType = '80/20' | '70/30' | '60/40' | '50/50';
+
+export const RATIO_OPTIONS: RatioType[] = ['80/20', '70/30', '60/40', '50/50'];
+
+export const RATIO_LABELS: Record<RatioType, string> = {
+  '80/20': '80\\20',
+  '70/30': '70\\30',
+  '60/40': '60\\40',
+  '50/50': '50\\50',
+};
+
+export const formatRatio = (ratio: RatioType): string => RATIO_LABELS[ratio] ?? ratio;
+
 export type CollectionName =
   | 'Spring'
   | 'Summer'
@@ -77,9 +92,11 @@ export interface CartItem {
   product: ProductItem;
   volume: VolumeType;
   nicotine: NicotineType;
+  ratio: RatioType;
   volumePrice: number;
   nicotinePrice: number;
-  totalUnitPrice: number; // volumePrice + nicotinePrice, or the set price
+  ratioPrice: number; // PG/VG surcharge, 0 for the collection's standard mix
+  totalUnitPrice: number; // volumePrice + nicotinePrice + ratioPrice, or the set price + ratioPrice
   // Set on a line that is sold as a whole rather than priced off the
   // volume/nicotine table, so the drawer can label it as a set.
   setUnitPrice?: number;

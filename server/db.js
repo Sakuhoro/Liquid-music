@@ -112,6 +112,8 @@ db.exec(`
     productImage TEXT,
     volume TEXT NOT NULL,
     nicotine TEXT NOT NULL,
+    ratio TEXT,
+    ratioPrice INTEGER NOT NULL DEFAULT 0,
     volumePrice INTEGER NOT NULL,
     nicotinePrice INTEGER NOT NULL,
     unitPrice INTEGER NOT NULL,
@@ -123,6 +125,19 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_orders_createdAt ON orders(createdAt);
   CREATE INDEX IF NOT EXISTS idx_order_items_orderId ON order_items(orderId);
 `);
+
+// Add the PG/VG columns to databases created before the option existed. Rows
+// written earlier keep a NULL ratio (there was no choice to record); the price
+// they were charged is already frozen in unitPrice.
+const orderItemColumns = db.prepare('PRAGMA table_info(order_items)').all();
+if (!orderItemColumns.some((col) => col.name === 'ratio')) {
+  db.exec('ALTER TABLE order_items ADD COLUMN ratio TEXT');
+  console.log('[liquid-music] migrated order_items: added ratio column');
+}
+if (!orderItemColumns.some((col) => col.name === 'ratioPrice')) {
+  db.exec('ALTER TABLE order_items ADD COLUMN ratioPrice INTEGER NOT NULL DEFAULT 0');
+  console.log('[liquid-music] migrated order_items: added ratioPrice column');
+}
 
 // Loyalty program: a customer who has spent more than 20 000 RUB in total gets
 // 5% off every later order, and more than 30 000 RUB gets 10%. The tier is
@@ -152,6 +167,21 @@ export function calculateUnitPrice(volume, nicotine) {
   const nic = NICOTINE_PRICING[nicotine];
   if (vol === undefined || nic === undefined) return null;
   return vol + nic;
+}
+
+// PG/VG pricing, mirrored from RATIO_PRICING / ratioSurcharge in
+// src/data/products.ts. Every ratio adds 300 ₽ except the mix the collection
+// standardises on: Bones of what you Believe (Permanent 1) uses 50/50, every
+// other collection's free mix is 70/30. Like the volume/nicotine table this is
+// recomputed here so a client cannot pick its own surcharge.
+export const RATIO_PRICING = 300;
+export const DEFAULT_RATIO = '70/30';
+export const RATIO_VALUES = ['80/20', '70/30', '60/40', '50/50'];
+const FREE_RATIO_BY_COLLECTION = { 'Permanent 1': '50/50' };
+
+export function ratioSurcharge(ratio, category) {
+  const free = FREE_RATIO_BY_COLLECTION[category] || DEFAULT_RATIO;
+  return ratio === free ? 0 : RATIO_PRICING;
 }
 
 // The loyalty balance lives on the user row so it survives without recomputing
@@ -1962,8 +1992,8 @@ export function createOrder({ userId, items, status = 'Pending Verification' }) 
     `).run(id, orderId, payload.userId, subtotal, tier.pct, discountAmount, total, status, now);
 
     const insertItem = db.prepare(`
-      INSERT INTO order_items (id, orderId, productId, productName, productImage, volume, nicotine, volumePrice, nicotinePrice, unitPrice, quantity)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO order_items (id, orderId, productId, productName, productImage, volume, nicotine, ratio, ratioPrice, volumePrice, nicotinePrice, unitPrice, quantity)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     for (const item of payload.items) {
       insertItem.run(
@@ -1974,6 +2004,8 @@ export function createOrder({ userId, items, status = 'Pending Verification' }) 
         item.productImage ?? null,
         item.volume,
         item.nicotine,
+        item.ratio ?? null,
+        item.ratioPrice ?? 0,
         item.volumePrice,
         item.nicotinePrice,
         item.unitPrice,

@@ -1,4 +1,4 @@
-import { ProductItem, VolumeType, NicotineType } from '../types';
+import { ProductItem, VolumeType, NicotineType, RatioType, CollectionName } from '../types';
 
 export const VOLUME_PRICING: Record<VolumeType, number> = {
   '30ml': 300,
@@ -15,6 +15,25 @@ export const NICOTINE_PRICING: Record<NicotineType, number> = {
 
 export function calculatePrice(volume: VolumeType, nicotine: NicotineType): number {
   return VOLUME_PRICING[volume] + NICOTINE_PRICING[nicotine];
+}
+
+// PG/VG surcharge. Every ratio costs 300 ₽ on top of the bottle except the mix
+// the collection standardises on: Bones of what you Believe (Permanent 1) mixes
+// 50/50, every other collection's house ratio is 70/30 and is free.
+export const RATIO_PRICING = 300;
+
+export const DEFAULT_RATIO: RatioType = '70/30';
+
+const FREE_RATIO_BY_COLLECTION: Partial<Record<CollectionName, RatioType>> = {
+  'Permanent 1': '50/50',
+};
+
+export function defaultRatioFor(collection: CollectionName): RatioType {
+  return FREE_RATIO_BY_COLLECTION[collection] ?? DEFAULT_RATIO;
+}
+
+export function ratioSurcharge(ratio: RatioType, collection: CollectionName): number {
+  return ratio === defaultRatioFor(collection) ? 0 : RATIO_PRICING;
 }
 
 // Clean JSON Array of products - Admin can easily swap image (PNG), name, description, and basePrice

@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { NicotineType, ProductItem } from '../types';
+import { defaultRatioFor } from '../data/products';
 import { PAIN_GIRL_ARTWORK, PAIN_GIRL_GALLERY } from '../data/painGirlGallery';
 import InfiniteSpiral from './ui/InfiniteSpiral';
 
@@ -253,7 +254,7 @@ export const PainGirlSpiralSection: React.FC = () => {
       aromaticChords: { top: 'Special Collection', heart: '6 Flavors Set', base: '60ml each' },
       accentColor: '#181818',
     };
-    addToCart(bundleProduct, '60ml', selectedNicotine);
+    addToCart(bundleProduct, '60ml', selectedNicotine, defaultRatioFor(bundleProduct.category));
     closeStoryFrame();
     setIsCartOpen(true);
   };

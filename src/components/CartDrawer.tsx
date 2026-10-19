@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { formatRatio } from '../types';
 import Shredder from './ui/Shredder';
 import {
   X,
@@ -220,6 +221,9 @@ export const CartDrawer: React.FC = () => {
                           </span>
                           <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
                             {item.nicotine} · +{item.nicotinePrice}₽
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
+                            PG\VG {formatRatio(item.ratio)}{item.ratioPrice > 0 ? ` · +${item.ratioPrice}₽` : ''}
                           </span>
                         </>
                       ) : (

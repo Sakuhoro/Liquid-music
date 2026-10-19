@@ -43,6 +43,8 @@ import {
   calculateUnitPrice,
   VOLUME_PRICING,
   NICOTINE_PRICING,
+  ratioSurcharge,
+  RATIO_VALUES,
 } from './db.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -475,13 +477,17 @@ function describeBuyer(user) {
   return name || 'без контакта'
 }
 
+// PG/VG the way the studio writes it: a backslash rather than the slash the
+// value travels with.
+const formatRatio = (ratio) => (ratio ? String(ratio).replace('/', '\\') : '')
+
 function orderMessageText(order, user) {
   const lines = [`📦 Новый заказ #${order.orderId}`, '', `👤 ${describeBuyer(user)}`]
   if (user?.phone) lines.push(`☎️ ${user.phone}`)
   lines.push('')
   for (const item of order.items) {
     lines.push(
-      `• ${item.productName} — ${item.volume} / ${item.nicotine} × ${item.quantity} — ${formatRub(item.unitPrice * item.quantity)}`
+      `• ${item.productName} — ${item.volume} / ${item.nicotine}${item.ratio ? ` / ${formatRatio(item.ratio)}` : ''} × ${item.quantity} — ${formatRub(item.unitPrice * item.quantity)}`
     )
   }
   lines.push('')
@@ -865,6 +871,7 @@ const orderItemSchema = z.object({
   productId: z.string().min(1, 'Не указан товар.'),
   volume: z.enum(['30ml', '60ml', '120ml'], { message: 'Неизвестный объем.' }),
   nicotine: z.enum(['0mg', '1.5mg', '3mg', '6mg'], { message: 'Неизвестная крепость.' }),
+  ratio: z.enum(RATIO_VALUES, { message: 'Неизвестное соотношение PG/VG.' }),
   quantity: z.number().int().min(1).max(999),
 })
 
@@ -921,12 +928,18 @@ app.post('/api/orders', requireAuth, (req, res) => {
         unitPrice = product.id === 'pain-girl-6' ? painGirlExtra : painGirlBase
       }
 
+      // PG/VG surcharge: quoted per unit on top of whatever the bottle costs.
+      const ratioPrice = ratioSurcharge(line.ratio, product.category)
+      unitPrice += ratioPrice
+
       items.push({
         productId: product.id,
         productName: product.name,
         productImage: product.image,
         volume: line.volume,
         nicotine: line.nicotine,
+        ratio: line.ratio,
+        ratioPrice,
         volumePrice: VOLUME_PRICING[line.volume],
         nicotinePrice: NICOTINE_PRICING[line.nicotine],
         unitPrice,
@@ -1002,8 +1015,10 @@ function mapOrderForClient(order) {
       productImage: item.productImage,
       volume: item.volume,
       nicotine: item.nicotine,
+      ratio: item.ratio ?? null,
       volumePrice: item.volumePrice,
       nicotinePrice: item.nicotinePrice,
+      ratioPrice: item.ratioPrice ?? 0,
       totalUnitPrice: item.unitPrice,
       quantity: item.quantity,
     })),

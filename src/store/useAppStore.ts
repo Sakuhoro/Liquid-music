@@ -5,6 +5,7 @@ import {
   CartItem,
   VolumeType,
   NicotineType,
+  RatioType,
   AuthUser,
   PlacedOrder,
   LoyaltyState,
@@ -19,6 +20,7 @@ import {
   INITIAL_PRODUCTS,
   VOLUME_PRICING,
   NICOTINE_PRICING,
+  ratioSurcharge,
 } from '../data/products';
 
 export const DEFAULT_COLLECTION_VIDEOS: CollectionVideosConfig = {
@@ -44,7 +46,7 @@ function toPlacedOrder(row: any, currentUser: AuthUser | null): PlacedOrder {
       registeredAt: '',
     },
     items: (row.items || []).map((item: any) => ({
-      id: `${item.productId}-${item.volume}-${item.nicotine}`,
+      id: `${item.productId}-${item.volume}-${item.nicotine}-${item.ratio ?? '70/30'}`,
       product: {
         id: item.productId,
         name: item.productName,
@@ -52,8 +54,12 @@ function toPlacedOrder(row: any, currentUser: AuthUser | null): PlacedOrder {
       } as any,
       volume: item.volume,
       nicotine: item.nicotine,
+      // Orders placed before the PG/VG option existed carry no ratio; the house
+      // 70/30 keeps their label and price intact.
+      ratio: (item.ratio ?? '70/30') as RatioType,
       volumePrice: item.volumePrice,
       nicotinePrice: item.nicotinePrice,
+      ratioPrice: item.ratioPrice ?? 0,
       totalUnitPrice: item.totalUnitPrice,
       quantity: item.quantity,
     })),
@@ -156,7 +162,7 @@ interface AppState {
   cart: CartItem[];
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
-  addToCart: (product: ProductItem, volume: VolumeType, nicotine: NicotineType) => void;
+  addToCart: (product: ProductItem, volume: VolumeType, nicotine: NicotineType, ratio: RatioType) => void;
   removeFromCart: (itemId: string) => void;
   updateCartQuantity: (itemId: string, delta: number) => void;
   clearCart: () => void;
@@ -641,15 +647,19 @@ export const useAppStore = create<AppState>()(
       dismissPlaylistToast: () => set({ playlistToast: null }),
       setIsCartOpen: (isCartOpen) => set({ isCartOpen }),
 
-      addToCart: (product, volume, nicotine) => {
-        const itemId = `${product.id}-${volume}-${nicotine}`;
+      addToCart: (product, volume, nicotine, ratio) => {
+        // The ratio is part of the line's identity: the same flavour at 70/30
+        // and at 80/20 are different bottles, so they must not merge into one
+        // row when both are in the playlist.
+        const itemId = `${product.id}-${volume}-${nicotine}-${ratio}`;
         // A set is not a bottle: quoting it off the volume/nicotine table would
         // show one bottle's price for six, and the customer would meet the real
         // total only at checkout.
         const setPrice = product.setPricing?.[nicotine];
         const volPrice = setPrice === undefined ? VOLUME_PRICING[volume] : 0;
         const nicPrice = setPrice === undefined ? NICOTINE_PRICING[nicotine] : 0;
-        const unitPrice = setPrice === undefined ? volPrice + nicPrice : setPrice;
+        const ratioPrice = ratioSurcharge(ratio, product.category);
+        const unitPrice = (setPrice === undefined ? volPrice + nicPrice : setPrice) + ratioPrice;
 
         set((state) => {
           // Adding no longer throws the drawer open. It used to, which meant
@@ -676,8 +686,10 @@ export const useAppStore = create<AppState>()(
             product,
             volume,
             nicotine,
+            ratio,
             volumePrice: volPrice,
             nicotinePrice: nicPrice,
+            ratioPrice,
             totalUnitPrice: unitPrice,
             setUnitPrice: setPrice,
             quantity: 1,
@@ -998,7 +1010,7 @@ export const useAppStore = create<AppState>()(
         try {
           // Only the choices go up. Prices, the loyalty discount and the total
           // are all decided on the server.
-          const expandedItems: Array<{ productId: string; volume: VolumeType; nicotine: NicotineType; quantity: number }> = [];
+          const expandedItems: Array<{ productId: string; volume: VolumeType; nicotine: NicotineType; ratio: RatioType; quantity: number }> = [];
           for (const item of cart) {
             if (item.product.id === 'pain-girl-bundle' || item.id.includes('pain-girl-bundle')) {
               for (let i = 1; i <= 6; i++) {
@@ -1006,6 +1018,7 @@ export const useAppStore = create<AppState>()(
                   productId: `pain-girl-${i}`,
                   volume: '60ml',
                   nicotine: item.nicotine,
+                  ratio: item.ratio,
                   quantity: item.quantity,
                 });
               }
@@ -1014,6 +1027,7 @@ export const useAppStore = create<AppState>()(
                 productId: item.product.id,
                 volume: item.volume,
                 nicotine: item.nicotine,
+                ratio: item.ratio,
                 quantity: item.quantity,
               });
             }

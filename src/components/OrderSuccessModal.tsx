@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { formatRatio } from '../types';
 import {
   CheckCircle2,
   Send,
@@ -149,7 +150,7 @@ export const OrderSuccessModal: React.FC = () => {
                         {item.quantity}× {item.product.name}
                         <span style={{ color: 'var(--hall-text-faint)' }}>
                           {' '}
-                          ({item.volume}, {item.nicotine})
+                          ({item.volume}, {item.nicotine}, PG\VG {formatRatio(item.ratio)})
                         </span>
                       </span>
                     </span>

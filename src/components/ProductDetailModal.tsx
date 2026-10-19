@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { VolumeType, NicotineType } from '../types';
-import { calculatePrice, VOLUME_PRICING, NICOTINE_PRICING } from '../data/products';
+import { VolumeType, NicotineType, RatioType, RATIO_OPTIONS, formatRatio } from '../types';
+import { calculatePrice, VOLUME_PRICING, NICOTINE_PRICING, ratioSurcharge, defaultRatioFor } from '../data/products';
 import { sanitizeRussianText } from '../utils/sanitizeText';
 import {
   X,
@@ -51,6 +51,7 @@ export const ProductDetailModal: React.FC = () => {
 
   const [selectedVolume, setSelectedVolume] = useState<VolumeType>('30ml');
   const [selectedNicotine, setSelectedNicotine] = useState<NicotineType>('0mg');
+  const [selectedRatio, setSelectedRatio] = useState<RatioType>('70/30');
 
   // Resolve the backing file from the live catalogue rather than the snapshot
   // captured when the card was opened. This way a background re-sync (which can
@@ -68,6 +69,9 @@ export const ProductDetailModal: React.FC = () => {
   useEffect(() => {
     setSelectedVolume('30ml');
     setSelectedNicotine('0mg');
+    // Each collection pre-selects the PG/VG mix it charges nothing extra for:
+    // 50/50 for Bones of what you Believe, 70/30 everywhere else.
+    if (inspectedProduct) setSelectedRatio(defaultRatioFor(inspectedProduct.category));
   }, [inspectedProduct]);
 
   // Keep the ambient music ducked for exactly as long as the preview is audible.
@@ -82,7 +86,8 @@ export const ProductDetailModal: React.FC = () => {
 
   const volPrice = VOLUME_PRICING[selectedVolume];
   const nicPrice = NICOTINE_PRICING[selectedNicotine];
-  const totalPrice = calculatePrice(selectedVolume, selectedNicotine);
+  const ratioPrice = ratioSurcharge(selectedRatio, inspectedProduct.category);
+  const totalPrice = calculatePrice(selectedVolume, selectedNicotine) + ratioPrice;
   const isArchived = isCollectionArchived(inspectedProduct.category as CollectionName);
 
   // How many of this flavour are already in the order. The stepper on the order
@@ -93,9 +98,9 @@ export const ProductDetailModal: React.FC = () => {
 
   const handleIncrement = () => {
     if (isArchived) return;
-    // Adds the volume and nicotine currently picked above, so the "+" and the
-    // segmented controls agree on what is being ordered.
-    addToCart(inspectedProduct, selectedVolume, selectedNicotine);
+    // Adds the volume, nicotine and ratio currently picked above, so the "+"
+    // and the segmented controls agree on what is being ordered.
+    addToCart(inspectedProduct, selectedVolume, selectedNicotine, selectedRatio);
   };
 
   const handleDecrement = () => {
@@ -105,7 +110,12 @@ export const ProductDetailModal: React.FC = () => {
     const target =
       [...productCartItems]
         .reverse()
-        .find((item) => item.volume === selectedVolume && item.nicotine === selectedNicotine) ??
+        .find(
+          (item) =>
+            item.volume === selectedVolume &&
+            item.nicotine === selectedNicotine &&
+            item.ratio === selectedRatio
+        ) ??
       productCartItems[productCartItems.length - 1];
     updateCartQuantity(target.id, -1);
   };
@@ -288,6 +298,40 @@ export const ProductDetailModal: React.FC = () => {
                         <div className="text-sm sm:text-lg font-extrabold tracking-tight">{n}</div>
                         <div className={`text-[10px] sm:text-sm font-semibold mt-0.5 ${isSelected ? 'text-slate-950/90' : 'text-stone-400'}`}>
                           {n === '0mg' ? '0₽' : `+${NICOTINE_PRICING[n]}₽`}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* PG/VG Ratio Segmented Control */}
+              <div className="space-y-1 sm:space-y-2">
+                <div className="flex justify-between items-center text-sm sm:text-base font-sans tracking-wider uppercase text-stone-300 antialiased">
+                  <span className="font-extrabold text-white">Соотношение PG\VG:</span>
+                  <span className="text-amber-400 font-extrabold font-sans text-sm sm:text-lg tracking-tight">
+                    {ratioPrice > 0 ? `+${ratioPrice} ₽` : '0 ₽'}
+                  </span>
+                </div>
+
+                {/* Segmented Control Pills */}
+                <div className="grid grid-cols-4 gap-1 sm:gap-2 p-0.5 sm:p-1.5 rounded-2xl bg-white/5 border border-white/15 backdrop-blur-md">
+                  {RATIO_OPTIONS.map((r) => {
+                    const isSelected = selectedRatio === r;
+                    const extra = ratioSurcharge(r, inspectedProduct.category);
+                    return (
+                      <button
+                        key={r}
+                        onClick={() => setSelectedRatio(r)}
+                        className={`relative py-1.5 sm:py-3 px-0.5 sm:px-1.5 rounded-xl text-center font-sans antialiased transition-all duration-300 cursor-pointer min-h-[24px] sm:min-h-[48px] flex flex-col items-center justify-center ${
+                          isSelected
+                            ? 'bg-amber-400 text-slate-950 font-extrabold shadow-lg shadow-amber-400/30 scale-[1.02]'
+                            : 'text-stone-200 hover:text-white hover:bg-white/10 font-bold'
+                        }`}
+                      >
+                        <div className="text-sm sm:text-lg font-extrabold tracking-tight">{formatRatio(r)}</div>
+                        <div className={`text-[10px] sm:text-sm font-semibold mt-0.5 ${isSelected ? 'text-slate-950/90' : 'text-stone-400'}`}>
+                          {extra > 0 ? `+${extra}₽` : '0₽'}
                         </div>
                       </button>
                     );

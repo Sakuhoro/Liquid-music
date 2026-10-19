@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { ProductItem, CollectionName, PlacedOrder, VolumeType, NicotineType, RecipeItem, isGalleryCollection } from '../types';
+import { ProductItem, CollectionName, PlacedOrder, VolumeType, NicotineType, RecipeItem, isGalleryCollection, formatRatio } from '../types';
 import { ART_SCALE_MIN, ART_SCALE_MAX, ART_SCALE_DEFAULT, clampArtScale, getItemScale } from '../utils/vinylScale';
 import { parseRecipeText, formatRecipeText } from '../utils/recipeParser';
 import { PAIN_GIRL_GALLERY } from '../data/painGirlGallery';
@@ -1876,7 +1876,8 @@ export const StudioAdminModal: React.FC = () => {
                             </div>
                             <div className="text-xs font-mono text-stone-300">
                               Объём: <span className="text-amber-300 font-bold">{item.volume}</span> •
-                              Никотин: <span className="text-amber-300 font-bold">{item.nicotine}</span>
+                              Никотин: <span className="text-amber-300 font-bold">{item.nicotine}</span> •
+                              PG\VG: <span className="text-amber-300 font-bold">{formatRatio(item.ratio)}</span>
                             </div>
                           </div>
                         </div>
