@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
 import { useTrackPreview } from '../hooks/useTrackPreview';
+import { MusicalQuantityControl } from './ui/MusicalQuantityControl';
 
 /**
  * Module 3: Premium Grade Apple/Stripe Design Refactoring
@@ -286,12 +287,18 @@ export const ProductDetailModal: React.FC = () => {
 
             {/* CTA Footer Row: Premium Typography Price Display & Clean Minimalist Order Button */}
             <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-              <div>
-                <div className="text-sm sm:text-base font-sans uppercase tracking-widest text-stone-300 mb-0.5 font-extrabold antialiased">
-                  Итоговая стоимость
+              <div className="flex items-center justify-between sm:justify-start gap-4">
+                <div>
+                  <div className="text-sm sm:text-base font-sans uppercase tracking-widest text-stone-300 mb-0.5 font-extrabold antialiased">
+                    Итоговая стоимость
+                  </div>
+                  <div className="text-5xl sm:text-6xl font-extrabold font-sans text-amber-400 tracking-tight antialiased">
+                    {totalPrice} ₽
+                  </div>
                 </div>
-                <div className="text-5xl sm:text-6xl font-extrabold font-sans text-amber-400 tracking-tight antialiased">
-                  {totalPrice} ₽
+                {/* Musical Quantity Counter Control */}
+                <div className="sm:ml-2">
+                  <MusicalQuantityControl product={inspectedProduct} size="md" />
                 </div>
               </div>
 

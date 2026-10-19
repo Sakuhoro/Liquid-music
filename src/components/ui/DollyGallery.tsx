@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Disc, Sparkles } from 'lucide-react';
 import { getItemScale } from '../../utils/vinylScale';
 import { sanitizeRussianText } from '../../utils/sanitizeText';
-import { CollectionName, getCollectionTitle } from '../../types';
+import { CollectionName, getCollectionTitle, ProductItem } from '../../types';
+import { MusicalQuantityControl } from './MusicalQuantityControl';
 
 // Public collection name ("Bones of what you Believe" / "Velvet Distortion") instead of the internal "Permanent 1"/"Permanent 2" key
 const getDollyItemCollectionTitle = (category?: unknown): string =>
@@ -420,6 +421,11 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                         {sanitizeRussianText(item.description, false)}
                       </p>
                     )}
+
+                    {/* Musical Quantity Counter Control */}
+                    <div className="mt-3 pointer-events-auto">
+                      <MusicalQuantityControl product={item as ProductItem} size="md" />
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -457,8 +463,13 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                 {sanitizeRussianText(activeItem.subtitle, true)}
               </p>
             ) : null}
-            <div className="mt-1 text-[11px] font-sans text-amber-400 font-bold">
-              Нажмите, чтобы открыть →
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <span className="text-[11px] font-sans text-amber-400 font-bold">
+                Нажмите, чтобы открыть →
+              </span>
+              <div onClick={(e) => e.stopPropagation()}>
+                <MusicalQuantityControl product={activeItem as ProductItem} size="sm" />
+              </div>
             </div>
           </motion.div>
         )}
