@@ -329,6 +329,16 @@ export const AccountModal: React.FC = () => {
                                 <span>−{formatRub(order.discountAmount)} ₽</span>
                               </div>
                             ) : null}
+
+                            {order.manualDiscount ? (
+                              <div className="flex items-center justify-between text-[11px] font-mono text-rose-300">
+                                <span className="flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+                                  Ручная скидка
+                                </span>
+                                <span>−{formatRub(order.manualDiscount)} ₽</span>
+                              </div>
+                            ) : null}
                           </div>
                         )}
                       </div>

@@ -138,12 +138,15 @@ export interface PlacedOrder {
   orderId: string;
   user: AuthUser;
   items: CartItem[];
-  subtotal: number; // amount actually paid
+  subtotal: number; // amount actually paid (after both the loyalty and any manual discount)
   createdAt: string;
   status: 'Pending Verification' | 'Confirmed';
   grossSubtotal?: number; // before the loyalty discount
   discountPct?: number;
   discountAmount?: number;
+  // A fixed amount the studio knocked off by hand. It is not part of the loyalty
+  // spend, so it is shown to the customer without moving their tier.
+  manualDiscount?: number;
 }
 
 export interface CheckoutSummary {

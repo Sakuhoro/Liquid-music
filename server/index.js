@@ -39,6 +39,8 @@ import {
   getOrdersByUser,
   getAllOrders,
   deleteTestOrder,
+  setOrderManualDiscount,
+  getAdminOrderByBusinessId,
   getLoyaltyForUser,
   calculateUnitPrice,
   VOLUME_PRICING,
@@ -978,6 +980,35 @@ app.get('/api/admin/orders', requireAuth, (req, res) => {
   }
 })
 
+// A manual discount an admin puts on a placed order. It never touches the
+// customer's loyalty balance: orders.total (the figure the tier derives from)
+// is left alone and the courtesy lives in manualDiscount, so the order history
+// shows the reduced amount while the loyalty ladder stays put.
+const orderDiscountSchema = z.object({
+  amount: z.number().int().min(0, 'Скидка не может быть отрицательной.').max(1000000, 'Слишком большая скидка.'),
+})
+
+app.post('/api/admin/orders/:orderId/discount', requireAuth, (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Недостаточно прав.' })
+    }
+    const parseResult = orderDiscountSchema.safeParse(req.body)
+    if (!parseResult.success) {
+      const issue = parseResult.error.issues[0]
+      return res.status(400).json({ error: issue.message })
+    }
+    const result = setOrderManualDiscount(req.params.orderId, parseResult.data.amount)
+    if (!result.ok) {
+      return res.status(404).json({ error: result.error })
+    }
+    const order = getAdminOrderByBusinessId(req.params.orderId)
+    return res.json({ success: true, order: mapAdminOrderForClient(order) })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // Same order shape as the customer's own view, with the buyer attached so the
 // admin table can show who a row belongs to.
 function mapAdminOrderForClient(order) {
@@ -1005,7 +1036,9 @@ function mapOrderForClient(order) {
     subtotal: order.subtotal,
     discountPct: order.discountPct,
     discountAmount: order.discountAmount,
+    manualDiscount: order.manualDiscount ?? 0,
     total: order.total,
+    payableTotal: order.total - (order.manualDiscount ?? 0),
     status: order.status,
     createdAt: order.createdAt,
     items: order.items.map((item) => ({

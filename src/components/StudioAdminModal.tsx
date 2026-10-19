@@ -87,6 +87,7 @@ export const StudioAdminModal: React.FC = () => {
   const adminOrders = useAppStore((state) => state.adminOrders);
   const fetchAdminOrders = useAppStore((state) => state.fetchAdminOrders);
   const deleteOrderHistory = useAppStore((state) => state.deleteOrderHistory);
+  const updateOrderDiscount = useAppStore((state) => state.updateOrderDiscount);
 
   const collectionVideos = useAppStore((state) => state.collectionVideos);
   const setCollectionVideo = useAppStore((state) => state.setCollectionVideo);
@@ -192,6 +193,10 @@ export const StudioAdminModal: React.FC = () => {
 
   // Orders tab state
   const [inspectedOrder, setInspectedOrder] = useState<PlacedOrder | null>(null);
+  // Manual (admin) discount on the inspected order: the rouble input and a
+  // short inline notice. Both reset whenever a different order is opened.
+  const [discountInput, setDiscountInput] = useState('');
+  const [discountNotice, setDiscountNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
   // Products tab filter state
   const [productCollectionFilter, setProductCollectionFilter] = useState<CollectionName | 'All'>('All');
@@ -227,6 +232,27 @@ export const StudioAdminModal: React.FC = () => {
     setEditingRecipeItems(items);
     setRecipeRawText(formatRecipeText(items));
   }, [selectedRecipeProductId, recipes, products]);
+
+  // Opening a different order resets the manual-discount field to that order's
+  // current value (blank when it has none) and clears any stale notice.
+  useEffect(() => {
+    setDiscountInput(inspectedOrder?.manualDiscount ? String(inspectedOrder.manualDiscount) : '');
+    setDiscountNotice(null);
+  }, [inspectedOrder]);
+
+  // The server clamps the amount against the order total, so the field is
+  // re-seeded from what actually stuck after a successful call.
+  const handleApplyDiscount = async (amount: number) => {
+    if (!inspectedOrder) return;
+    const result = await updateOrderDiscount(inspectedOrder.orderId, amount);
+    if (result.success) {
+      const fresh = useAppStore.getState().adminOrders.find((o) => o.orderId === inspectedOrder.orderId);
+      setDiscountInput(fresh?.manualDiscount ? String(fresh.manualDiscount) : '');
+      setDiscountNotice({ ok: true, text: amount > 0 ? 'Скидка применена' : 'Скидка убрана' });
+    } else {
+      setDiscountNotice({ ok: false, text: result.error || 'Не удалось применить скидку.' });
+    }
+  };
 
   // Facet Counts for Tab 6.2 (Products)
   const productCountsByCollection = useMemo(() => {
@@ -318,6 +344,12 @@ export const StudioAdminModal: React.FC = () => {
     0
   );
   const totalRevenueSum = adminOrders.reduce((sum, order) => sum + order.subtotal, 0);
+
+  // Render the inspection modal off the live row so applying a manual discount
+  // updates the amount and the breakdown right away, without reopening.
+  const liveInspectedOrder = inspectedOrder
+    ? adminOrders.find((o) => o.orderId === inspectedOrder.orderId) || inspectedOrder
+    : null;
 
   // Filtered Products for Tab 6.2 (Products)
   const filteredProducts = products.filter((p) => {
@@ -767,6 +799,11 @@ export const StudioAdminModal: React.FC = () => {
                                   <div className="text-xl font-extrabold text-amber-400 font-mono">
                                     {order.subtotal} ₽
                                   </div>
+                                  {!!order.manualDiscount && (
+                                    <div className="text-[10px] font-mono font-bold text-rose-300">
+                                      ручная −{order.manualDiscount} ₽
+                                    </div>
+                                  )}
                                 </div>
 
                                 <button
@@ -1830,7 +1867,7 @@ export const StudioAdminModal: React.FC = () => {
             </div>
 
             {/* Modal: Order Details Inspection Modal */}
-            {inspectedOrder && (
+            {liveInspectedOrder && (
               <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
                 <div
                   className={`w-full max-w-2xl rounded-3xl p-6 sm:p-8 border shadow-2xl ${
@@ -1840,10 +1877,10 @@ export const StudioAdminModal: React.FC = () => {
                   <div className="flex items-center justify-between mb-5 border-b border-white/10 pb-4">
                     <div>
                       <h3 className="font-sans text-xl font-extrabold">
-                        Детали заказа #{inspectedOrder.orderId}
+                        Детали заказа #{liveInspectedOrder.orderId}
                       </h3>
                       <p className="text-xs text-stone-400 font-mono mt-0.5">
-                        Пользователь: {inspectedOrder.user?.telegram} ({inspectedOrder.user?.name})
+                        Пользователь: {liveInspectedOrder.user?.telegram} ({liveInspectedOrder.user?.name})
                       </p>
                     </div>
                     <button
@@ -1854,12 +1891,12 @@ export const StudioAdminModal: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="space-y-3 max-h-80 overflow-y-auto">
+                  <div className="space-y-3 max-h-72 overflow-y-auto">
                     <h4 className="text-xs font-sans font-extrabold uppercase text-amber-400 tracking-wider">
                       Состав заказа:
                     </h4>
 
-                    {inspectedOrder.items.map((item) => (
+                    {liveInspectedOrder.items.map((item) => (
                       <div
                         key={item.id}
                         className="p-3.5 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-between"
@@ -1894,11 +1931,79 @@ export const StudioAdminModal: React.FC = () => {
                     ))}
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-sans uppercase text-stone-400 font-bold">Итого:</span>
-                      <div className="text-2xl font-extrabold font-mono text-amber-400">
-                        {inspectedOrder.subtotal} ₽
+                  {/* Manual discount: an admin-typed amount off this order only.
+                      Kept out of the loyalty total, so it never moves the tier. */}
+                  <div className="mt-5 p-4 rounded-2xl border border-white/10 bg-white/[0.03] space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="text-xs font-sans font-extrabold uppercase tracking-wider text-amber-400">
+                          Ручная скидка
+                        </div>
+                        <p className="text-[11px] font-mono text-stone-400">
+                          Не влияет на постоянную скидку пользователя
+                        </p>
+                      </div>
+                      <span className="text-sm font-mono font-bold text-rose-300">
+                        {liveInspectedOrder.manualDiscount ? `−${liveInspectedOrder.manualDiscount} ₽` : 'нет'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        inputMode="numeric"
+                        value={discountInput}
+                        onChange={(e) => setDiscountInput(e.target.value)}
+                        placeholder="Сумма, ₽"
+                        className="flex-1 px-3.5 py-2.5 rounded-xl border border-white/15 bg-white/5 focus:outline-none focus:border-amber-400 text-sm font-mono font-bold text-white"
+                      />
+                      <button
+                        onClick={() => handleApplyDiscount(Math.max(0, Math.round(Number(discountInput) || 0)))}
+                        className="px-4 py-2.5 rounded-xl bg-amber-400 text-slate-950 font-sans font-extrabold text-xs cursor-pointer shadow-md"
+                      >
+                        Применить
+                      </button>
+                      {liveInspectedOrder.manualDiscount ? (
+                        <button
+                          onClick={() => handleApplyDiscount(0)}
+                          className="px-4 py-2.5 rounded-xl border border-white/15 hover:bg-white/10 text-stone-200 font-sans font-bold text-xs cursor-pointer"
+                        >
+                          Убрать
+                        </button>
+                      ) : null}
+                    </div>
+                    {discountNotice && (
+                      <div
+                        className={`text-[11px] font-mono ${discountNotice.ok ? 'text-emerald-300' : 'text-rose-300'}`}
+                      >
+                        {discountNotice.text}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 flex items-end justify-between gap-4">
+                    <div className="space-y-1 text-xs font-mono">
+                      <div className="flex items-center gap-2 text-stone-400">
+                        <span>База:</span>
+                        <span className="text-stone-200">{liveInspectedOrder.grossSubtotal} ₽</span>
+                      </div>
+                      {!!liveInspectedOrder.discountAmount && (
+                        <div className="flex items-center gap-2 text-amber-300">
+                          <span>Скидка {liveInspectedOrder.discountPct}%:</span>
+                          <span>−{liveInspectedOrder.discountAmount} ₽</span>
+                        </div>
+                      )}
+                      {!!liveInspectedOrder.manualDiscount && (
+                        <div className="flex items-center gap-2 text-rose-300">
+                          <span>Ручная скидка:</span>
+                          <span>−{liveInspectedOrder.manualDiscount} ₽</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 pt-1">
+                        <span className="text-stone-400 uppercase font-bold">Итого:</span>
+                        <span className="text-2xl font-extrabold text-amber-400">
+                          {liveInspectedOrder.subtotal} ₽
+                        </span>
                       </div>
                     </div>
 

@@ -63,12 +63,13 @@ function toPlacedOrder(row: any, currentUser: AuthUser | null): PlacedOrder {
       totalUnitPrice: item.totalUnitPrice,
       quantity: item.quantity,
     })),
-    subtotal: row.total,
+    subtotal: (row.total ?? row.subtotal) - (row.manualDiscount ?? 0),
     createdAt: new Date(row.createdAt).toLocaleString('ru-RU'),
     status: row.status,
     grossSubtotal: row.subtotal,
     discountPct: row.discountPct,
     discountAmount: row.discountAmount,
+    manualDiscount: row.manualDiscount ?? 0,
   };
 }
 
@@ -228,6 +229,7 @@ interface AppState {
   fetchAdminOrders: () => Promise<void>;
   refreshLoyalty: () => Promise<void>;
   deleteOrderHistory: (orderId: string) => void;
+  updateOrderDiscount: (orderId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   placeOrder: () => Promise<{ success: boolean; requiresAuth?: boolean; error?: string }>;
 }
 
@@ -993,6 +995,32 @@ export const useAppStore = create<AppState>()(
           ordersHistory: state.ordersHistory.filter((o) => o.orderId !== orderId),
           adminOrders: state.adminOrders.filter((o) => o.orderId !== orderId),
         })),
+
+      // The admin puts a fixed amount off a placed order. The server keeps it
+      // out of the loyalty total, so applying it here never changes the
+      // customer's tier; the order history simply shows the lower amount.
+      updateOrderDiscount: async (orderId, amount) => {
+        try {
+          const res = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/discount`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            return { success: false, error: data.error || 'Не удалось применить скидку.' };
+          }
+          const { currentUser } = get();
+          const updated = toPlacedOrder(data.order, currentUser);
+          set((state) => ({
+            adminOrders: state.adminOrders.map((o) => (o.orderId === orderId ? updated : o)),
+            ordersHistory: state.ordersHistory.map((o) => (o.orderId === orderId ? updated : o)),
+          }));
+          return { success: true };
+        } catch (err) {
+          return { success: false, error: err instanceof Error ? err.message : 'Сетевая ошибка.' };
+        }
+      },
 
       placeOrder: async () => {
         const { currentUser, cart } = get();

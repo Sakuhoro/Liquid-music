@@ -98,6 +98,7 @@ db.exec(`
     subtotal INTEGER NOT NULL,
     discountPct INTEGER NOT NULL DEFAULT 0,
     discountAmount INTEGER NOT NULL DEFAULT 0,
+    manualDiscount INTEGER NOT NULL DEFAULT 0,
     total INTEGER NOT NULL,
     status TEXT NOT NULL DEFAULT 'Pending Verification',
     createdAt TEXT NOT NULL,
@@ -137,6 +138,14 @@ if (!orderItemColumns.some((col) => col.name === 'ratio')) {
 if (!orderItemColumns.some((col) => col.name === 'ratioPrice')) {
   db.exec('ALTER TABLE order_items ADD COLUMN ratioPrice INTEGER NOT NULL DEFAULT 0');
   console.log('[liquid-music] migrated order_items: added ratioPrice column');
+}
+
+// Manual (admin) discount. Stored apart from orders.total on purpose: see
+// setOrderManualDiscount for why it must not feed the loyalty balance.
+const orderColumns = db.prepare('PRAGMA table_info(orders)').all();
+if (!orderColumns.some((col) => col.name === 'manualDiscount')) {
+  db.exec('ALTER TABLE orders ADD COLUMN manualDiscount INTEGER NOT NULL DEFAULT 0');
+  console.log('[liquid-music] migrated orders: added manualDiscount column');
 }
 
 // Loyalty program: a customer who has spent more than 20 000 RUB in total gets
@@ -2076,6 +2085,35 @@ export function deleteTestOrder(businessOrderId) {
   });
 
   return { ok: true, orderId: businessOrderId, userId: order.userId, spend: remove(order) };
+}
+
+// A fixed amount the studio knocks off a single order by hand. It is kept in its
+// own column rather than folded into orders.total: the loyalty tier is derived
+// from total, so a one-off courtesy would otherwise push the customer along the
+// loyalty ladder (or, when the total shrinks, pull them back down) as a side
+// effect. total stays the loyalty figure; what the customer owes is
+// total - manualDiscount. The amount is clamped to the order so a discount can
+// never turn into a credit.
+export function setOrderManualDiscount(businessOrderId, amount) {
+  const order = db.prepare('SELECT id, total FROM orders WHERE orderId = ?').get(businessOrderId);
+  if (!order) return { ok: false, error: 'Заказ не найден.' };
+  const clean = Math.max(0, Math.min(Math.round(Number(amount) || 0), order.total));
+  db.prepare('UPDATE orders SET manualDiscount = ? WHERE id = ?').run(clean, order.id);
+  return { ok: true, orderId: businessOrderId, manualDiscount: clean };
+}
+
+// One order with its items and the buyer, for the admin discount endpoint.
+export function getAdminOrderByBusinessId(businessOrderId) {
+  const order = db
+    .prepare(`
+      SELECT o.*, u.fullName, u.phone, u.telegramId
+      FROM orders o JOIN users u ON u.id = o.userId
+      WHERE o.orderId = ?
+    `)
+    .get(businessOrderId);
+  if (!order) return null;
+  const items = db.prepare('SELECT * FROM order_items WHERE orderId = ?').all(order.id);
+  return { ...order, items };
 }
 
 export function getLoyaltyForUser(userId) {
