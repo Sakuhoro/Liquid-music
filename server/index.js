@@ -423,10 +423,14 @@ const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || ''
 
 const formatRub = (value) => `${new Intl.NumberFormat('ru-RU').format(Math.round(Number(value) || 0))} ₽`
 
-// One call to the Bot API. Returns null instead of throwing, because a Telegram
-// outage is not a reason to fail the customer's checkout or the webhook.
-async function callTelegram(method, payload) {
-  if (!TELEGRAM_BOT_TOKEN) return null
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// One call to the Bot API. Never throws: it returns a plain outcome so the
+// caller can decide whether the fault is worth repeating. A network error and a
+// 429/5xx are transient and say so; a 4xx (bad request, bad chat, blocked bot)
+// will not get better by asking again, so it is marked permanent.
+async function callTelegramOutcome(method, payload) {
+  if (!TELEGRAM_BOT_TOKEN) return { ok: false, retryable: false, reason: 'TELEGRAM_BOT_TOKEN не задан' }
   try {
     const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {
       method: 'POST',
@@ -434,15 +438,31 @@ async function callTelegram(method, payload) {
       body: JSON.stringify(payload),
     })
     const body = await response.json().catch(() => null)
-    if (!response.ok || !body || body.ok !== true) {
-      console.error(`[liquid-music] telegram ${method} failed:`, body ? body.description : response.status)
-      return null
+    if (response.ok && body && body.ok === true) {
+      return { ok: true, result: body.result }
     }
-    return body.result
+    const retryable = response.status === 429 || response.status >= 500
+    return {
+      ok: false,
+      retryable,
+      reason: body ? body.description : String(response.status),
+      retryAfter: body && body.parameters ? body.parameters.retry_after : null,
+    }
   } catch (err) {
-    console.error(`[liquid-music] telegram ${method} threw:`, err.message)
+    // A thrown fetch is a network problem (DNS, timeout, reset), worth retrying.
+    return { ok: false, retryable: true, reason: err.message }
+  }
+}
+
+// One call to the Bot API. Returns null instead of throwing, because a Telegram
+// outage is not a reason to fail the customer's checkout or the webhook.
+async function callTelegram(method, payload) {
+  const outcome = await callTelegramOutcome(method, payload)
+  if (!outcome.ok) {
+    console.error(`[liquid-music] telegram ${method} failed:`, outcome.reason)
     return null
   }
+  return outcome.result
 }
 
 // The buyer's Telegram @username. The studio writes to people by handle, so the
@@ -475,9 +495,19 @@ function orderMessageText(order, user) {
 // Announced after the order is committed and deliberately not awaited: the
 // customer has already paid and must not be kept waiting on Telegram, and a
 // failed announcement must not roll the order back.
+//
+// A single dropped request used to lose the notification for good, so it is
+// retried here: transient faults (network errors, 429, 5xx) get a few backoff
+// attempts, a permanent rejection is logged and given up on at once so a bad
+// chat id does not spin. The delays are short and bounded so the background
+// task cannot pile up; the reported order id makes any final failure traceable.
+const ORDER_NOTIFY_ATTEMPTS = 4
+const ORDER_NOTIFY_BASE_DELAY_MS = 700
+const ORDER_NOTIFY_MAX_DELAY_MS = 8000
+
 async function notifyOrderCreated(order, user) {
   if (!TELEGRAM_ORDER_CHAT_ID) return
-  await callTelegram('sendMessage', {
+  const payload = {
     chat_id: TELEGRAM_ORDER_CHAT_ID,
     text: orderMessageText(order, user),
     reply_markup: {
@@ -485,7 +515,35 @@ async function notifyOrderCreated(order, user) {
         [{ text: '🗑 Удалить тестовый заказ', callback_data: `delete_test_order:${order.orderId}` }],
       ],
     },
-  })
+  }
+
+  for (let attempt = 1; attempt <= ORDER_NOTIFY_ATTEMPTS; attempt += 1) {
+    const outcome = await callTelegramOutcome('sendMessage', payload)
+    if (outcome.ok) return outcome.result
+
+    const isLastAttempt = attempt === ORDER_NOTIFY_ATTEMPTS
+    if (!outcome.retryable || isLastAttempt) {
+      console.error(
+        `[liquid-music] telegram sendMessage for order ${order.orderId} failed` +
+          (isLastAttempt ? ` after ${attempt} attempts` : ' (не повторяем)') +
+          `: ${outcome.reason}`
+      )
+      return null
+    }
+
+    // After a 429 Telegram tells us how long to wait; otherwise back off
+    // exponentially. The wait is capped so a long outage does not hold the task.
+    const retryAfterMs = outcome.retryAfter ? Number(outcome.retryAfter) * 1000 : 0
+    const backoffMs = Math.min(
+      retryAfterMs || ORDER_NOTIFY_BASE_DELAY_MS * 2 ** (attempt - 1),
+      ORDER_NOTIFY_MAX_DELAY_MS
+    )
+    console.error(
+      `[liquid-music] telegram sendMessage for order ${order.orderId} failed ` +
+        `(попытка ${attempt}/${ORDER_NOTIFY_ATTEMPTS}), повтор через ${backoffMs}ms: ${outcome.reason}`
+    )
+    await sleep(backoffMs)
+  }
 }
 
 function isStaffChat(chatId) {
