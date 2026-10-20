@@ -1540,65 +1540,89 @@ export const StudioAdminModal: React.FC = () => {
                     </div>
                   )}
 
-                  {/* SUB-TAB 6.3.3: АРОМЫ (CONSOLIDATED FLAVORINGS & COST CALCULATOR) */}
+                  {/* SUB-TAB 6.3.3: АРОМЫ (PER-RECIPE FLAVORINGS & COST CALCULATOR) */}
                   {prodSubTab === 'aromas' && (
                     <div className="space-y-6">
-                      {/* Summary Metrics Banner */}
                       {(() => {
-                        // Calculate total required flavorings across all user orders with normalized keys
-                        const flavorMap = new Map<string, { vendor: string; name: string; totalMl: number; key: string }>();
-
+                        // Ordered liquid volume per product, summed over every user's
+                        // orders: 15 bottles of a flavour at 120 ml means 1800 ml to
+                        // mix. The recipe is then applied to that volume, so each
+                        // flavour gets its own aroma list.
+                        const orderedMlByProduct = new Map<string, number>();
+                        const orderedBottlesByProduct = new Map<string, number>();
                         for (const order of adminOrders) {
                           for (const item of order.items) {
+                            const productId = item.product.id;
                             const volMl = parseInt(item.volume.replace('ml', ''), 10) || 30;
-                            const totalLiquidMl = volMl * item.quantity;
-                            const recipe = recipes.find((r) => r.productId === item.product.id);
-
-                            if (recipe && recipe.items) {
-                              for (const comp of recipe.items) {
-                                const cleanVendor = comp.vendor.trim().toUpperCase();
-                                const cleanName = comp.name.trim().replace(/\s+/g, ' ');
-                                const canonicalKey = `${cleanVendor}_${cleanName.toLowerCase()}`;
-                                const compMl = totalLiquidMl * (comp.mlPer100ml / 100);
-
-                                if (flavorMap.has(canonicalKey)) {
-                                  const existing = flavorMap.get(canonicalKey)!;
-                                  existing.totalMl += compMl;
-                                } else {
-                                  flavorMap.set(canonicalKey, {
-                                    key: canonicalKey,
-                                    vendor: cleanVendor,
-                                    name: cleanName,
-                                    totalMl: compMl,
-                                  });
-                                }
-                              }
-                            }
+                            orderedMlByProduct.set(
+                              productId,
+                              (orderedMlByProduct.get(productId) ?? 0) + volMl * item.quantity
+                            );
+                            orderedBottlesByProduct.set(
+                              productId,
+                              (orderedBottlesByProduct.get(productId) ?? 0) + item.quantity
+                            );
                           }
                         }
 
-                        const aggregatedList = Array.from(flavorMap.values()).sort((a, b) =>
-                          a.vendor.localeCompare(b.vendor) || a.name.localeCompare(b.name)
-                        );
-
-                        // Calculate totals
-                        let totalMlSum = 0;
-                        let totalCostSum = 0;
-
-                        aggregatedList.forEach((item) => {
-                          totalMlSum += item.totalMl;
-                          const key1 = `${item.vendor}:${item.name.toLowerCase()}`;
-                          const key2 = `${item.vendor}_${item.name.toLowerCase()}`;
+                        const pricePer10mlFor = (vendor: string, name: string) => {
+                          const key1 = `${vendor}:${name.toLowerCase()}`;
+                          const key2 = `${vendor}_${name.toLowerCase()}`;
                           const priceRecord = flavorPrices.find((fp) => fp.key === key1 || fp.key === key2);
-                          const pricePer10ml = priceRecord ? priceRecord.pricePer10ml : 100;
-                          const cost = (item.totalMl / 10) * pricePer10ml;
-                          totalCostSum += cost;
-                        });
+                          return priceRecord ? priceRecord.pricePer10ml : 100;
+                        };
+
+                        // One entry per flavour that has a recipe and at least one
+                        // ordered bottle, with its own aroma breakdown.
+                        const perRecipeGroups = products
+                          .map((product) => {
+                            const recipe = recipes.find((r) => r.productId === product.id);
+                            const orderedMl = orderedMlByProduct.get(product.id) ?? 0;
+                            if (!recipe || !recipe.items || recipe.items.length === 0) return null;
+                            if (orderedMl <= 0) return null;
+
+                            const aromas = recipe.items.map((comp) => {
+                              const vendor = comp.vendor.trim().toUpperCase();
+                              const name = comp.name.trim().replace(/\s+/g, ' ');
+                              const ml = orderedMl * (comp.mlPer100ml / 100);
+                              const pricePer10ml = pricePer10mlFor(vendor, name);
+                              return { vendor, name, ml, pricePer10ml, cost: (ml / 10) * pricePer10ml };
+                            });
+
+                            const totalMl = aromas.reduce((sum, a) => sum + a.ml, 0);
+                            const totalCost = aromas.reduce((sum, a) => sum + a.cost, 0);
+                            return {
+                              productId: product.id,
+                              name: product.name,
+                              category: product.category,
+                              orderedMl,
+                              orderedBottles: orderedBottlesByProduct.get(product.id) ?? 0,
+                              aromas,
+                              totalMl,
+                              totalCost,
+                            };
+                          })
+                          .filter((group): group is NonNullable<typeof group> => group !== null)
+                          .sort((a, b) => a.name.localeCompare(b.name));
+
+                        // Grand totals across every flavour's own list. The unique
+                        // count is over the aroma identity, not the raw sum, so an
+                        // aroma shared by two recipes is only counted once.
+                        const uniqueKeys = new Set<string>();
+                        let grandMlSum = 0;
+                        let grandCostSum = 0;
+                        for (const group of perRecipeGroups) {
+                          for (const aroma of group.aromas) {
+                            uniqueKeys.add(`${aroma.vendor}_${aroma.name.toLowerCase()}`);
+                          }
+                          grandMlSum += group.totalMl;
+                          grandCostSum += group.totalCost;
+                        }
 
                         const formattedVolume =
-                          totalMlSum >= 1000
-                            ? `${(totalMlSum / 1000).toFixed(2)} л (${totalMlSum.toFixed(0)} мл)`
-                            : `${totalMlSum.toFixed(1)} мл`;
+                          grandMlSum >= 1000
+                            ? `${(grandMlSum / 1000).toFixed(2)} л (${grandMlSum.toFixed(0)} мл)`
+                            : `${grandMlSum.toFixed(1)} мл`;
 
                         return (
                           <div className="space-y-6">
@@ -1606,10 +1630,10 @@ export const StudioAdminModal: React.FC = () => {
                               <div className="p-5 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-md flex items-center justify-between">
                                 <div>
                                   <p className="text-xs font-sans uppercase font-extrabold text-stone-400 tracking-wider">
-                                    Уникальных ароматизаторов к заказу
+                                    Вкусов с рецептом к изготовлению
                                   </p>
                                   <h3 className="text-3xl font-extrabold font-sans text-amber-400 mt-1">
-                                    {aggregatedList.length}
+                                    {perRecipeGroups.length}
                                   </h3>
                                 </div>
                                 <div className="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-400">
@@ -1637,7 +1661,7 @@ export const StudioAdminModal: React.FC = () => {
                                     Примерная стоимость закупки
                                   </p>
                                   <h3 className="text-3xl font-extrabold font-sans text-amber-400 mt-1">
-                                    {Math.round(totalCostSum)} ₽
+                                    {Math.round(grandCostSum)} ₽
                                   </h3>
                                 </div>
                                 <div className="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-400">
@@ -1646,77 +1670,89 @@ export const StudioAdminModal: React.FC = () => {
                               </div>
                             </div>
 
-                            {/* Aggregated Flavorings Procurement Table */}
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-sans font-extrabold text-white">
-                                  Сводный список ароматизаторов по всем заказам
-                                </h4>
-                                <span className="text-xs text-stone-400 font-mono">
-                                  Цены сохраняются в БД автоматически (за 10мл)
-                                </span>
+                            {perRecipeGroups.length === 0 ? (
+                              <div className="p-8 rounded-2xl border border-white/15 bg-black/40 text-center text-stone-400 font-sans font-semibold text-sm">
+                                Заказы отсутствуют или рецепты не заданы.
                               </div>
+                            ) : (
+                              perRecipeGroups.map((group) => (
+                                <div key={group.productId} className="space-y-3">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <h4 className="text-sm font-sans font-extrabold text-white flex items-center gap-2">
+                                      <Droplets className="w-4 h-4 text-amber-400" />
+                                      <span>{group.name}</span>
+                                      <span className="text-[11px] font-mono font-bold text-stone-400">
+                                        {group.category}
+                                      </span>
+                                    </h4>
+                                    <span className="text-xs font-mono text-stone-300">
+                                      К изготовлению:{' '}
+                                      <span className="text-emerald-400 font-bold">
+                                        {(group.orderedMl / 1000 >= 1
+                                          ? `${(group.orderedMl / 1000).toFixed(2)} л`
+                                          : `${group.orderedMl.toFixed(0)} мл`)}
+                                      </span>{' '}
+                                      ({group.orderedBottles} шт.) · концентраты:{' '}
+                                      <span className="text-emerald-400 font-bold">
+                                        {group.totalMl.toFixed(1)} мл
+                                      </span>{' '}
+                                      · <span className="text-amber-400 font-bold">{Math.round(group.totalCost)} ₽</span>
+                                    </span>
+                                  </div>
 
-                              <div className="overflow-x-auto rounded-2xl border border-white/15 bg-black/40">
-                                <table className="w-full text-left border-collapse text-xs font-sans">
-                                  <thead>
-                                    <tr className="border-b border-white/20 bg-white/10 text-stone-200">
-                                      <th className="p-3 font-extrabold">Вендор (Vendor)</th>
-                                      <th className="p-3 font-extrabold">Ароматизатор</th>
-                                      <th className="p-3 text-center font-extrabold">Потребность (мл)</th>
-                                      <th className="p-3 text-center font-extrabold">Цена за 10мл (₽)</th>
-                                      <th className="p-3 text-right font-extrabold">Итого закупка (₽)</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {aggregatedList.length === 0 ? (
-                                      <tr>
-                                        <td colSpan={5} className="p-8 text-center text-stone-400 font-sans font-semibold">
-                                          Заказы отсутствуют или рецепты не заданы.
-                                        </td>
-                                      </tr>
-                                    ) : (
-                                      aggregatedList.map((item) => {
-                                        const key1 = `${item.vendor}:${item.name.toLowerCase()}`;
-                                        const key2 = `${item.vendor}_${item.name.toLowerCase()}`;
-                                        const priceRecord = flavorPrices.find((fp) => fp.key === key1 || fp.key === key2);
-                                        const pricePer10ml = priceRecord ? priceRecord.pricePer10ml : 100;
-                                        const cost = (item.totalMl / 10) * pricePer10ml;
-
-                                        return (
-                                          <tr key={item.key} className="border-b border-white/10 hover:bg-white/5 transition-colors">
+                                  <div className="overflow-x-auto rounded-2xl border border-white/15 bg-black/40">
+                                    <table className="w-full text-left border-collapse text-xs font-sans">
+                                      <thead>
+                                        <tr className="border-b border-white/20 bg-white/10 text-stone-200">
+                                          <th className="p-3 font-extrabold">Вендор (Vendor)</th>
+                                          <th className="p-3 font-extrabold">Ароматизатор</th>
+                                          <th className="p-3 text-center font-extrabold">% (мл на 100мл)</th>
+                                          <th className="p-3 text-center font-extrabold">Потребность (мл)</th>
+                                          <th className="p-3 text-center font-extrabold">Цена за 10мл (₽)</th>
+                                          <th className="p-3 text-right font-extrabold">Итого закупка (₽)</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {group.aromas.map((aroma, idx) => (
+                                          <tr
+                                            key={`${group.productId}-${idx}`}
+                                            className="border-b border-white/10 hover:bg-white/5 transition-colors"
+                                          >
                                             <td className="p-3 font-mono font-bold text-amber-300">
-                                              {item.vendor}
+                                              {aroma.vendor}
                                             </td>
                                             <td className="p-3 font-bold text-white">
-                                              {item.name}
+                                              {aroma.name}
+                                            </td>
+                                            <td className="p-3 text-center font-mono text-stone-300">
+                                              {((aroma.ml / group.orderedMl) * 100).toFixed(2)}
                                             </td>
                                             <td className="p-3 text-center font-mono font-extrabold text-emerald-400">
-                                              {item.totalMl.toFixed(1)} мл
+                                              {aroma.ml.toFixed(1)} мл
                                             </td>
                                             <td className="p-3 text-center">
                                               <input
                                                 type="number"
                                                 step="5"
-                                                value={pricePer10ml}
+                                                value={aroma.pricePer10ml}
                                                 onChange={(e) => {
                                                   const val = parseFloat(e.target.value) || 0;
-                                                  saveFlavorPrice(item.vendor, item.name, val);
+                                                  saveFlavorPrice(aroma.vendor, aroma.name, val);
                                                 }}
                                                 className="w-24 px-2.5 py-1.5 rounded-lg border border-white/15 bg-white/5 font-mono text-xs text-amber-400 text-center font-bold focus:outline-none focus:border-amber-400"
                                               />
                                             </td>
                                             <td className="p-3 text-right font-mono font-extrabold text-amber-400">
-                                              {Math.round(cost)} ₽
+                                              {Math.round(aroma.cost)} ₽
                                             </td>
                                           </tr>
-                                        );
-                                      })
-                                    )}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              ))
+                            )}
                           </div>
                         );
                       })()}
