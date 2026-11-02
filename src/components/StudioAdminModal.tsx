@@ -1,3 +1,5 @@
+import { flavorPurchaseCost } from '../utils/flavorPurchase';
+import { calculateOrderRevenue } from '../utils/orderRevenue';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { ProductItem, CollectionName, PlacedOrder, VolumeType, NicotineType, RecipeItem, isGalleryCollection, formatRatio } from '../types';
@@ -77,6 +79,10 @@ export const StudioAdminModal: React.FC = () => {
   const deleteProduct = useAppStore((state) => state.deleteProduct);
   const resetProducts = useAppStore((state) => state.resetProducts);
 
+  const archiveSettingsLoaded = useAppStore((state) => state.archiveSettingsLoaded);
+  const isArchiveSaving = useAppStore((state) => state.isArchiveSaving);
+  const archiveError = useAppStore((state) => state.archiveError);
+  const fetchArchiveSettings = useAppStore((state) => state.fetchArchiveSettings);
   const archivedCollections = useAppStore((state) => state.archivedCollections);
   const toggleArchiveCollection = useAppStore((state) => state.toggleArchiveCollection);
   const setArchiveAllCollections = useAppStore((state) => state.setArchiveAllCollections);
@@ -343,7 +349,7 @@ export const StudioAdminModal: React.FC = () => {
     (sum, order) => sum + order.items.reduce((iSum, item) => iSum + item.quantity, 0),
     0
   );
-  const totalRevenueSum = adminOrders.reduce((sum, order) => sum + order.subtotal, 0);
+  const totalRevenueSum = calculateOrderRevenue(adminOrders);
 
   // Render the inspection modal off the live row so applying a manual discount
   // updates the amount and the breakdown right away, without reopening.
@@ -852,6 +858,7 @@ export const StudioAdminModal: React.FC = () => {
                     </div>
 
                     <button
+                      disabled={isArchiveSaving || !archiveSettingsLoaded}
                       onClick={() => setArchiveAllCollections(!areAllCollectionsArchived)}
                       className={`px-5 py-2.5 rounded-xl font-sans font-extrabold text-xs transition-all cursor-pointer shadow-md ${
                         areAllCollectionsArchived
@@ -865,6 +872,13 @@ export const StudioAdminModal: React.FC = () => {
                     </button>
                   </div>
 
+                  {archiveError && (
+                    <div role="alert" className="text-sm text-rose-300 p-3 rounded-xl bg-rose-500/10 flex items-center justify-between gap-3">
+                      <span>{archiveError}</span>
+                      <button type="button" onClick={() => fetchArchiveSettings()} className="underline shrink-0 cursor-pointer">Повторить</button>
+                    </div>
+                  )}
+                  {isArchiveSaving && <p role="status" className="text-xs text-stone-400">Сохраняем статусы коллекций…</p>}
                   {/* Individual Collections Status Toggles */}
                   <div className="p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
                     <h4 className="text-xs font-sans uppercase font-extrabold text-stone-300 mb-3 tracking-wider">
@@ -891,6 +905,7 @@ export const StudioAdminModal: React.FC = () => {
                               </span>
                             </div>
                             <button
+                              disabled={isArchiveSaving || !archiveSettingsLoaded}
                               onClick={() => toggleArchiveCollection(col)}
                               className="w-full py-1.5 rounded-lg text-[11px] font-sans font-bold border cursor-pointer transition-colors bg-white/10 hover:bg-white/20 border-white/15"
                             >
@@ -1543,6 +1558,7 @@ export const StudioAdminModal: React.FC = () => {
                   {/* SUB-TAB 6.3.3: АРОМЫ (PER-RECIPE FLAVORINGS & COST CALCULATOR) */}
                   {prodSubTab === 'aromas' && (
                     <div className="space-y-6">
+                      <p className="text-sm text-stone-400">Закупка рассчитана целыми флаконами по 10 мл с округлением вверх.</p>
                       {(() => {
                         // Ordered liquid volume per product, summed over every user's
                         // orders: 15 bottles of a flavour at 120 ml means 1800 ml to
@@ -1569,7 +1585,7 @@ export const StudioAdminModal: React.FC = () => {
                           const key1 = `${vendor}:${name.toLowerCase()}`;
                           const key2 = `${vendor}_${name.toLowerCase()}`;
                           const priceRecord = flavorPrices.find((fp) => fp.key === key1 || fp.key === key2);
-                          return priceRecord ? priceRecord.pricePer10ml : 100;
+                          return priceRecord ? priceRecord.pricePer10ml : 200;
                         };
 
                         // One entry per flavour that has a recipe and at least one
@@ -1586,7 +1602,7 @@ export const StudioAdminModal: React.FC = () => {
                               const name = comp.name.trim().replace(/\s+/g, ' ');
                               const ml = orderedMl * (comp.mlPer100ml / 100);
                               const pricePer10ml = pricePer10mlFor(vendor, name);
-                              return { vendor, name, ml, pricePer10ml, cost: (ml / 10) * pricePer10ml };
+                              return { vendor, name, ml, pricePer10ml, cost: flavorPurchaseCost(ml, pricePer10ml) };
                             });
 
                             const totalMl = aromas.reduce((sum, a) => sum + a.ml, 0);

@@ -46,7 +46,9 @@ export const ProductDetailModal: React.FC = () => {
   const addToCart = useAppStore((state) => state.addToCart);
   const updateCartQuantity = useAppStore((state) => state.updateCartQuantity);
   const cart = useAppStore((state) => state.cart);
-  const isCollectionArchived = useAppStore((state) => state.isCollectionArchived);
+  const archivedCollections = useAppStore((state) => state.archivedCollections);
+  const archiveSettingsLoaded = useAppStore((state) => state.archiveSettingsLoaded);
+  const isCollectionArchived = (col: CollectionName) => !archiveSettingsLoaded || Boolean(archivedCollections[col]);
   const theme = useAppStore((state) => state.theme);
 
   const [selectedVolume, setSelectedVolume] = useState<VolumeType>('30ml');

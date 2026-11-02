@@ -87,6 +87,30 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
   const count = items.length;
   const angleStep = count > 0 ? 360 / count : 0;
 
+  // Use a native non-passive listener so the wheel rotates the shelf.
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node || count <= 1) return;
+    let lastStep = -Infinity;
+    let accumulated = 0;
+    const wheel = (event: WheelEvent) => {
+      if (event.ctrlKey || isDraggingRef.current) return;
+      event.preventDefault();
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      if (!delta) return;
+      const now = performance.now();
+      if (now - lastStep < 220) return;
+      accumulated += delta * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? node.clientHeight : 1);
+      if (Math.abs(accumulated) < 20) return;
+      const direction = Math.sign(accumulated);
+      setRotation(previous => (Math.round(previous / angleStep) - direction) * angleStep);
+      accumulated = 0;
+      lastStep = now;
+    };
+    node.addEventListener('wheel', wheel, { passive: false });
+    return () => node.removeEventListener('wheel', wheel);
+  }, [count, angleStep]);
+
   // The stage's perspective magnifies whichever card is at the front: a card
   // pushed `radius` toward the viewer is drawn 1200/(1200-radius) times its
   // real size. That factor is what actually has to fit the screen, so the card

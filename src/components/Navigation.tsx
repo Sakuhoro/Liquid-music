@@ -97,14 +97,14 @@ export const Navigation: React.FC = () => {
       </div>
 
       {/* Center Links: Admin Cabinet, Collections, Account */}
-      <nav className="flex flex-col md:flex-row items-center gap-2 sm:gap-6 md:gap-8 text-xs sm:text-sm font-medium max-w-full pb-1 sm:pb-0">
-        <div className="flex items-center gap-3 sm:gap-6 justify-center">
+      <nav className="grid grid-cols-2 md:flex md:flex-row items-center gap-x-3 gap-y-2 sm:gap-x-6 md:gap-8 text-xs sm:text-sm font-medium max-w-full pb-1 sm:pb-0">
+        <div className="contents">
           {/* Only visible when authenticated as ADMIN */}
           {isAdmin && (
             <button
               id="nav-link-studio"
               onClick={() => setIsStudioModalOpen(true)}
-              className={`shrink-0 min-h-[44px] px-2 hover:opacity-100 transition-all flex items-center gap-1.5 cursor-pointer font-bold text-amber-400 ${
+              className={`col-span-2 shrink-0 min-h-[44px] px-2 hover:opacity-100 transition-all flex items-center justify-center gap-1.5 cursor-pointer font-bold text-amber-400 ${
                 isDark ? 'hover:text-amber-300' : 'hover:text-amber-600'
               }`}
             >
@@ -136,8 +136,7 @@ export const Navigation: React.FC = () => {
         <button
           id="nav-link-account"
           onClick={handleAccountClick}
-          style={{ display: 'flex', justifyContent: 'center', marginInline: 'auto', width: 'fit-content' }}
-          className={`shrink-0 min-h-[44px] px-2 hover:opacity-100 transition-all items-center gap-1.5 cursor-pointer ${
+          className={`shrink-0 min-h-[44px] px-2 hover:opacity-100 transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             isDark ? 'text-stone-300 hover:text-white' : 'text-stone-700 hover:text-stone-950'
           }`}
         >

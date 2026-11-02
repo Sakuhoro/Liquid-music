@@ -78,7 +78,9 @@ export const CatalogView: React.FC = () => {
   const setInspectedProduct = useAppStore((state) => state.setInspectedProduct);
   const activeCollection = useAppStore((state) => state.activeCollection);
   const setActiveCollection = useAppStore((state) => state.setActiveCollection);
-  const isCollectionArchived = useAppStore((state) => state.isCollectionArchived);
+  const archivedCollections = useAppStore((state) => state.archivedCollections);
+  const archiveSettingsLoaded = useAppStore((state) => state.archiveSettingsLoaded);
+  const isCollectionArchived = (col: CollectionName) => !archiveSettingsLoaded || Boolean(archivedCollections[col]);
   const theme = useAppStore((state) => state.theme);
 
   const [searchQuery, setSearchQuery] = useState('');

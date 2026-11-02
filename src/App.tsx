@@ -44,7 +44,7 @@ export default function App() {
   const isBgMusicPlayingRef = useRef(isBgMusicPlaying);
   const isTrackPreviewPlaying = useAppStore((state) => state.isTrackPreviewPlaying);
   const BACKGROUND_MUSIC_VOLUME = 0.45;
-  const PREVIEW_DUCK_VOLUME = 0.04;
+
 
   useEffect(() => {
     isBgMusicPlayingRef.current = isBgMusicPlaying;
@@ -64,6 +64,20 @@ export default function App() {
     }
   }, [fetchProducts, fetchAudioSettings, fetchRecipes, fetchFlavorPrices, fetchPainGirlStories, setIsStudioModalOpen]);
 
+  // Refresh the shared archive on load, on return, and while the page is open.
+  useEffect(() => {
+    const refresh = () => { if (!document.hidden) useAppStore.getState().fetchArchiveSettings(); };
+    refresh();
+    const timer = window.setInterval(refresh, 15000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, []);
+
   // Sync document class for dark/light mode
   useEffect(() => {
     const root = document.documentElement;
@@ -82,7 +96,7 @@ export default function App() {
   // Autoplay Policy Handler (User Interaction Listener)
   useEffect(() => {
     const handleUserInteraction = () => {
-      if (isAutoplayBlockedRef.current && audioRef.current && isBgMusicPlayingRef.current) {
+      if (isAutoplayBlockedRef.current && audioRef.current && isBgMusicPlayingRef.current && !useAppStore.getState().isTrackPreviewPlaying && useAppStore.getState().activeCollection !== 'Pain Girl') {
         audioRef.current.play().then(() => {
           isAutoplayBlockedRef.current = false;
         }).catch(() => {});
@@ -115,7 +129,7 @@ export default function App() {
       // generic chord instead of the track — until a full manual reload.
       useAppStore.getState().fetchProducts();
 
-      if (audioRef.current && isBgMusicPlayingRef.current) {
+      if (audioRef.current && isBgMusicPlayingRef.current && !useAppStore.getState().isTrackPreviewPlaying && useAppStore.getState().activeCollection !== 'Pain Girl') {
         audioRef.current.play().catch(() => {
           isAutoplayBlockedRef.current = true;
         });
@@ -135,7 +149,7 @@ export default function App() {
   useEffect(() => {
     if (!audioRef.current) return;
 
-    if (!isBgMusicPlaying || activeCollection === 'Pain Girl') {
+    if (!isBgMusicPlaying || isTrackPreviewPlaying || document.hidden || activeCollection === 'Pain Girl') {
       audioRef.current.pause();
       return;
     }
@@ -158,15 +172,7 @@ export default function App() {
         isAutoplayBlockedRef.current = true;
       });
     }
-  }, [isBgMusicPlaying, currentMusicSrc, activeCollection]);
-
-  // Duck the ambient bed while a product card is previewing its own track. The
-  // level is lowered rather than the element paused so playback keeps its place
-  // and the autoplay-retry path above is not disturbed.
-  useEffect(() => {
-    if (!audioRef.current) return;
-    audioRef.current.volume = isTrackPreviewPlaying ? PREVIEW_DUCK_VOLUME : BACKGROUND_MUSIC_VOLUME;
-  }, [isTrackPreviewPlaying]);
+  }, [isBgMusicPlaying, currentMusicSrc, activeCollection, isTrackPreviewPlaying]);
 
   return (
     <main

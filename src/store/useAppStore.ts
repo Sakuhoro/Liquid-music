@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
+  RATIO_OPTIONS,
   ProductItem,
   CartItem,
   VolumeType,
@@ -63,7 +64,7 @@ function toPlacedOrder(row: any, currentUser: AuthUser | null): PlacedOrder {
       totalUnitPrice: item.totalUnitPrice,
       quantity: item.quantity,
     })),
-    subtotal: (row.total ?? row.subtotal) - (row.manualDiscount ?? 0),
+    subtotal: row.payableTotal ?? ((row.total ?? row.subtotal) - (row.manualDiscount ?? 0)),
     createdAt: new Date(row.createdAt).toLocaleString('ru-RU'),
     status: row.status,
     grossSubtotal: row.subtotal,
@@ -87,8 +88,13 @@ interface AppState {
   activeCollection: CollectionName | 'All';
   setActiveCollection: (col: CollectionName | 'All') => void;
   archivedCollections: Record<CollectionName, boolean>;
-  toggleArchiveCollection: (col: CollectionName) => void;
-  setArchiveAllCollections: (archived: boolean) => void;
+  archiveSettingsLoaded: boolean;
+  isArchiveSaving: boolean;
+  archiveError: string | null;
+  fetchArchiveSettings: () => Promise<void>;
+  saveArchiveSettings: (changes: Partial<Record<CollectionName, boolean>>) => Promise<void>;
+  toggleArchiveCollection: (col: CollectionName) => Promise<void>;
+  setArchiveAllCollections: (archived: boolean) => Promise<void>;
   isCollectionArchived: (col: CollectionName) => boolean;
 
   // Collection-Specific Cinematic Videos
@@ -166,6 +172,8 @@ interface AppState {
   addToCart: (product: ProductItem, volume: VolumeType, nicotine: NicotineType, ratio: RatioType) => void;
   removeFromCart: (itemId: string) => void;
   updateCartQuantity: (itemId: string, delta: number) => void;
+  updateCartNicotine: (itemId: string, nicotine: NicotineType) => void;
+  updateCartOptions: (itemId: string, options: Partial<Pick<CartItem, 'volume' | 'nicotine' | 'ratio'>>) => void;
   clearCart: () => void;
   getCartSubtotal: () => number;
   getCartItemCount: () => number;
@@ -236,6 +244,7 @@ interface AppState {
 // Bumped per add, so the playlist notice replays on every addition. A module
 // counter rather than one in state, since it is never read by the UI.
 let playlistToastSeq = 0;
+let archiveRequestSeq = 0;
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -443,28 +452,45 @@ export const useAppStore = create<AppState>()(
         'Permanent 2': false,
         'Pain Girl': false,
       },
-      toggleArchiveCollection: (col) =>
-        set((state) => ({
-          archivedCollections: {
-            ...state.archivedCollections,
-            [col]: !state.archivedCollections[col],
-          },
-        })),
-      setArchiveAllCollections: (archived) =>
-        set({
-          archivedCollections: {
-            Spring: archived,
-            Summer: archived,
-            Autumn: archived,
-            'Permanent 1': archived,
-            'Permanent 2': archived,
-            'Pain Girl': archived,
-          },
-        }),
-      isCollectionArchived: (col) => {
-        const { archivedCollections } = get();
-        return Boolean(archivedCollections?.[col]);
+      archiveSettingsLoaded: false,
+      isArchiveSaving: false,
+      archiveError: null,
+      fetchArchiveSettings: async () => {
+        if (get().isArchiveSaving) return;
+        const request = ++archiveRequestSeq;
+        try {
+          const response = await fetch('/api/collections/archive', { cache: 'no-store' });
+          if (!response.ok) throw new Error('Не удалось загрузить архив коллекций.');
+          const data = await response.json();
+          const names = Object.keys(get().archivedCollections) as CollectionName[];
+          if (!names.every(name => typeof data.archivedCollections?.[name] === 'boolean')) throw new Error('Некорректный ответ сервера.');
+          if (request === archiveRequestSeq) set({ archivedCollections: data.archivedCollections, archiveSettingsLoaded: true, archiveError: null });
+        } catch (error) {
+          if (request === archiveRequestSeq) set({ archiveError: error instanceof Error ? error.message : 'Не удалось загрузить архив.' });
+        }
       },
+      saveArchiveSettings: async (changes) => {
+        if (get().isArchiveSaving || !get().archiveSettingsLoaded) return;
+        ++archiveRequestSeq;
+        set({ isArchiveSaving: true, archiveError: null });
+        try {
+          const response = await fetch('/api/collections/archive', {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ changes }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || 'Не удалось сохранить архив коллекций.');
+          const names = Object.keys(get().archivedCollections) as CollectionName[];
+          if (!names.every(name => typeof data.archivedCollections?.[name] === 'boolean')) throw new Error('Некорректный ответ сервера.');
+          set({ archivedCollections: data.archivedCollections, archiveSettingsLoaded: true });
+        } catch (error) {
+          set({ archiveError: error instanceof Error ? error.message : 'Не удалось сохранить архив.' });
+        } finally { set({ isArchiveSaving: false }); }
+      },
+      toggleArchiveCollection: (col) => get().saveArchiveSettings({ [col]: !get().archivedCollections[col] }),
+      setArchiveAllCollections: (archived) => get().saveArchiveSettings(
+        Object.fromEntries(Object.keys(get().archivedCollections).map(name => [name, archived]))
+      ),
+      isCollectionArchived: (col) => !get().archiveSettingsLoaded || Boolean(get().archivedCollections[col]),
 
       // Collection-specific video feeds
       collectionVideos: DEFAULT_COLLECTION_VIDEOS,
@@ -650,6 +676,7 @@ export const useAppStore = create<AppState>()(
       setIsCartOpen: (isCartOpen) => set({ isCartOpen }),
 
       addToCart: (product, volume, nicotine, ratio) => {
+        if (get().isCollectionArchived(product.category)) return;
         // The ratio is part of the line's identity: the same flavour at 70/30
         // and at 80/20 are different bottles, so they must not merge into one
         // row when both are in the playlist.
@@ -721,6 +748,32 @@ export const useAppStore = create<AppState>()(
             .filter(Boolean) as CartItem[];
           return { cart: updated };
         }),
+
+      updateCartNicotine: (itemId, nicotine) => get().updateCartOptions(itemId, { nicotine }),
+      updateCartOptions: (itemId, options) => set((state) => {
+        const item = state.cart.find(row => row.id === itemId);
+        if (!item) return {};
+        const volume = options.volume ?? item.volume;
+        const nicotine = options.nicotine ?? item.nicotine;
+        const ratio = options.ratio ?? item.ratio;
+        if (!(volume in VOLUME_PRICING) || !(nicotine in NICOTINE_PRICING) || !RATIO_OPTIONS.includes(ratio)) return {};
+        if (volume === item.volume && nicotine === item.nicotine && ratio === item.ratio) return {};
+        // A set keeps its bottle volume; only individual bottles may resize.
+        if (item.setUnitPrice !== undefined && volume !== item.volume) return {};
+        const product = state.products.find(p => p.id === item.product.id) ?? item.product;
+        const setPrice = product.setPricing?.[nicotine];
+        if (item.setUnitPrice !== undefined && setPrice === undefined) return {};
+        const id = `${product.id}-${volume}-${nicotine}-${ratio}`;
+        const volumePrice = setPrice === undefined ? VOLUME_PRICING[volume] : 0;
+        const nicotinePrice = setPrice === undefined ? NICOTINE_PRICING[nicotine] : 0;
+        const ratioPrice = ratioSurcharge(ratio, product.category);
+        const updated = { ...item, id, product, volume, nicotine, ratio, volumePrice, nicotinePrice, ratioPrice,
+          setUnitPrice: setPrice, totalUnitPrice: (setPrice ?? volumePrice + nicotinePrice) + ratioPrice };
+        const existing = state.cart.find(row => row.id === id);
+        return { cart: existing
+          ? state.cart.filter(row => row.id !== itemId).map(row => row.id === id ? { ...updated, quantity: row.quantity + item.quantity } : row)
+          : state.cart.map(row => row.id === itemId ? updated : row) };
+      }),
 
       clearCart: () => set({ cart: [] }),
 

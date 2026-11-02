@@ -48,13 +48,13 @@ export function useTrackPreview(audioFile?: string | null): TrackPreview {
   }, [audioFile]);
 
   useEffect(() => {
+    const audio = audioRef.current;
     return () => {
-      const audio = audioRef.current;
       if (!audio) return;
       audio.pause();
       audio.currentTime = 0;
     };
-  }, []);
+  }, [audioFile]);
 
   // Prime the element as soon as the flavour opens so the first tap already has
   // a buffered track. iOS Safari refuses play() on an element that has never

@@ -1,14 +1,12 @@
 node_modules/
-build/
 dist/
-coverage/
-.DS_Store
-*.log
-.env*
-data/
-uploads/
-public/uploads/
+.env
+.env.*
 !.env.example
-
-# local scratch databases, never the live one in data/
-server/*.db
+state/
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.log
+*.bak*
