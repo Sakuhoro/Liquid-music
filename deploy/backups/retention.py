@@ -4,7 +4,7 @@ import datetime, json, re
 STAMP = re.compile(r'^\d{8}T\d{12}Z\.json\.age$')
 OBJECT = re.compile(r'^objects/[0-9a-f]{64}\.age$')
 
-def prune_snapshots(repo, current_name, current_objects, now, days=7):
+def prune_snapshots(repo, current_name, current_objects, now, days=7, keep_latest=False):
     if days < 1:
         raise ValueError('At least one day of retention is required')
     snapshots = repo / 'snapshots'
@@ -29,7 +29,7 @@ def prune_snapshots(repo, current_name, current_objects, now, days=7):
     expired = []
     for file in files:
         timestamp = datetime.datetime.strptime(file.name, '%Y%m%dT%H%M%S%fZ.json.age').replace(tzinfo=datetime.timezone.utc)
-        if file.name == current_name or timestamp >= cutoff:
+        if file.name == current_name or (not keep_latest and timestamp >= cutoff):
             retained[file.name] = index[file.name]
         else:
             expired.append(file)
@@ -50,4 +50,4 @@ def prune_snapshots(repo, current_name, current_objects, now, days=7):
     temporary = index_file.with_suffix('.tmp')
     temporary.write_text(json.dumps(retained, sort_keys=True))
     temporary.replace(index_file)
-    return {'retentionDays': days, 'snapshotsKept': len(retained), 'snapshotsRemoved': len(expired), 'objectsRemoved': removed_objects}
+    return {'retentionDays': None if keep_latest else days, 'retentionPolicy': 'latest_only' if keep_latest else 'days', 'snapshotsKept': len(retained), 'snapshotsRemoved': len(expired), 'objectsRemoved': removed_objects}

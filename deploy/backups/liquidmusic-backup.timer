@@ -1,10 +1,10 @@
 [Unit]
-Description=Hourly Liquid Music backup
+Description=Daily Liquid Music backup
 
 [Timer]
-OnCalendar=hourly
+OnCalendar=*-*-* 03:00:00 Europe/Moscow
 Persistent=true
-RandomizedDelaySec=120
+RandomizedDelaySec=0
 Unit=liquidmusic-backup.service
 
 [Install]

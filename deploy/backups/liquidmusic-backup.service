@@ -1,5 +1,5 @@
 [Unit]
-Description=Encrypted Liquid Music backup to GitHub
+Description=Daily encrypted Liquid Music backup to GitHub
 Wants=network-online.target
 After=network-online.target
 

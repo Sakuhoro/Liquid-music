@@ -64,13 +64,13 @@ def main():
         subprocess.run(['age', '-r', RECIPIENT, '-o', str(snapshots / (STAMP + '.json.age')), str(private_manifest)], check=True)
     retention = prune_snapshots(REPO, STAMP + '.json.age',
         [part['object'] for file in manifest['files'] for part in file['parts']],
-        datetime.datetime.now(datetime.timezone.utc), days=7)
+        datetime.datetime.now(datetime.timezone.utc), keep_latest=True)
     remote = git('ls-remote', '--heads', 'origin', 'server-backups').split()[0]
     git('add', '-A', 'objects', 'snapshots', 'snapshot-index.json')
     tree = git('write-tree')
     # Parentless history is deliberate: deleting files in normal Git history
     # does not remove old backups. Only the dedicated backup branch is rewritten.
-    commit = git('commit-tree', tree, '-m', 'Encrypted backup ' + STAMP + ' (7 day retention)')
+    commit = git('commit-tree', tree, '-m', 'Encrypted backup ' + STAMP + ' (latest snapshot only)')
     git('update-ref', 'HEAD', commit, git('rev-parse', 'HEAD'))
     summary = {'timestamp': STAMP, 'files': len(manifest['files']), 'gitCommit': commit, 'uploaded': False, **retention}
     status = ROOT / 'last-backup.json'
