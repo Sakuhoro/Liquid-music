@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Encrypted, deduplicated application backups to a dedicated Git branch."""
 import datetime, hashlib, json, os, pathlib, socket, sqlite3, subprocess, tempfile
+from retention import prune_snapshots
 
 APP = pathlib.Path('/opt/liquid-music')
 ROOT = pathlib.Path('/var/lib/liquidmusic-backup')
@@ -61,17 +62,27 @@ def main():
         snapshots = REPO / 'snapshots'
         snapshots.mkdir(exist_ok=True)
         subprocess.run(['age', '-r', RECIPIENT, '-o', str(snapshots / (STAMP + '.json.age')), str(private_manifest)], check=True)
-    git('add', 'objects', 'snapshots')
-    git('commit', '-m', 'Encrypted application backup ' + STAMP)
-    summary = {'timestamp': STAMP, 'files': len(manifest['files']), 'gitCommit': git('rev-parse', 'HEAD'), 'uploaded': False}
+    retention = prune_snapshots(REPO, STAMP + '.json.age',
+        [part['object'] for file in manifest['files'] for part in file['parts']],
+        datetime.datetime.now(datetime.timezone.utc), days=7)
+    remote = git('ls-remote', '--heads', 'origin', 'server-backups').split()[0]
+    git('add', '-A', 'objects', 'snapshots', 'snapshot-index.json')
+    tree = git('write-tree')
+    # Parentless history is deliberate: deleting files in normal Git history
+    # does not remove old backups. Only the dedicated backup branch is rewritten.
+    commit = git('commit-tree', tree, '-m', 'Encrypted backup ' + STAMP + ' (7 day retention)')
+    git('update-ref', 'HEAD', commit, git('rev-parse', 'HEAD'))
+    summary = {'timestamp': STAMP, 'files': len(manifest['files']), 'gitCommit': commit, 'uploaded': False, **retention}
     status = ROOT / 'last-backup.json'
     status.write_text(json.dumps(summary))
     try:
-        git('push', 'origin', 'HEAD:server-backups')
+        git('push', '--force-with-lease=refs/heads/server-backups:' + remote, 'origin', 'HEAD:server-backups')
     except subprocess.CalledProcessError:
         raise RuntimeError('Encrypted backup saved locally; GitHub push failed. Check deploy-key write access and network.') from None
     summary['uploaded'] = True
     status.write_text(json.dumps(summary))
+    git('reflog', 'expire', '--expire=now', '--all')
+    git('gc', '--prune=now', '--quiet')
     print(json.dumps(summary))
 
 if __name__ == '__main__':
