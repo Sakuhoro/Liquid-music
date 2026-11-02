@@ -9,6 +9,7 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - run: python3 -m py_compile deploy/backups/backup.py deploy/backups/restore.py
       - run: npm ci
       - run: npm run lint
       - run: npm run build

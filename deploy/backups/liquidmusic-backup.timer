@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly Liquid Music backup
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=120
+Unit=liquidmusic-backup.service
+
+[Install]
+WantedBy=timers.target
