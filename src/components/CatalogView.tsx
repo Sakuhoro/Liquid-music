@@ -54,7 +54,7 @@ const COLLECTION_CARDS = [
   {
     id: 'Permanent 2',
     title: 'Velvet Ditsortion',
-    description: 'Плотные гитарные риффы, бархатные басы и дерзкие мелодии, созданные чтобы зажечь ваш внутренний концерт.',
+    description: 'Плотные гитарные риффы, бархатные басы и дерзкие мелодии, чтобы зажечь ваш внутренний концерт.',
     image: '/uploads/velvet-distortion.png',
     badge: 'Постоянная коллекция',
     color: 'from-emerald-500/80 to-teal-900/80',
