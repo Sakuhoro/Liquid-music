@@ -53,8 +53,8 @@ const COLLECTION_CARDS = [
   },
   {
     id: 'Permanent 2',
-    title: 'Бархатный перегруз',
-    description: 'Nordic spearmint, frosted fir resins, and soothing aloe vera grape harmonies.',
+    title: 'Velvet Ditsortion',
+    description: 'Плотные гитарные риффы, бархатные басы и дерзкие мелодии, созданные чтобы зажечь ваш внутренний концерт.',
     image: '/uploads/velvet-distortion.png',
     badge: 'Постоянная коллекция',
     color: 'from-emerald-500/80 to-teal-900/80',
