@@ -1850,6 +1850,12 @@ export function deletePainGirlStory(frameId) {
   return { frameId };
 }
 
+// Supplier audit metadata is independent of manually edited prices.
+const supplierColumns = db.prepare('PRAGMA table_info(flavor_prices)').all();
+for (const [name, type] of [['supplierStatus','TEXT'], ['supplierUrl','TEXT'], ['supplierCheckedAt','TEXT'], ['packVolumeMl','REAL DEFAULT 10']]) {
+  if (!supplierColumns.some(column => column.name === name)) db.exec('ALTER TABLE flavor_prices ADD COLUMN ' + name + ' ' + type);
+}
+
 // Flavor Price operations
 export function getAllFlavorPrices() {
   const rows = db.prepare('SELECT * FROM flavor_prices').all();
@@ -1860,6 +1866,10 @@ export function getAllFlavorPrices() {
     pricePer10ml: row.pricePer10ml,
     currency: row.currency || 'RUB',
     updatedAt: row.updatedAt,
+    supplierStatus: row.supplierStatus,
+    supplierUrl: row.supplierUrl,
+    supplierCheckedAt: row.supplierCheckedAt,
+    packVolumeMl: row.packVolumeMl || 10,
   }));
 }
 

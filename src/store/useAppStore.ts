@@ -397,6 +397,7 @@ export const useAppStore = create<AppState>()(
         set((state) => {
           const existingIndex = state.flavorPrices.findIndex((fp) => fp.key === key);
           const newPrice: FlavorPrice = {
+            ...(existingIndex >= 0 ? state.flavorPrices[existingIndex] : {}),
             key,
             vendor: vendor.trim(),
             name: name.trim(),

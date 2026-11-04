@@ -1,7 +1,6 @@
-// Flavorings are purchased as whole 10 ml bottles. Small floating-point noise
-// at an exact multiple of 10 ml must not add another bottle to the purchase.
-export function flavorPurchaseCost(requiredMl: number, pricePer10ml: number): number {
+// Purchase whole bottles of the supplier's actual pack size.
+export function flavorPurchaseCost(requiredMl: number, bottlePrice: number, packVolumeMl = 10): number {
   if (!Number.isFinite(requiredMl) || requiredMl <= 0) return 0;
-  const bottles = Math.max(1, Math.ceil(requiredMl / 10 - 1e-9));
-  return bottles * pricePer10ml;
+  if (!Number.isFinite(packVolumeMl) || packVolumeMl <= 0) return 0;
+  return Math.max(1, Math.ceil(requiredMl / packVolumeMl - 1e-9)) * bottlePrice;
 }
