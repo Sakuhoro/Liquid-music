@@ -106,6 +106,11 @@ function syncFileToGit(filepath, originalName) {
 }
 
 // Serve uploaded files statically
+// Carousel variants use content hashes; cache them without revalidating originals.
+app.use('/uploads/carousel', express.static(path.join(uploadsDir, 'carousel'), {
+  maxAge: '1y',
+  immutable: true,
+}))
 app.use('/uploads', express.static(uploadsDir))
 
 // API Health
