@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.join(__dirname, '..', 'data');
+const dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(__dirname, '..', 'data');
 const uploadsDir = path.join(dataDir, 'uploads');
 
 if (!fs.existsSync(dataDir)) {
@@ -18,6 +18,20 @@ if (!fs.existsSync(uploadsDir)) {
 
 const dbPath = path.join(dataDir, 'liquid_music.db');
 const db = new Database(dbPath);
+
+// The outbox entry is committed in the same transaction as a new order.
+db.exec(`CREATE TABLE IF NOT EXISTS order_notifications (
+  orderId TEXT PRIMARY KEY,
+  state TEXT NOT NULL DEFAULT 'pending',
+  attempts INTEGER NOT NULL DEFAULT 0,
+  nextAttemptAt INTEGER NOT NULL DEFAULT 0,
+  leaseUntil INTEGER NOT NULL DEFAULT 0,
+  nextPart INTEGER NOT NULL DEFAULT 0,
+  messageId INTEGER,
+  lastError TEXT,
+  createdAt TEXT NOT NULL,
+  sentAt TEXT
+); CREATE INDEX IF NOT EXISTS idx_order_notifications_due ON order_notifications(state, nextAttemptAt);`);
 
 // Initialize database schema
 db.exec(`
@@ -1603,10 +1617,11 @@ function seedRecipesAndPrices() {
 }
 
 function seedUsers() {
-  const adminTelegram = 'white_blooming';
+  const adminTelegram = (process.env.ADMIN_TELEGRAM || 'white_blooming').replace(/^@/, '');
   const existingAdmin = db.prepare('SELECT * FROM users WHERE telegramId = ?').get(adminTelegram);
   if (!existingAdmin) {
-    const adminPass = '365Dca586';
+    const adminPass = process.env.ADMIN_PASSWORD;
+    if (!adminPass) return;
     const hash = bcrypt.hashSync(adminPass, 10);
     const id = crypto.randomUUID ? crypto.randomUUID() : 'admin-' + Date.now();
     // Identity is intentionally not hardcoded here: a seeded name and phone
@@ -1835,6 +1850,12 @@ export function deletePainGirlStory(frameId) {
   return { frameId };
 }
 
+// Supplier audit metadata is independent of manually edited prices.
+const supplierColumns = db.prepare('PRAGMA table_info(flavor_prices)').all();
+for (const [name, type] of [['supplierStatus','TEXT'], ['supplierUrl','TEXT'], ['supplierCheckedAt','TEXT'], ['packVolumeMl','REAL DEFAULT 10']]) {
+  if (!supplierColumns.some(column => column.name === name)) db.exec('ALTER TABLE flavor_prices ADD COLUMN ' + name + ' ' + type);
+}
+
 // Flavor Price operations
 export function getAllFlavorPrices() {
   const rows = db.prepare('SELECT * FROM flavor_prices').all();
@@ -1845,6 +1866,10 @@ export function getAllFlavorPrices() {
     pricePer10ml: row.pricePer10ml,
     currency: row.currency || 'RUB',
     updatedAt: row.updatedAt,
+    supplierStatus: row.supplierStatus,
+    supplierUrl: row.supplierUrl,
+    supplierCheckedAt: row.supplierCheckedAt,
+    packVolumeMl: row.packVolumeMl || 10,
   }));
 }
 
@@ -2030,6 +2055,8 @@ export function createOrder({ userId, items, status = 'Pending Verification' }) 
       payload.userId
     );
 
+    db.prepare('INSERT INTO order_notifications (orderId, createdAt) VALUES (?, ?)').run(orderId, now);
+
     return { id, orderId, subtotal, discountPct: tier.pct, discountAmount, total, status, createdAt: now };
   });
 
@@ -2073,6 +2100,7 @@ export function deleteTestOrder(businessOrderId) {
   const remove = db.transaction((row) => {
     // order_items.orderId holds the orders.id key, not the LM-... number.
     db.prepare('DELETE FROM order_items WHERE orderId = ?').run(row.id);
+    db.prepare('DELETE FROM order_notifications WHERE orderId = ?').run(businessOrderId);
     db.prepare('DELETE FROM orders WHERE id = ?').run(row.id);
 
     const { total } = db

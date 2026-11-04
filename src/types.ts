@@ -179,6 +179,10 @@ export interface Recipe {
 }
 
 export interface FlavorPrice {
+  supplierStatus?: 'available' | 'out_of_stock' | 'not_found' | 'unconfirmed' | 'price_unconfirmed' | 'no_10ml';
+  supplierUrl?: string;
+  supplierCheckedAt?: string;
+  packVolumeMl?: number;
   key: string;
   vendor: string;
   name: string;

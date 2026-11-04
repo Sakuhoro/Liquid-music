@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Disc, Sparkles } from 'lucide-react';
+import { useCarouselActivity } from '../../hooks/useCarouselActivity';
+import { carouselImageProps, carouselImageAspect } from '../../utils/carouselImages';
 import { getItemScale } from '../../utils/vinylScale';
 import { sanitizeRussianText } from '../../utils/sanitizeText';
 import { CollectionName, getCollectionTitle } from '../../types';
@@ -69,6 +71,10 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const isCarouselActive = useCarouselActivity(containerRef);
+  const reduceMotion = useReducedMotion();
+  const wakeAnimationRef = useRef<() => void>(() => {});
+
   // Current scroll position in "index step" units (float)
   const targetPosRef = useRef(0);
   const currentPosRef = useRef(0);
@@ -83,9 +89,9 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
   const dragStartClientRef = useRef({ x: 0, y: 0 });
   const dragStartPosRef = useRef(0);
 
-  const [renderPos, setRenderPos] = useState(0);
-  const [pointerOffset, setPointerOffset] = useState({ x: 0, y: 0 });
-  const [scrollVelocity, setScrollVelocity] = useState(0);
+  const [{ renderPos, pointerOffset, scrollVelocity }, setFrame] = useState({
+    renderPos: 0, pointerOffset: { x: 0, y: 0 }, scrollVelocity: 0,
+  });
   const [hoveredItemId, setHoveredItemId] = useState<string | number | null>(null);
   // Intrinsic aspect ratio (naturalWidth / naturalHeight) of every artwork that
   // has finished loading, keyed by image src. Drives the automatic label fit.
@@ -127,7 +133,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
     [itemCount, infinite]
   );
 
-  const activeIndex = Math.round(getWrappedIndex(renderPos));
+  const activeIndex = getWrappedIndex(Math.round(renderPos));
   const activeItem = items[activeIndex];
 
   // Notify active index change
@@ -139,44 +145,54 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
     }
   }, [activeIndex, onIndexChange]);
 
-  // Main animation loop
+  // Schedule frames only while motion is still converging or autoplay is active.
   useEffect(() => {
-    let animId: number;
-    let lastTime = performance.now();
-
-    const updateLoop = (now: number) => {
-      const dt = Math.min((now - lastTime) / 1000, 0.1);
-      lastTime = now;
-
-      // Auto scroll if enabled
-      if (autoScroll !== 0 && (!pauseOnHover || !isHoveredRef.current)) {
-        targetPosRef.current += (autoScroll / spacing) * dt;
+    let animId: number | null = null;
+    let lastTime = 0;
+    let disposed = false;
+    const wake = () => {
+      if (isCarouselActive && !disposed && animId === null) {
+        lastTime = 0;
+        animId = requestAnimationFrame(updateLoop);
       }
-
-      // Smooth pos damping towards targetPos
-      const diff = targetPosRef.current - currentPosRef.current;
-      const easing = 1 - Math.pow(1 - Math.min(1, 1 - smooth), dt * 60);
-      currentPosRef.current += diff * easing;
-
-      // Track scroll velocity for tilt and pulse
-      const vel = (targetPosRef.current - currentPosRef.current) * 10;
-      velocityRef.current = velocityRef.current * 0.8 + vel * 0.2;
-
-      // Smooth pointer parallax damping
-      const p = pointerRef.current;
-      p.x += (p.targetX - p.x) * 0.1;
-      p.y += (p.targetY - p.y) * 0.1;
-
-      setRenderPos(currentPosRef.current);
-      setPointerOffset({ x: p.x, y: p.y });
-      setScrollVelocity(velocityRef.current);
-
-      animId = requestAnimationFrame(updateLoop);
     };
-
-    animId = requestAnimationFrame(updateLoop);
-    return () => cancelAnimationFrame(animId);
-  }, [spacing, smooth, autoScroll, pauseOnHover]);
+    const updateLoop = (now: number) => {
+      animId = null;
+      const dt = lastTime ? Math.min((now - lastTime) / 1000, 0.05) : 1 / 60;
+      lastTime = now;
+      const autoplaying = !reduceMotion && autoScroll !== 0 && (!pauseOnHover || !isHoveredRef.current);
+      if (autoplaying) targetPosRef.current += (autoScroll / spacing) * dt;
+      const diff = targetPosRef.current - currentPosRef.current;
+      const easing = reduceMotion ? 1 : 1 - Math.pow(Math.min(0.999, Math.max(0, smooth)), dt * 60);
+      currentPosRef.current += diff * easing;
+      const vel = (targetPosRef.current - currentPosRef.current) * 10;
+      velocityRef.current = reduceMotion ? 0 : velocityRef.current * 0.8 + vel * 0.2;
+      const p = pointerRef.current;
+      if (reduceMotion) p.targetX = p.targetY = 0;
+      const pointerEasing = reduceMotion ? 1 : 1 - Math.pow(0.9, dt * 60);
+      p.x += (p.targetX - p.x) * pointerEasing;
+      p.y += (p.targetY - p.y) * pointerEasing;
+      const moving = Math.abs(targetPosRef.current - currentPosRef.current) > 0.0001 ||
+        Math.abs(velocityRef.current) > 0.001 || Math.abs(p.targetX - p.x) > 0.0005 || Math.abs(p.targetY - p.y) > 0.0005;
+      if (!moving) {
+        currentPosRef.current = targetPosRef.current;
+        velocityRef.current = 0;
+        p.x = p.targetX; p.y = p.targetY;
+      }
+      setFrame(previous => previous.renderPos === currentPosRef.current && previous.scrollVelocity === velocityRef.current &&
+        previous.pointerOffset.x === p.x && previous.pointerOffset.y === p.y ? previous : {
+          renderPos: currentPosRef.current, scrollVelocity: velocityRef.current, pointerOffset: { x: p.x, y: p.y },
+        });
+      if ((moving || autoplaying) && !disposed) animId = requestAnimationFrame(updateLoop);
+    };
+    wakeAnimationRef.current = wake;
+    wake();
+    return () => {
+      disposed = true;
+      if (animId !== null) cancelAnimationFrame(animId);
+      wakeAnimationRef.current = () => {};
+    };
+  }, [spacing, smooth, autoScroll, pauseOnHover, isCarouselActive, reduceMotion]);
 
   // Event handlers for mouse wheel & drag
   useEffect(() => {
@@ -184,6 +200,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
     if (!el) return;
 
     const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || itemCount <= 1) return;
       e.preventDefault();
       const delta = (e.deltaY * 0.0025 * wheelSpeed);
       let next = targetPosRef.current + delta;
@@ -191,6 +208,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
         next = Math.max(-0.2, Math.min(itemCount - 0.8, next));
       }
       targetPosRef.current = next;
+      wakeAnimationRef.current();
     };
 
     const handlePointerMove = (e: PointerEvent) => {
@@ -199,6 +217,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
       const ny = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
       pointerRef.current.targetX = nx;
       pointerRef.current.targetY = ny;
+      wakeAnimationRef.current();
 
       if (isPointerDownRef.current) {
         const dx = e.clientX - dragStartClientRef.current.x;
@@ -221,6 +240,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
             next = Math.max(-0.2, Math.min(itemCount - 0.8, next));
           }
           targetPosRef.current = next;
+      wakeAnimationRef.current();
         }
       }
     };
@@ -241,11 +261,13 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
         } catch (_) {}
         // Snap smoothly to nearest item index upon release
         targetPosRef.current = Math.round(targetPosRef.current);
+        wakeAnimationRef.current();
       }
     };
 
     const handleMouseEnter = () => {
       isHoveredRef.current = true;
+      wakeAnimationRef.current();
     };
 
     const handleMouseLeave = () => {
@@ -253,6 +275,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
       pointerRef.current.targetX = 0;
       pointerRef.current.targetY = 0;
       setHoveredItemId(null);
+      wakeAnimationRef.current();
     };
 
     el.addEventListener('wheel', handleWheel, { passive: false });
@@ -293,9 +316,9 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
 
           if (infinite) {
             // Continuous loop offset wrapping
-            const half = itemCount / 2;
-            while (stepOffset > half) stepOffset -= itemCount;
-            while (stepOffset < -half) stepOffset += itemCount;
+            stepOffset %= itemCount;
+            if (stepOffset > itemCount / 2) stepOffset -= itemCount;
+            if (stepOffset < -itemCount / 2) stepOffset += itemCount;
           }
 
           // Beyond visibility ranges, don't render
@@ -350,7 +373,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                 opacity: Math.max(0, Math.min(1, opacity)),
                 zIndex: Math.round(1000 - Math.abs(stepOffset) * 100),
                 transformStyle: 'preserve-3d',
-                transition: isDraggingRef.current ? 'none' : 'transform 0.15s ease-out',
+                willChange: 'transform, opacity',
               }}
               className="group flex items-center justify-center cursor-pointer relative"
             >
@@ -360,6 +383,7 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                   isFocused ? 'shadow-[0_0_40px_rgba(251,191,36,0.35)]' : ''
                 }`}
                 style={{
+                  animationPlayState: isCarouselActive && !reduceMotion ? 'running' : 'paused',
                   backgroundImage:
                     'repeating-radial-gradient(#111, #111 4px, #252525 5px, #111 6px)',
                   boxShadow:
@@ -369,10 +393,12 @@ export const DollyGallery: React.FC<DollyGalleryProps> = ({
                 {/* Vinyl Central Label (80% circle) */}
                 <div className="vinyl-label relative w-[80%] h-[80%] rounded-full flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.8)] border border-amber-400/30">
                   <img
-                    src={item.image}
+                    {...carouselImageProps(item.image, effectiveItemWidth * 0.8)}
+                    loading="eager"
+                    fetchPriority={isFocused ? 'high' : 'low'}
                     alt={item.name}
                     onLoad={(e) => measureArtwork(item.image, e.currentTarget)}
-                    style={{ transform: `scale(${getItemScale(item, artworkAspects[item.image])})` }}
+                    style={{ transform: `scale(${getItemScale(item, carouselImageAspect(item.image) ?? artworkAspects[item.image])})` }}
                     className="w-full h-full object-cover rounded-full pointer-events-none transition-transform duration-300"
                   />
                 </div>

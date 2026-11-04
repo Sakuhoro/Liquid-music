@@ -55,3 +55,8 @@
     border-radius: 1rem;
   }
 }
+
+.collection-carousel-wrapper[data-carousel-active="false"] .animate-spin { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .collection-carousel-card, .collection-carousel-card img { transition: none; }
+}

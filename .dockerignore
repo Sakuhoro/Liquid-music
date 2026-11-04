@@ -1,0 +1,14 @@
+.git
+node_modules
+dist
+state
+data
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.bak*
+*.log
+verification_*.png
+tests

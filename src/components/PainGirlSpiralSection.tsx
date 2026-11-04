@@ -55,6 +55,7 @@ const BUNDLE_NICOTINE: NicotineType[] = ['0mg', '3mg', '6mg'];
  * to say once per mount -- leaving the collection and coming back plays it again.
  */
 export const PainGirlSpiralSection: React.FC = () => {
+  const isArchived = useAppStore(state => !state.archiveSettingsLoaded || state.archivedCollections['Pain Girl']);
   const products = useAppStore((state) => state.products);
   const addToCart = useAppStore((state) => state.addToCart);
   const setIsCartOpen = useAppStore((state) => state.setIsCartOpen);
@@ -234,6 +235,7 @@ export const PainGirlSpiralSection: React.FC = () => {
   // bundle product, the set pricing the server charges for the six singles, and
   // the cart opening itself afterwards. Only the button's label moved.
   const handleAddBundleToCart = () => {
+    if (isArchived) return;
     const bundleProduct: ProductItem = {
       id: 'pain-girl-bundle',
       name: 'Коллекция Pain Girl (6 х 60ml)',
@@ -299,7 +301,7 @@ export const PainGirlSpiralSection: React.FC = () => {
             top of a picture; giving the control its own height instead keeps the
             spiral clear on every screen. It sits right so it reads as the same
             corner control the other collections carry. */}
-        <div className="relative z-30 w-full flex justify-end px-4 sm:px-8 pt-2 min-[769px]:pt-3">
+        <div className="relative z-30 w-full hidden md:flex justify-end px-4 sm:px-8 pt-2 min-[769px]:pt-3">
           <button
             type="button"
             onClick={backToAllCollections}
@@ -394,11 +396,7 @@ export const PainGirlSpiralSection: React.FC = () => {
               <span className="font-mono text-xs uppercase tracking-wider font-bold text-amber-400 pt-2">
                 {String(activeStoryFrame + 1).padStart(2, '0')} / {String(PAIN_GIRL_GALLERY.length).padStart(2, '0')}
               </span>
-              {/* The "back to the collections" control. On a desktop it stays up
-                  here in the corner; on a phone it moves to the bottom of the
-                  modal, into the footer action stack, so the thumb does not have
-                  to reach for the top of the sheet. The two copies never show
-                  together: each is hidden where the other is shown. */}
+              {/* Desktop return control; mobile uses the Collections link in the header. */}
               <button
                 type="button"
                 onClick={backToAllCollections}
@@ -506,24 +504,14 @@ export const PainGirlSpiralSection: React.FC = () => {
               <button
                 type="button"
                 onClick={handleAddBundleToCart}
+                disabled={isArchived}
                 className="w-full min-h-[52px] py-4 px-6 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-mono font-extrabold text-xs sm:text-sm md:text-base uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-lg shadow-amber-400/20 md:w-auto md:min-w-[320px] md:justify-center"
               >
-                Добавить истории в плейлист ({bundlePrice} руб.)
+                {isArchived ? 'Коллекция в архиве' : `Добавить истории в плейлист (${bundlePrice} руб.)`}
               </button>
             </div>
 
-            {/* The mobile copy of the return control, at the bottom of the action
-                stack. Hidden on a desktop, where the corner copy shows instead. */}
-            <div className="md:hidden">
-              <button
-                type="button"
-                onClick={backToAllCollections}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-[#181818] hover:bg-amber-400 border border-[#333] hover:border-amber-300 text-stone-200 hover:text-slate-950 font-mono text-[11px] uppercase tracking-wider font-bold transition-all duration-300 cursor-pointer"
-              >
-                Вернуться ко всем коллекциям
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+
           </div>
           </div>
           </div>,

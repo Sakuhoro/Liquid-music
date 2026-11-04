@@ -1,16 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { formatRatio } from '../types';
+import { formatRatio, NicotineType, VolumeType, RatioType, RATIO_OPTIONS } from '../types';
 import Shredder from './ui/Shredder';
+import './CartDrawer.css';
+import { NICOTINE_PRICING, VOLUME_PRICING } from '../data/products';
 import {
   X,
-  Trash2,
   Plus,
   Minus,
   Disc3,
   ArrowRight,
   Sparkles,
   AlertCircle,
+  ChevronDown,
 } from 'lucide-react';
 
 // Ticks the number up to its new value instead of snapping, so a change in
@@ -73,6 +75,7 @@ export const CartDrawer: React.FC = () => {
   const setIsCartOpen = useAppStore((state) => state.setIsCartOpen);
   const cart = useAppStore((state) => state.cart);
   const updateCartQuantity = useAppStore((state) => state.updateCartQuantity);
+  const updateCartOptions = useAppStore((state) => state.updateCartOptions);
   const removeFromCart = useAppStore((state) => state.removeFromCart);
   const getCartSubtotal = useAppStore((state) => state.getCartSubtotal);
   const placeOrder = useAppStore((state) => state.placeOrder);
@@ -111,7 +114,7 @@ export const CartDrawer: React.FC = () => {
   };
 
   const surface = isDark ? 'var(--hall-surface)' : 'var(--hall-surface)';
-  const raised = isDark ? 'var(--hall-surface-raised)' : 'var(--hall-surface-raised)';
+
 
   return (
     <div
@@ -183,105 +186,84 @@ export const CartDrawer: React.FC = () => {
             // back into the store only once the tear has finished, and the trash
             // button below is still there for anyone who would rather not throw.
             <Shredder
+              className="hall-playlist"
               items={cart}
               tone={isDark ? 'dark' : 'light'}
               getKey={(item) => item.id}
               onShred={(item) => removeFromCart(item.id)}
               renderItem={(item, index) => (
-                <div
-                  className="hall-list-in p-4 rounded-2xl border flex gap-3.5"
-                  style={{
-                    background: raised,
-                    borderColor: 'var(--hall-border)',
-                    // Stagger is capped at six rows so a full satchel does not
-                    // crawl in.
-                    animationDelay: `${Math.min(index, 6) * 45}ms`,
-                  }}
+                <article
+                  className="playlist-line hall-list-in"
+                  aria-label={item.product.name}
+                  style={{ animationDelay: `${Math.min(index, 6) * 35}ms` }}
                 >
-                  <img
-                    src={item.product.image}
-                    alt={item.product.name}
-                    className="w-24 h-24 sm:w-16 sm:h-16 rounded-xl object-cover shrink-0"
-                    style={{ border: '1px solid var(--hall-border)' }}
-                  />
+                  <div className="playlist-line__art">
+                    <img src={item.product.image} alt="" />
+                  </div>
+                  <h4 className="playlist-line__title">{item.product.name}</h4>
+                  <button
+                    type="button"
+                    onClick={() => removeFromCart(item.id)}
+                    aria-label={`Убрать ${item.product.name}`}
+                    className="playlist-line__remove"
+                  >
+                    <X size={16} strokeWidth={1.5} />
+                  </button>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-serif hall-text-base font-semibold leading-snug truncate">
-                        {item.product.name}
-                      </h4>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        aria-label={`Убрать ${item.product.name}`}
-                        className="hall-focusable p-1 transition-colors cursor-pointer"
-                        style={{ color: 'var(--hall-text-faint)' }}
+                  <p className="playlist-line__description">{item.product.description}</p>
+                  <div className="playlist-line__details">
+                    {item.setUnitPrice !== undefined ? (
+                      <span>Сет · {item.volume.replace('ml', ' мл')}</span>
+                    ) : (
+                      <label className="playlist-line__strength playlist-line__volume">
+                        <span className="sr-only">Объём флакона: {item.product.name}</span>
+                        <select aria-label={`Объём флакона: ${item.product.name}`} value={item.volume}
+                          onChange={(event) => updateCartOptions(item.id, { volume: event.target.value as VolumeType })}>
+                          {(Object.keys(VOLUME_PRICING) as VolumeType[]).map(volume => <option key={volume} value={volume}>{volume.replace('ml', ' мл')}</option>)}
+                        </select>
+                        <ChevronDown size={12} aria-hidden="true" />
+                      </label>
+                    )}
+                    <span aria-hidden="true" className="playlist-line__dot">·</span>
+                    <label className="playlist-line__strength">
+                      <span className="sr-only">Крепость: {item.product.name}</span>
+                      <select
+                        aria-label={`Крепость: ${item.product.name}`}
+                        value={item.nicotine}
+                        onChange={(event) => updateCartOptions(item.id, { nicotine: event.target.value as NicotineType })}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        {(Object.keys(NICOTINE_PRICING) as NicotineType[])
+                          .filter(nicotine => item.setUnitPrice === undefined || item.product.setPricing?.[nicotine] !== undefined)
+                          .map(nicotine => <option key={nicotine} value={nicotine}>{nicotine.replace('mg', ' мг')}</option>)}
+                      </select>
+                      <ChevronDown size={12} aria-hidden="true" />
+                    </label>
+                    <span aria-hidden="true" className="playlist-line__dot">·</span>
+                    <label className="playlist-line__strength playlist-line__ratio">
+                      <span className="sr-only">Соотношение: {item.product.name}</span>
+                      <select aria-label={`Соотношение: ${item.product.name}`} value={item.ratio}
+                        onChange={(event) => updateCartOptions(item.id, { ratio: event.target.value as RatioType })}>
+                        {RATIO_OPTIONS.map(ratio => <option key={ratio} value={ratio}>{formatRatio(ratio)}</option>)}
+                      </select>
+                      <ChevronDown size={12} aria-hidden="true" />
+                    </label>
+                  </div>
+
+                  <div className="playlist-line__bottom">
+                    <div className="playlist-line__quantity" role="group" aria-label={`Количество: ${item.product.name}`}>
+                      <button type="button" onClick={() => updateCartQuantity(item.id, -1)} aria-label={`Уменьшить количество: ${item.product.name}`}>
+                        <Minus size={13} strokeWidth={1.6} />
+                      </button>
+                      <span aria-live="polite" aria-atomic="true">{item.quantity}</span>
+                      <button type="button" onClick={() => updateCartQuantity(item.id, 1)} aria-label={`Увеличить количество: ${item.product.name}`}>
+                        <Plus size={13} strokeWidth={1.6} />
                       </button>
                     </div>
-
-                    <div className="flex items-center gap-2 mt-1.5 hall-text-2xs font-mono" style={{ color: 'var(--hall-varnish)' }}>
-                      {item.setUnitPrice === undefined ? (
-                        <>
-                          <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
-                            {item.volume} · {item.volumePrice}₽
-                          </span>
-                          <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
-                            {item.nicotine} · +{item.nicotinePrice}₽
-                          </span>
-                          <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
-                            PG\VG {formatRatio(item.ratio)}{item.ratioPrice > 0 ? ` · +${item.ratioPrice}₽` : ''}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="px-1.5 py-0.5 rounded-md" style={{ background: 'var(--hall-varnish-soft)' }}>
-                          Сет {item.volume} · {item.nicotine}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between mt-3">
-                      <div
-                        className="flex items-center gap-1 rounded-lg p-1 hall-focusable"
-                        style={{ background: 'var(--hall-border)' }}
-                      >
-                        <button
-                          onClick={() => updateCartQuantity(item.id, -1)}
-                          aria-label="Уменьшить количество"
-                          className="w-5 h-5 rounded flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
-                          style={{ background: 'var(--hall-surface)' }}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="hall-text-sm font-mono font-bold w-5 text-center">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateCartQuantity(item.id, 1)}
-                          aria-label="Увеличить количество"
-                          className="w-5 h-5 rounded flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
-                          style={{ background: 'var(--hall-surface)' }}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      <div className="text-right">
-                        <span
-                          className="font-sans tabular-nums hall-text-base font-bold"
-                          style={{ color: 'var(--hall-varnish)' }}
-                        >
-                          {formatRub(item.totalUnitPrice * item.quantity)} ₽
-                        </span>
-                        {item.quantity > 1 && (
-                          <div className="hall-text-2xs font-sans tabular-nums font-medium" style={{ color: 'var(--hall-text-faint)' }}>
-                            {formatRub(item.totalUnitPrice)} ₽ / шт
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <span className="playlist-line__price" aria-label={`Стоимость ${item.product.name}: ${formatRub(item.totalUnitPrice * item.quantity)} рублей`}>
+                      {formatRub(item.totalUnitPrice * item.quantity)} <span>₽</span>
+                    </span>
                   </div>
-                </div>
+                </article>
               )}
             />
           )}

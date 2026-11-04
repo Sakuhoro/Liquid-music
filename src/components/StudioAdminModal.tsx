@@ -1,3 +1,5 @@
+import { flavorPurchaseCost } from '../utils/flavorPurchase';
+import { calculateOrderRevenue } from '../utils/orderRevenue';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { ProductItem, CollectionName, PlacedOrder, VolumeType, NicotineType, RecipeItem, isGalleryCollection, formatRatio } from '../types';
@@ -77,6 +79,10 @@ export const StudioAdminModal: React.FC = () => {
   const deleteProduct = useAppStore((state) => state.deleteProduct);
   const resetProducts = useAppStore((state) => state.resetProducts);
 
+  const archiveSettingsLoaded = useAppStore((state) => state.archiveSettingsLoaded);
+  const isArchiveSaving = useAppStore((state) => state.isArchiveSaving);
+  const archiveError = useAppStore((state) => state.archiveError);
+  const fetchArchiveSettings = useAppStore((state) => state.fetchArchiveSettings);
   const archivedCollections = useAppStore((state) => state.archivedCollections);
   const toggleArchiveCollection = useAppStore((state) => state.toggleArchiveCollection);
   const setArchiveAllCollections = useAppStore((state) => state.setArchiveAllCollections);
@@ -343,7 +349,7 @@ export const StudioAdminModal: React.FC = () => {
     (sum, order) => sum + order.items.reduce((iSum, item) => iSum + item.quantity, 0),
     0
   );
-  const totalRevenueSum = adminOrders.reduce((sum, order) => sum + order.subtotal, 0);
+  const totalRevenueSum = calculateOrderRevenue(adminOrders);
 
   // Render the inspection modal off the live row so applying a manual discount
   // updates the amount and the breakdown right away, without reopening.
@@ -852,6 +858,7 @@ export const StudioAdminModal: React.FC = () => {
                     </div>
 
                     <button
+                      disabled={isArchiveSaving || !archiveSettingsLoaded}
                       onClick={() => setArchiveAllCollections(!areAllCollectionsArchived)}
                       className={`px-5 py-2.5 rounded-xl font-sans font-extrabold text-xs transition-all cursor-pointer shadow-md ${
                         areAllCollectionsArchived
@@ -865,6 +872,13 @@ export const StudioAdminModal: React.FC = () => {
                     </button>
                   </div>
 
+                  {archiveError && (
+                    <div role="alert" className="text-sm text-rose-300 p-3 rounded-xl bg-rose-500/10 flex items-center justify-between gap-3">
+                      <span>{archiveError}</span>
+                      <button type="button" onClick={() => fetchArchiveSettings()} className="underline shrink-0 cursor-pointer">Повторить</button>
+                    </div>
+                  )}
+                  {isArchiveSaving && <p role="status" className="text-xs text-stone-400">Сохраняем статусы коллекций…</p>}
                   {/* Individual Collections Status Toggles */}
                   <div className="p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
                     <h4 className="text-xs font-sans uppercase font-extrabold text-stone-300 mb-3 tracking-wider">
@@ -891,6 +905,7 @@ export const StudioAdminModal: React.FC = () => {
                               </span>
                             </div>
                             <button
+                              disabled={isArchiveSaving || !archiveSettingsLoaded}
                               onClick={() => toggleArchiveCollection(col)}
                               className="w-full py-1.5 rounded-lg text-[11px] font-sans font-bold border cursor-pointer transition-colors bg-white/10 hover:bg-white/20 border-white/15"
                             >
@@ -1543,6 +1558,7 @@ export const StudioAdminModal: React.FC = () => {
                   {/* SUB-TAB 6.3.3: АРОМЫ (PER-RECIPE FLAVORINGS & COST CALCULATOR) */}
                   {prodSubTab === 'aromas' && (
                     <div className="space-y-6">
+                      <p className="text-sm text-stone-400">Закупка рассчитана целыми флаконами по 10 мл с округлением вверх.</p>
                       {(() => {
                         // Ordered liquid volume per product, summed over every user's
                         // orders: 15 bottles of a flavour at 120 ml means 1800 ml to
@@ -1565,12 +1581,10 @@ export const StudioAdminModal: React.FC = () => {
                           }
                         }
 
-                        const pricePer10mlFor = (vendor: string, name: string) => {
-                          const key1 = `${vendor}:${name.toLowerCase()}`;
-                          const key2 = `${vendor}_${name.toLowerCase()}`;
-                          const priceRecord = flavorPrices.find((fp) => fp.key === key1 || fp.key === key2);
-                          return priceRecord ? priceRecord.pricePer10ml : 100;
-                        };
+                        const normalizeVendor = (value: string) => value.trim().toUpperCase().replace(/[()\s]/g, '').replace(/^СAP$/, 'CAP');
+                        const normalizeName = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
+                        const priceRecordFor = (vendor: string, name: string) => flavorPrices.find(fp =>
+                          normalizeVendor(fp.vendor) === normalizeVendor(vendor) && normalizeName(fp.name) === normalizeName(name));
 
                         // One entry per flavour that has a recipe and at least one
                         // ordered bottle, with its own aroma breakdown.
@@ -1585,8 +1599,12 @@ export const StudioAdminModal: React.FC = () => {
                               const vendor = comp.vendor.trim().toUpperCase();
                               const name = comp.name.trim().replace(/\s+/g, ' ');
                               const ml = orderedMl * (comp.mlPer100ml / 100);
-                              const pricePer10ml = pricePer10mlFor(vendor, name);
-                              return { vendor, name, ml, pricePer10ml, cost: (ml / 10) * pricePer10ml };
+                              const priceRecord = priceRecordFor(vendor, name);
+                              const pricePer10ml = priceRecord?.pricePer10ml ?? 200;
+                              const packVolumeMl = priceRecord?.packVolumeMl ?? 10;
+                              const supplierStatus = priceRecord?.supplierStatus;
+                              return { vendor, name, ml, pricePer10ml, packVolumeMl, supplierStatus, supplierUrl: priceRecord?.supplierUrl,
+                                cost: flavorPurchaseCost(ml, pricePer10ml, packVolumeMl) };
                             });
 
                             const totalMl = aromas.reduce((sum, a) => sum + a.ml, 0);
@@ -1708,7 +1726,7 @@ export const StudioAdminModal: React.FC = () => {
                                           <th className="p-3 font-extrabold">Ароматизатор</th>
                                           <th className="p-3 text-center font-extrabold">% (мл на 100мл)</th>
                                           <th className="p-3 text-center font-extrabold">Потребность (мл)</th>
-                                          <th className="p-3 text-center font-extrabold">Цена за 10мл (₽)</th>
+                                          <th className="p-3 text-center font-extrabold">Цена за флакон (₽)</th>
                                           <th className="p-3 text-right font-extrabold">Итого закупка (₽)</th>
                                         </tr>
                                       </thead>
@@ -1716,13 +1734,19 @@ export const StudioAdminModal: React.FC = () => {
                                         {group.aromas.map((aroma, idx) => (
                                           <tr
                                             key={`${group.productId}-${idx}`}
-                                            className="border-b border-white/10 hover:bg-white/5 transition-colors"
+                                            className={`border-b border-white/10 transition-colors ${aroma.supplierStatus && aroma.supplierStatus !== 'available' ? 'bg-red-950/40 hover:bg-red-950/60' : 'hover:bg-white/5'}`}
                                           >
                                             <td className="p-3 font-mono font-bold text-amber-300">
                                               {aroma.vendor}
                                             </td>
-                                            <td className="p-3 font-bold text-white">
+                                            <td className={`p-3 font-bold ${aroma.supplierStatus && aroma.supplierStatus !== 'available' ? 'text-red-300' : 'text-white'}`}>
                                               {aroma.name}
+                                              {aroma.supplierStatus && aroma.supplierStatus !== 'available' && (
+                                                <div className="mt-1 text-[11px] font-normal text-red-300">
+                                                  {aroma.supplierStatus === 'not_found' ? 'Нет в каталоге Paromag' : aroma.supplierStatus === 'out_of_stock' ? 'Нет в наличии на Paromag' : aroma.supplierStatus === 'no_10ml' ? 'Нет фасовки 10 мл — расчёт по доступному флакону' : aroma.supplierStatus === 'price_unconfirmed' ? 'Цена не подтверждена — указана справочная' : 'Точное совпадение не подтверждено'}
+                                                </div>
+                                              )}
+                                              {aroma.supplierUrl && <a href={aroma.supplierUrl} target="_blank" rel="noreferrer" className="mt-1 block text-[11px] font-normal underline text-stone-400">Карточка Paromag</a>}
                                             </td>
                                             <td className="p-3 text-center font-mono text-stone-300">
                                               {((aroma.ml / group.orderedMl) * 100).toFixed(2)}
@@ -1741,6 +1765,7 @@ export const StudioAdminModal: React.FC = () => {
                                                 }}
                                                 className="w-24 px-2.5 py-1.5 rounded-lg border border-white/15 bg-white/5 font-mono text-xs text-amber-400 text-center font-bold focus:outline-none focus:border-amber-400"
                                               />
+                                              <div className="mt-1 text-[10px] text-stone-400">за {aroma.packVolumeMl} мл</div>
                                             </td>
                                             <td className="p-3 text-right font-mono font-extrabold text-amber-400">
                                               {Math.round(aroma.cost)} ₽

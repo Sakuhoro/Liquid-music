@@ -102,6 +102,8 @@ export const AuthModal: React.FC = () => {
       <div className="relative w-full max-w-xl">
         {/* Close Button */}
         <button
+          type="button"
+          aria-label="Закрыть окно входа и регистрации"
           onClick={closeAuthModal}
           className="absolute top-4 right-4 sm:top-6 sm:right-6 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer z-20 text-white"
         >

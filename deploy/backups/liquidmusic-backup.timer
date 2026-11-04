@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Liquid Music backup
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 Europe/Moscow
+Persistent=true
+RandomizedDelaySec=0
+Unit=liquidmusic-backup.service
+
+[Install]
+WantedBy=timers.target

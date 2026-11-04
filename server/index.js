@@ -1,6 +1,9 @@
 // Loaded first so the Telegram bot credentials below are in process.env before
 // they are read. The file itself is gitignored; .env.example documents the keys.
 import 'dotenv/config'
+import { callTelegramTransport } from './telegramTransport.js'
+import { createOrderNotificationQueue } from './orderNotificationQueue.js'
+import db from './db.js'
 import express from 'express'
 import path from 'path'
 import fs from 'fs'
@@ -59,7 +62,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 app.use(cookieParser())
 
 // Uploads directory
-const uploadsDir = path.join(__dirname, '..', 'data', 'uploads')
+const uploadsDir = path.join(process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(__dirname, '..', 'data'), 'uploads')
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true })
 }
@@ -103,6 +106,11 @@ function syncFileToGit(filepath, originalName) {
 }
 
 // Serve uploaded files statically
+// Carousel variants use content hashes; cache them without revalidating originals.
+app.use('/uploads/carousel', express.static(path.join(uploadsDir, 'carousel'), {
+  maxAge: '1y',
+  immutable: true,
+}))
 app.use('/uploads', express.static(uploadsDir))
 
 // API Health
@@ -434,28 +442,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 // 429/5xx are transient and say so; a 4xx (bad request, bad chat, blocked bot)
 // will not get better by asking again, so it is marked permanent.
 async function callTelegramOutcome(method, payload) {
-  if (!TELEGRAM_BOT_TOKEN) return { ok: false, retryable: false, reason: 'TELEGRAM_BOT_TOKEN не задан' }
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    const body = await response.json().catch(() => null)
-    if (response.ok && body && body.ok === true) {
-      return { ok: true, result: body.result }
-    }
-    const retryable = response.status === 429 || response.status >= 500
-    return {
-      ok: false,
-      retryable,
-      reason: body ? body.description : String(response.status),
-      retryAfter: body && body.parameters ? body.parameters.retry_after : null,
-    }
-  } catch (err) {
-    // A thrown fetch is a network problem (DNS, timeout, reset), worth retrying.
-    return { ok: false, retryable: true, reason: err.message }
-  }
+  return callTelegramTransport(TELEGRAM_BOT_TOKEN, method, payload)
 }
 
 // One call to the Bot API. Returns null instead of throwing, because a Telegram
@@ -498,60 +485,6 @@ function orderMessageText(order, user) {
   }
   lines.push(`Итого: ${formatRub(order.total)}`)
   return lines.join('\n')
-}
-
-// Announced after the order is committed and deliberately not awaited: the
-// customer has already paid and must not be kept waiting on Telegram, and a
-// failed announcement must not roll the order back.
-//
-// A single dropped request used to lose the notification for good, so it is
-// retried here: transient faults (network errors, 429, 5xx) get a few backoff
-// attempts, a permanent rejection is logged and given up on at once so a bad
-// chat id does not spin. The delays are short and bounded so the background
-// task cannot pile up; the reported order id makes any final failure traceable.
-const ORDER_NOTIFY_ATTEMPTS = 4
-const ORDER_NOTIFY_BASE_DELAY_MS = 700
-const ORDER_NOTIFY_MAX_DELAY_MS = 8000
-
-async function notifyOrderCreated(order, user) {
-  if (!TELEGRAM_ORDER_CHAT_ID) return
-  const payload = {
-    chat_id: TELEGRAM_ORDER_CHAT_ID,
-    text: orderMessageText(order, user),
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: '🗑 Удалить тестовый заказ', callback_data: `delete_test_order:${order.orderId}` }],
-      ],
-    },
-  }
-
-  for (let attempt = 1; attempt <= ORDER_NOTIFY_ATTEMPTS; attempt += 1) {
-    const outcome = await callTelegramOutcome('sendMessage', payload)
-    if (outcome.ok) return outcome.result
-
-    const isLastAttempt = attempt === ORDER_NOTIFY_ATTEMPTS
-    if (!outcome.retryable || isLastAttempt) {
-      console.error(
-        `[liquid-music] telegram sendMessage for order ${order.orderId} failed` +
-          (isLastAttempt ? ` after ${attempt} attempts` : ' (не повторяем)') +
-          `: ${outcome.reason}`
-      )
-      return null
-    }
-
-    // After a 429 Telegram tells us how long to wait; otherwise back off
-    // exponentially. The wait is capped so a long outage does not hold the task.
-    const retryAfterMs = outcome.retryAfter ? Number(outcome.retryAfter) * 1000 : 0
-    const backoffMs = Math.min(
-      retryAfterMs || ORDER_NOTIFY_BASE_DELAY_MS * 2 ** (attempt - 1),
-      ORDER_NOTIFY_MAX_DELAY_MS
-    )
-    console.error(
-      `[liquid-music] telegram sendMessage for order ${order.orderId} failed ` +
-        `(попытка ${attempt}/${ORDER_NOTIFY_ATTEMPTS}), повтор через ${backoffMs}ms: ${outcome.reason}`
-    )
-    await sleep(backoffMs)
-  }
 }
 
 function isStaffChat(chatId) {
@@ -646,6 +579,14 @@ app.post('/api/telegram/webhook', async (req, res) => {
 // credentials live in the environment, never in the bundle.
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || ''
 const TELEGRAM_BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || ''
+const orderNotificationQueue = createOrderNotificationQueue({
+  db, chatId: TELEGRAM_ORDER_CHAT_ID, send: callTelegramOutcome,
+  format: orderMessageText, loadOrder: getAdminOrderByBusinessId,
+})
+function processOrderNotifications() {
+  if (process.env.ORDER_NOTIFICATIONS_ENABLED === 'false') return
+  orderNotificationQueue.processPending().catch(error => console.error('[liquid-music] telegram queue worker failed:', error.message))
+}
 
 // Telegram's own scheme: the key is the SHA-256 of the bot token, the message
 // is every remaining field joined by newlines in key order, and the hex digest
@@ -903,6 +844,7 @@ app.post('/api/orders', requireAuth, (req, res) => {
 
     // Price every line from the server-side matrix and the products table. The
     // client never gets to say what an item costs or what it is called.
+    const archivedCollections = getCollectionArchive()
     const items = []
     for (const line of parseResult.data.items) {
       let unitPrice = calculateUnitPrice(line.volume, line.nicotine)
@@ -912,6 +854,10 @@ app.post('/api/orders', requireAuth, (req, res) => {
       const product = getProductById(line.productId)
       if (!product) {
         return res.status(400).json({ error: `Товар ${line.productId} больше не доступен.` })
+      }
+
+      if (archivedCollections[product.category]) {
+        return res.status(409).json({ error: 'Коллекция в архиве. Уберите её товары из корзины, чтобы оформить заказ.' })
       }
 
       if (product.category === 'Pain Girl' || product.id.startsWith('pain-girl-')) {
@@ -954,7 +900,7 @@ app.post('/api/orders', requireAuth, (req, res) => {
 
     // Announced, not awaited: the order is already saved, so Telegram is told
     // about it in the background and the checkout returns straight away.
-    notifyOrderCreated(full, req.user).catch(() => {})
+    processOrderNotifications()
 
     return res.status(201).json({
       success: true,
@@ -1058,6 +1004,30 @@ function mapOrderForClient(order) {
   }
 }
 
+// The shared archive is stored server-side; browser state is only a view.
+const COLLECTION_ARCHIVE_KEY = 'collectionArchive'
+const COLLECTION_NAMES = ['Spring', 'Summer', 'Autumn', 'Permanent 1', 'Permanent 2', 'Pain Girl']
+const archiveChangesSchema = z.object(Object.fromEntries(COLLECTION_NAMES.map(name => [name, z.boolean().optional()]))).strict()
+function getCollectionArchive() {
+  const stored = JSON.parse(getSetting(COLLECTION_ARCHIVE_KEY) || '{}')
+  return Object.fromEntries(COLLECTION_NAMES.map(name => [name, stored[name] === true]))
+}
+app.get('/api/collections/archive', (req, res) => {
+  res.set('Cache-Control', 'no-store')
+  try { res.json({ archivedCollections: getCollectionArchive() }) }
+  catch { res.status(500).json({ error: 'Не удалось загрузить архив коллекций.' }) }
+})
+app.patch('/api/collections/archive', requireAuth, (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Недостаточно прав.' })
+  const parsed = archiveChangesSchema.safeParse(req.body?.changes)
+  if (!parsed.success || !Object.keys(parsed.data).length) return res.status(400).json({ error: 'Некорректные статусы коллекций.' })
+  try {
+    const archivedCollections = { ...getCollectionArchive(), ...parsed.data }
+    setSetting(COLLECTION_ARCHIVE_KEY, archivedCollections)
+    res.set('Cache-Control', 'no-store').json({ archivedCollections })
+  } catch { res.status(500).json({ error: 'Не удалось сохранить архив коллекций.' }) }
+})
+
 // Settings API Endpoints (e.g. for videos, audio settings)
 app.get('/api/settings/:key', (req, res) => {
   try {
@@ -1069,6 +1039,7 @@ app.get('/api/settings/:key', (req, res) => {
 })
 
 app.post('/api/settings/:key', (req, res) => {
+  if (req.params.key === COLLECTION_ARCHIVE_KEY) return res.status(403).json({ error: 'Используйте управление архивом коллекций.' })
   try {
     setSetting(req.params.key, req.body.value)
     res.json({ success: true })
@@ -1076,6 +1047,9 @@ app.post('/api/settings/:key', (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+// Runtime media is migrated independently from source code and the build.
+if (process.env.MEDIA_DIR) app.use(express.static(path.resolve(process.env.MEDIA_DIR)))
 
 // Serve static React build in production
 const distDir = path.join(__dirname, '..', 'dist')
@@ -1088,4 +1062,6 @@ if (fs.existsSync(distDir)) {
 
 app.listen(PORT, () => {
   console.log(`[liquid-music] server listening on :${PORT}`)
+  processOrderNotifications()
+  setInterval(processOrderNotifications, 15000).unref()
 })

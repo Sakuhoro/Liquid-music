@@ -38,7 +38,7 @@ const COLLECTION_CARDS = [
   {
     id: 'Autumn',
     title: 'Зимняя коллекция',
-    description: 'Глубокие, согревающие аккорды и неторопливые инструментальные мелодии, созданные, чтобы укутать вас уютом в сезон холодов и вьюг.',
+    description: 'Глубокие, согревающие и неторопливые мелодии, созданные чтобы подарить вам уют.',
     image: '/uploads/photo_2026-09-15_00-00-17.jpg',
     badge: 'Зимняя коллекция',
     color: 'from-blue-600/80 to-slate-900/80',
@@ -53,8 +53,8 @@ const COLLECTION_CARDS = [
   },
   {
     id: 'Permanent 2',
-    title: 'Velvet Distortion',
-    description: 'Nordic spearmint, frosted fir resins, and soothing aloe vera grape harmonies.',
+    title: 'Velvet Ditsortion',
+    description: 'Плотные гитарные риффы, бархатные басы и дерзкие мелодии, чтобы зажечь ваш внутренний концерт.',
     image: '/uploads/velvet-distortion.png',
     badge: 'Постоянная коллекция',
     color: 'from-emerald-500/80 to-teal-900/80',
@@ -78,7 +78,9 @@ export const CatalogView: React.FC = () => {
   const setInspectedProduct = useAppStore((state) => state.setInspectedProduct);
   const activeCollection = useAppStore((state) => state.activeCollection);
   const setActiveCollection = useAppStore((state) => state.setActiveCollection);
-  const isCollectionArchived = useAppStore((state) => state.isCollectionArchived);
+  const archivedCollections = useAppStore((state) => state.archivedCollections);
+  const archiveSettingsLoaded = useAppStore((state) => state.archiveSettingsLoaded);
+  const isCollectionArchived = (col: CollectionName) => !archiveSettingsLoaded || Boolean(archivedCollections[col]);
   const theme = useAppStore((state) => state.theme);
 
   const [searchQuery, setSearchQuery] = useState('');

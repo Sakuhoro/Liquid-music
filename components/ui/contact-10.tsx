@@ -125,15 +125,11 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
   // Appended this way it runs on load, finds its own data-telegram-login tag and
   // swaps itself for the button.
   const tgWidgetHost = React.useRef<HTMLDivElement | null>(null);
-  // Set when the bot is configured but no button ever turned up, so the form can
-  // say so instead of leaving a gap where the button should be.
-  const [tgUnreachable, setTgUnreachable] = useState(false);
 
   useEffect(() => {
     const host = tgWidgetHost.current;
     if (!host || !tgEnabled || !tgUsername) return;
 
-    setTgUnreachable(false);
     host.innerHTML = '';
     const script = document.createElement('script');
     script.async = true;
@@ -162,17 +158,10 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
     });
     observer.observe(host, { childList: true, subtree: true });
 
-    // Nothing at all after a while means the script itself never arrived, which
-    // is what a blocked telegram.org looks like.
-    const watchdog = window.setTimeout(() => {
-      if (!host.querySelector('iframe')) setTgUnreachable(true);
-    }, 7000);
-
     // Telegram replaces the script with the button, so the host is emptied on
     // the way out instead of trying to un-append a node that no longer exists.
     return () => {
       observer.disconnect();
-      window.clearTimeout(watchdog);
       nudgeTimers.forEach((id) => window.clearTimeout(id));
       host.innerHTML = '';
     };
@@ -259,7 +248,7 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
       <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Title */}
-      <h2 className="font-serif text-2xl sm:text-3xl font-normal tracking-tight text-white mb-6">
+      <h2 className="font-serif text-xl sm:text-3xl font-normal leading-snug tracking-tight text-white mb-6 pr-11 break-words">
         Вход для звукорежиссеров
       </h2>
 
@@ -306,7 +295,7 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
       )}
 
       {/* Input Form */}
-      <form onSubmit={handleSubmit} className={`${formGap} font-sans`}>
+      <form id={isRegister ? "registration-form" : "login-form"} autoComplete="on" onSubmit={handleSubmit} className={`${formGap} font-sans`}>
         {/* Telegram first, because on this path it replaces the fields below.
             On both tabs, not just registration: a member who already has an
             account signs in through it too, and the server lets them straight
@@ -323,23 +312,7 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
             <div className="flex justify-center">
               <div id="tg-widget-host" ref={tgWidgetHost} className="[&_iframe]:!border-0" />
             </div>
-            {/* The host stays mounted either way: if the script turns up late
-                the button can still appear above this note. */}
-            {tgUnreachable && (
-              <p className="text-center text-xs font-sans text-stone-400 leading-relaxed">
-                Кнопка Telegram не загрузилась — telegram.org недоступен из вашей сети или
-                заблокирован расширением. Можно войти напрямую через{' '}
-                <a
-                  href={`https://t.me/${tgUsername}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
-                >
-                  @{tgUsername}
-                </a>
-                , или заполнить поля ниже.
-              </p>
-            )}
+
           </div>
         )}
 
@@ -380,7 +353,7 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
             {/* Field: Full Name / ФИО */}
             {!viaTelegram && (
             <div className={labelGap}>
-              <label className="block font-mono uppercase tracking-wider text-xs text-stone-300 font-bold">
+              <label htmlFor="auth-name" className="block font-mono uppercase tracking-wider text-xs text-stone-300 font-bold">
                 ФИО (Полное имя):
               </label>
               <div className="relative">
@@ -388,6 +361,9 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
                 <input
                   type="text"
                   required
+                  id="auth-name"
+                  name="name"
+                  autoComplete="name"
                   placeholder="Иванова Анна Сергеевна"
                   value={fullName}
                   onChange={(e) => {
@@ -408,6 +384,9 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
               <div className="relative">
                 <Phone className={`w-5 h-5 absolute ${iconInset} top-1/2 -translate-y-1/2 text-stone-400`} />
                 <input
+                  id="auth-phone"
+                  name="phone"
+                  autoComplete="tel"
                   type="tel"
                   // Not required on the Telegram path: a member who already has
                   // an account is let straight in, and the server only demands
@@ -429,7 +408,7 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
         {/* Field: Telegram ID */}
         {!viaTelegram && (
         <div className={labelGap}>
-          <label className="block font-mono uppercase tracking-wider text-xs text-stone-300 font-bold">
+          <label htmlFor="auth-username" className="block font-mono uppercase tracking-wider text-xs text-stone-300 font-bold">
             Telegram ID:
           </label>
           <div className="relative">
@@ -437,6 +416,9 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
             <input
               type="text"
               required
+              id="auth-username"
+              name="username"
+              autoComplete="username"
               placeholder="@username"
               value={telegramId}
               onChange={(e) => {
@@ -458,12 +440,15 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
             produce a password that could never be used. */}
         {!viaTelegram && (
         <div className={labelGap}>
-          <label className="block font-mono uppercase tracking-wider text-xs text-stone-300 font-bold">
+          <label htmlFor="auth-password" className="block font-mono uppercase tracking-wider text-xs text-stone-300 font-bold">
             Пароль (мин. 9 символов):
           </label>
           <div className="relative">
             <Lock className={`w-5 h-5 absolute ${iconInset} top-1/2 -translate-y-1/2 text-stone-400`} />
             <input
+              id="auth-password"
+              name="password"
+              autoComplete={isRegister ? "new-password" : "current-password"}
               type="password"
               required
               minLength={9}
@@ -500,10 +485,10 @@ export const Contact10: React.FC<StudioAccessGateProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className={`liquid-glass w-full ${submitPad} rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-3 cursor-pointer transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] text-white shadow-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40`}
+            className={`liquid-glass w-full ${submitPad} px-4 sm:px-6 rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-3 cursor-pointer transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] text-white shadow-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40`}
           >
-            <Sliders className="w-5 h-5 text-amber-400" />
-            <span>
+            <Sliders className="w-5 h-5 shrink-0 text-amber-400" aria-hidden="true" />
+            <span className="min-w-0 text-center leading-snug break-words">
               {loading
                 ? 'Обработка доступа...'
                 : mode === 'login'

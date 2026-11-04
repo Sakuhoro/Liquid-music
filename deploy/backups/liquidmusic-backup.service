@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily encrypted Liquid Music backup to GitHub
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/flock -n /var/lib/liquidmusic-backup/backup.lock /usr/bin/python3 /opt/liquid-music/deploy/backups/backup.py
+TimeoutStartSec=45min
+Nice=10
+IOSchedulingClass=idle

@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    init: true
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATA_DIR: /app/data
+      MEDIA_DIR: /app/media
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./state/data:/app/data
+      - ./state/media:/app/media:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

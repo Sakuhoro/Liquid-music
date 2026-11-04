@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Disc } from 'lucide-react';
+import { useReducedMotion } from 'motion/react';
+import { useCarouselActivity } from '../../hooks/useCarouselActivity';
+import { carouselImageProps } from '../../utils/carouselImages';
 import './CollectionCarousel.css';
 
 export interface CollectionCarouselItem {
@@ -50,25 +53,17 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
   const rotationStartRef = useRef<number>(0);
   const dragDistanceXRef = useRef<number>(0);
 
+  const isCarouselActive = useCarouselActivity(containerRef);
+  const reduceMotion = useReducedMotion();
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(() => new Set());
+  const dragFrameRef = useRef<number | null>(null);
+  const latestRotationRef = useRef(0);
+
   // Memoize sources key to prevent image re-fetching and flickering loops
   const sourcesKey = useMemo(
     () => items.map((item) => item.src || item.image || '').join('|'),
     [items]
   );
-
-  // Preload images safely without race conditions or resetting state during re-renders
-  useEffect(() => {
-    const sources = items.map((item) => item.src || item.image || '').filter(Boolean);
-
-    if (sources.length === 0) {
-      return;
-    }
-
-    sources.forEach((src) => {
-      const img = new Image();
-      img.src = src;
-    });
-  }, [sourcesKey]);
 
   // Handle window resize for adaptive responsiveness
   useEffect(() => {
@@ -86,6 +81,30 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
 
   const count = items.length;
   const angleStep = count > 0 ? 360 / count : 0;
+
+  // Use a native non-passive listener so the wheel rotates the shelf.
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node || count <= 1) return;
+    let lastStep = -Infinity;
+    let accumulated = 0;
+    const wheel = (event: WheelEvent) => {
+      if (event.ctrlKey || isDraggingRef.current) return;
+      event.preventDefault();
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      if (!delta) return;
+      const now = performance.now();
+      if (now - lastStep < 220) return;
+      accumulated += delta * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? node.clientHeight : 1);
+      if (Math.abs(accumulated) < 20) return;
+      const direction = Math.sign(accumulated);
+      setRotation(previous => (Math.round(previous / angleStep) - direction) * angleStep);
+      accumulated = 0;
+      lastStep = now;
+    };
+    node.addEventListener('wheel', wheel, { passive: false });
+    return () => node.removeEventListener('wheel', wheel);
+  }, [count, angleStep]);
 
   // The stage's perspective magnifies whichever card is at the front: a card
   // pushed `radius` toward the viewer is drawn 1200/(1200-radius) times its
@@ -151,12 +170,12 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
 
   // Autoplay handler
   useEffect(() => {
-    if (!autoplay || count <= 1 || isDraggingRef.current) return;
+    if (!autoplay || reduceMotion || !isCarouselActive || count <= 1) return;
     const interval = setInterval(() => {
-      setRotation((prev) => prev - angleStep);
+      if (!isDraggingRef.current) setRotation((prev) => prev - angleStep);
     }, autoplaySpeed);
     return () => clearInterval(interval);
-  }, [autoplay, count, angleStep, autoplaySpeed]);
+  }, [autoplay, count, angleStep, autoplaySpeed, isCarouselActive, reduceMotion]);
 
   // Dragging event handlers (Mouse + Touch)
   const handleDragStart = useCallback(
@@ -164,6 +183,7 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
       isDraggingRef.current = true;
       dragStartXRef.current = clientX;
       rotationStartRef.current = rotation;
+      latestRotationRef.current = rotation;
       dragDistanceXRef.current = 0;
     },
     [rotation]
@@ -175,7 +195,11 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
       const dx = clientX - dragStartXRef.current;
       dragDistanceXRef.current = dx;
       const dragSensitivity = isMobile ? 0.35 : 0.25;
-      setRotation(rotationStartRef.current + dx * dragSensitivity);
+      latestRotationRef.current = rotationStartRef.current + dx * dragSensitivity;
+      if (dragFrameRef.current === null) dragFrameRef.current = requestAnimationFrame(() => {
+        dragFrameRef.current = null;
+        setRotation(latestRotationRef.current);
+      });
     },
     [isMobile]
   );
@@ -183,9 +207,10 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
   const handleDragEnd = useCallback(() => {
     if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
+    if (dragFrameRef.current !== null) { cancelAnimationFrame(dragFrameRef.current); dragFrameRef.current = null; }
     // Snap to nearest item index
     if (angleStep > 0) {
-      const nearestIndex = Math.round(-rotation / angleStep);
+      const nearestIndex = Math.round(-latestRotationRef.current / angleStep);
       setRotation(-nearestIndex * angleStep);
     }
   }, [rotation, angleStep]);
@@ -224,10 +249,28 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
   const activeIndex =
     count > 0 ? Math.round(normalizedRotation / angleStep) % count : 0;
 
+  useEffect(() => {
+    if (!count) return;
+    // Retain loaded neighbours as the cylinder rotates; never eagerly fetch its rear faces.
+    setLoadedImages(previous => {
+      const next = new Set(previous);
+      for (const offset of [-1, 0, 1]) {
+        const item = items[(activeIndex + offset + count) % count];
+        const src = item.src || item.image;
+        if (src) next.add(src);
+      }
+      return next.size === previous.size ? previous : next;
+    });
+  }, [activeIndex, count, sourcesKey]);
+  useEffect(() => () => {
+    if (dragFrameRef.current !== null) cancelAnimationFrame(dragFrameRef.current);
+  }, []);
+
   if (items.length === 0) return null;
 
   return (
     <div
+      data-carousel-active={isCarouselActive && !reduceMotion}
       ref={containerRef}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -290,9 +333,11 @@ export const CollectionCarousel: React.FC<CollectionCarouselProps> = ({
                 }}
               >
                 {/* Background Image */}
-                {imgSrc && (
+                {imgSrc && (loadedImages.has(imgSrc) || angleFromFront <= angleStep * 1.1) && (
                   <img
-                    src={imgSrc}
+                    {...carouselImageProps(imgSrc, effectiveCardWidth * 1.5)}
+                    loading={isActive ? 'eager' : 'lazy'}
+                    fetchPriority={isActive ? 'high' : 'low'}
                     alt={item.alt || title}
                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-105 pointer-events-none"
                   />

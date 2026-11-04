@@ -60,10 +60,18 @@ export const AccountModal: React.FC = () => {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isAccountModalOpen) {
-      fetchOrders();
-    }
-  }, [isAccountModalOpen, fetchOrders]);
+    if (!isAccountModalOpen) return;
+    fetchOrders();
+    const refresh = () => {
+      if (!document.hidden) fetchOrders();
+    };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [isAccountModalOpen, isOrderHistorySubModalOpen, fetchOrders]);
 
   if (!isAccountModalOpen || !currentUser) return null;
 
@@ -334,11 +342,15 @@ export const AccountModal: React.FC = () => {
                               <div className="flex items-center justify-between text-[11px] font-mono text-rose-300">
                                 <span className="flex items-center gap-1.5">
                                   <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-                                  Ручная скидка
+                                  Скидка администратора
                                 </span>
                                 <span>−{formatRub(order.manualDiscount)} ₽</span>
                               </div>
                             ) : null}
+                            <div className="flex items-center justify-between text-sm font-semibold text-white pt-3 border-t border-white/[0.08]">
+                              <span>Итого к оплате</span>
+                              <span>{formatRub(order.subtotal)} ₽</span>
+                            </div>
                           </div>
                         )}
                       </div>
